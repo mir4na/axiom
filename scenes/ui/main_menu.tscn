@@ -1,0 +1,70 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_mm"]
+
+[node name="MainMenu" type="Control" unique_id=971112489]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mm")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1243386206]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.04, 0.08, 1)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1970154351]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center" unique_id=474603971]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Title" type="Label" parent="Center/VBox" unique_id=2057415415]
+layout_mode = 2
+theme_override_font_sizes/font_size = 72
+text = "AXIOM"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/VBox" unique_id=656285286]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "[ REALITY IS YOURS TO BEND ]"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Center/VBox" unique_id=1102882143]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="Center/VBox" unique_id=1883573762]
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "PLAY"
+
+[node name="QuitButton" type="Button" parent="Center/VBox" unique_id=725704535]
+custom_minimum_size = Vector2(240, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "QUIT"
+
+[node name="Controls" type="Label" parent="Center/VBox" unique_id=326222130]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "DRAG  rotate  ·  SCROLL  scale  ·  Q/E  time  ·  ESC  pause"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="Center/VBox/PlayButton" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="Center/VBox/QuitButton" to="." method="_on_quit_pressed"]

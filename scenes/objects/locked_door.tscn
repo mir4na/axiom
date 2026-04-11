@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/locked_door.gd" id="1_door"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_door"]
+size = Vector3(2, 2.5, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_door"]
+size = Vector3(2, 2.5, 0.4)
+
+[node name="LockedDoor" type="StaticBody3D" groups=["time_actor"]]
+script = ExtResource("1_door")
+required_key = "key_1"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_door")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_door")

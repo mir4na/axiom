@@ -1,0 +1,89 @@
+[gd_scene format=3 uid="uid://dp7cy4t1lpacm"]
+
+[ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/camera/camera_pivot.tscn" id="3_camera"]
+[ext_resource type="Script" uid="uid://c1y6irc5xmvq8" path="res://scripts/objects/platform.gd" id="4_platform"]
+[ext_resource type="Script" uid="uid://c606llspgcrhk" path="res://scripts/objects/locked_door.gd" id="5_door"]
+[ext_resource type="Script" uid="uid://bgcg4mrh6u5sm" path="res://scripts/objects/key_item.gd" id="6_key"]
+[ext_resource type="Script" uid="uid://dr8rn6f7xg50c" path="res://scripts/objects/enemy.gd" id="7_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/objects/exit_door.tscn" id="8_exit"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_enemy"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_door"]
+size = Vector3(4, 3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_door"]
+size = Vector3(4, 3, 1)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_key"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_key"]
+
+[node name="World" type="Node3D" unique_id=1193203873 groups=["main"]]
+script = ExtResource("1_world")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1441150761]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Player" parent="." unique_id=815839120 instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="CameraPivot" parent="Player" unique_id=1153273590 instance=ExtResource("3_camera")]
+
+[node name="LevelGeometry" type="Node3D" parent="." unique_id=1167170630]
+
+[node name="StartPlatform" type="CSGBox3D" parent="LevelGeometry" unique_id=656525895]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+use_collision = true
+size = Vector3(12, 2, 12)
+
+[node name="EndPlatform" type="CSGBox3D" parent="LevelGeometry" unique_id=1840788039]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -25)
+use_collision = true
+size = Vector3(15, 2, 15)
+
+[node name="MovingObstacle" type="CharacterBody3D" parent="LevelGeometry" unique_id=947595706]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -12)
+script = ExtResource("7_enemy")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LevelGeometry/MovingObstacle" unique_id=164396937]
+shape = SubResource("CylinderShape3D_enemy")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="LevelGeometry/MovingObstacle" unique_id=409338530]
+
+[node name="TimeBridge" type="StaticBody3D" parent="LevelGeometry" unique_id=197258807]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -12.5)
+script = ExtResource("4_platform")
+active_on_forward = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LevelGeometry/TimeBridge" unique_id=534135836]
+shape = SubResource("BoxShape3D_door")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LevelGeometry/TimeBridge" unique_id=1102438829]
+mesh = SubResource("BoxMesh_door")
+
+[node name="LockedDoor" type="StaticBody3D" parent="LevelGeometry" unique_id=1944746036]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -18)
+script = ExtResource("5_door")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LevelGeometry/LockedDoor" unique_id=321360185]
+shape = SubResource("BoxShape3D_door")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LevelGeometry/LockedDoor" unique_id=121456258]
+mesh = SubResource("BoxMesh_door")
+
+[node name="KeyItem" type="Area3D" parent="LevelGeometry" unique_id=2080618090]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1, -25)
+script = ExtResource("6_key")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LevelGeometry/KeyItem" unique_id=1027568234]
+shape = SubResource("SphereShape3D_key")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LevelGeometry/KeyItem" unique_id=1806568214]
+mesh = SubResource("SphereMesh_key")
+
+[node name="ExitDoor" parent="LevelGeometry" unique_id=421003037 instance=ExtResource("8_exit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -30)

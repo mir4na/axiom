@@ -1,0 +1,57 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="1_pm"]
+
+[node name="PauseMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+process_mode = 3
+script = ExtResource("1_pm")
+
+[node name="Overlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.0, 0.0, 0.0, 0.7)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -120.0
+offset_right = 140.0
+offset_bottom = 120.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+text = "— PAUSED —"
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="Panel/VBox"]
+text = "RESUME"
+theme_override_font_sizes/font_size = 20
+custom_minimum_size = Vector2(240, 44)
+
+[node name="RestartButton" type="Button" parent="Panel/VBox"]
+text = "RESTART LEVEL"
+theme_override_font_sizes/font_size = 20
+custom_minimum_size = Vector2(240, 44)
+
+[node name="MenuButton" type="Button" parent="Panel/VBox"]
+text = "MAIN MENU"
+theme_override_font_sizes/font_size = 20
+custom_minimum_size = Vector2(240, 44)
+
+[connection signal="pressed" from="Panel/VBox/ResumeButton" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="Panel/VBox/RestartButton" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="Panel/VBox/MenuButton" to="." method="_on_main_menu_pressed"]
