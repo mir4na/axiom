@@ -15,6 +15,11 @@ extends CanvasLayer
 var normal_style: StyleBoxFlat
 var selected_style: StyleBoxFlat
 
+@onready var dig_progress_bar: Control = $DigProgress
+
+func set_dig_progress(val: float, is_vis: bool) -> void:
+	dig_progress_bar.set_progress(val, is_vis)
+
 func _ready() -> void:
 	prompt_label.visible = false
 	

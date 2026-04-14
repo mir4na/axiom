@@ -2,6 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/ui/player_hud.gd" id="1_hud"]
 [ext_resource type="Shader" path="res://shaders/glitch.gdshader" id="GlitchShader"]
+[ext_resource type="Texture2D" uid="uid://circlebg" path="res://assets/circle_bg.png" id="bg_tex"]
+[ext_resource type="Texture2D" uid="uid://circlefg" path="res://assets/circle_fg.png" id="fg_tex"]
+[ext_resource type="Script" path="res://scripts/ui/dig_circle.gd" id="dig_script"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_glitch"]
 shader = ExtResource("GlitchShader")
@@ -120,3 +123,17 @@ size_flags_horizontal = 3
 layout_mode = 2
 text = "3: Empty"
 horizontal_alignment = 1
+
+[node name="DigProgress" type="Control" parent="."]
+script = ExtResource("dig_script")
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2

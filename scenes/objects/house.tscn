@@ -125,7 +125,6 @@ size = Vector3(0.6, 1.4, 2.5)
 
 [node name="Roof" type="CSGPolygon3D" parent="." unique_id=1067710928]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.5, 2, 10.009462)
-flip_faces = true
 polygon = PackedVector2Array(0, 0, 12.5, 4.5, 25, 0)
 depth = 19.2
 material = SubResource("MatRoof")

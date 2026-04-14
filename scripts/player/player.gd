@@ -122,22 +122,27 @@ func _handle_interaction() -> void:
 	if collider is Interactable:
 		var is_dig = collider.has_method("get_equip_hint") and collider.get_equip_hint() == GameState.slots[GameState.selected_slot]
 		
-		if last_interactable != collider:
-			last_interactable = collider
+		if last_interactable != null and last_interactable != collider and last_interactable.has_method("reset_minigame"):
+			last_interactable.reset_minigame()
+			hud.set_dig_progress(0, false)
+			
+		last_interactable = collider
+		if collider.prompt_text == "":
+			hud.hide_prompt()
+		else:
 			hud.show_prompt(collider.prompt_text)
-			
 		hud.set_crosshair_active(true, is_dig)
-			
-		if Input.is_key_pressed(KEY_E):
-			collider.interact()
 	else:
 		if last_interactable != null:
+			if last_interactable.has_method("reset_minigame"):
+				last_interactable.reset_minigame()
 			last_interactable = null
 			hud.hide_prompt()
+			hud.set_dig_progress(0, false)
 		hud.set_crosshair_active(false)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_1:
 			GameState.select_slot(0)
 		elif event.keycode == KEY_2:
@@ -146,6 +151,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			GameState.select_slot(2)
 		elif event.keycode == KEY_Q:
 			_drop_item()
+		elif event.keycode == KEY_E:
+			if last_interactable:
+				if last_interactable.has_method("progress_minigame"):
+					var prog = last_interactable.progress_minigame()
+					if prog >= 0:
+						hud.set_dig_progress(prog, true)
+					if prog >= 100.0:
+						hud.set_dig_progress(0, false)
+						hud.set_crosshair_active(false, false)
+				else:
+					last_interactable.interact()
 
 func _drop_item() -> void:
 	var item_name = GameState.slots[GameState.selected_slot]
