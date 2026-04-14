@@ -61,6 +61,20 @@ func show_prompt(text: String) -> void:
 func hide_prompt() -> void:
 	prompt_label.visible = false
 
+func set_crosshair_active(active: bool, is_dig: bool = false) -> void:
+	if active:
+		crosshair.add_theme_color_override("font_color", Color(1, 0.9, 0.2, 1))
+		if is_dig:
+			crosshair.text = "⊕"
+			crosshair.add_theme_font_size_override("font_size", 28)
+		else:
+			crosshair.text = "+"
+			crosshair.remove_theme_font_size_override("font_size")
+	else:
+		crosshair.remove_theme_color_override("font_color")
+		crosshair.text = "+"
+		crosshair.remove_theme_font_size_override("font_size")
+
 func _update_inventory_ui() -> void:
 	var slots = GameState.slots
 	var sel = GameState.selected_slot

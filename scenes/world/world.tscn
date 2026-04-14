@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
+[ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
+[ext_resource type="PackedScene" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.48, 0.68, 0.95, 1)
@@ -80,6 +82,18 @@ albedo_color = Color(0.1, 0.3, 0.08, 1)
 [sub_resource type="StandardMaterial3D" id="MatForestMid"]
 albedo_color = Color(0.15, 0.38, 0.1, 1)
 
+[sub_resource type="BoxShape3D" id="ShapeNS"]
+size = Vector3(160, 10, 1)
+
+[sub_resource type="BoxShape3D" id="ShapeEW"]
+size = Vector3(1, 10, 140)
+
+[sub_resource type="BoxShape3D" id="ShapeYardNS"]
+size = Vector3(43, 10, 1)
+
+[sub_resource type="BoxShape3D" id="ShapeYardEW"]
+size = Vector3(1, 10, 35)
+
 [node name="World" type="Node3D" unique_id=921239400]
 script = ExtResource("1_world")
 
@@ -111,21 +125,21 @@ size = Vector3(160, 0.9, 4)
 material = SubResource("MatConcrete")
 
 [node name="Pavement" type="CSGBox3D" parent="Terrain" unique_id=430865857]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.724359, -0.38, 13.140284)
-size = Vector3(5.762927, 0.9, 8.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.724359, -0.38, 11.150049)
+size = Vector3(5.762927, 0.9, 12.480469)
 material = SubResource("MatConcrete")
 
 [node name="Fences" type="CSGCombiner3D" parent="Terrain" unique_id=948908838]
 use_collision = true
 
 [node name="FenceL" type="CSGBox3D" parent="Terrain/Fences" unique_id=1399476801]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.95, 1)
-size = Vector3(0.4, 1.95, 35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.95, 0.48388672)
+size = Vector3(0.4, 1.95, 34.950195)
 material = SubResource("MatFence")
 
 [node name="FenceR" type="CSGBox3D" parent="Terrain/Fences" unique_id=222505492]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0.95, 1)
-size = Vector3(0.4, 1.95, 35)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 0.95, 0.50286865)
+size = Vector3(0.4, 1.95, 34.935425)
 material = SubResource("MatFence")
 
 [node name="FenceBack" type="CSGBox3D" parent="Terrain/Fences" unique_id=59344512]
@@ -144,13 +158,13 @@ size = Vector3(19.400879, 1.95, 0.4)
 material = SubResource("MatFence")
 
 [node name="GatePostL" type="CSGBox3D" parent="Terrain/Fences" unique_id=216643045]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.899607, 1.4, 17.8)
-size = Vector3(0.55, 2.85, 0.55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.899607, 1.1113892, 17.8)
+size = Vector3(0.55, 2.2727783, 0.55)
 material = SubResource("MatFence")
 
 [node name="GatePostR" type="CSGBox3D" parent="Terrain/Fences" unique_id=123874623]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.4, 17.951757)
-size = Vector3(0.55, 2.85, 0.55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.1034546, 17.82317)
+size = Vector3(0.55, 2.2569091, 0.55)
 material = SubResource("MatFence")
 
 [node name="Trees" type="CSGCombiner3D" parent="Terrain" unique_id=1958289669]
@@ -198,11 +212,17 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 radius = 1.7
 material = SubResource("MatLeaves")
 
+[node name="GateBar" type="CSGBox3D" parent="Terrain" unique_id=1490890022]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.7, 0.975, 17.85)
+visible = false
+size = Vector3(5.8, 1.95, 0.2)
+material = SubResource("MatFence")
+
 [node name="House" parent="." unique_id=65160958 instance=ExtResource("7_house")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -4)
 
 [node name="Player" parent="." unique_id=758033891 instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.660072, 1, 0.78345966)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.660072, 1, -7.59978)
 
 [node name="Neighborhood" type="Node3D" parent="." unique_id=663843665]
 
@@ -228,13 +248,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.4, 7.05)
 operation = 2
 size = Vector3(2, 1.1, 0.5)
 
-[node name="Win2" type="CSGBox3D" parent="Neighborhood/HouseA" unique_id=551181511]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.4, 7.05)
-operation = 2
-size = Vector3(2, 1.1, 0.5)
-
 [node name="Door" type="CSGBox3D" parent="Neighborhood/HouseA" unique_id=1402054940]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, -0.8, 7.13)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, -0.79999995, 6.918441)
 size = Vector3(1.6, 2.2, 0.1)
 material = SubResource("MatFence")
 
@@ -320,8 +335,8 @@ operation = 2
 size = Vector3(2, 1.1, 0.5)
 
 [node name="Door" type="CSGBox3D" parent="Neighborhood/HouseC" unique_id=237575170]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, -0.8, 8.13)
-size = Vector3(1.6, 2.2, 0.1)
+transform = Transform3D(0.999999, -0.0013481657, 0.00041809652, 0.0013481322, 0.99999905, 7.926921e-05, -0.0004182045, -7.8697594e-05, 0.9999999, -0.97904587, -0.75377417, 7.9648666)
+size = Vector3(1.7148193, 2.292395, 0.1)
 material = SubResource("MatFence")
 
 [node name="Porch" type="CSGBox3D" parent="Neighborhood/HouseC" unique_id=1211029159]
@@ -354,11 +369,6 @@ size = Vector3(1.8, 2.4, 0.5)
 
 [node name="Win1" type="CSGBox3D" parent="Neighborhood/HouseD" unique_id=1289363886]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.4, 6.05)
-operation = 2
-size = Vector3(2, 1.1, 0.5)
-
-[node name="Win2" type="CSGBox3D" parent="Neighborhood/HouseD" unique_id=1233764043]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.4, 6.05)
 operation = 2
 size = Vector3(2, 1.1, 0.5)
 
@@ -433,14 +443,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.4, -7.05)
 operation = 2
 size = Vector3(2, 1.1, 0.5)
 
-[node name="Win2" type="CSGBox3D" parent="Neighborhood/HouseF" unique_id=1884881160]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.4, -7.05)
-operation = 2
-size = Vector3(2, 1.1, 0.5)
-
 [node name="Door" type="CSGBox3D" parent="Neighborhood/HouseF" unique_id=249244459]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, -0.8, -7.13)
-size = Vector3(1.6, 2.2, 0.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0061512, -0.7450806, -7.0203667)
+size = Vector3(1.7095703, 2.3098388, 0.1)
 material = SubResource("MatFence")
 
 [node name="Porch" type="CSGBox3D" parent="Neighborhood/HouseF" unique_id=410390329]
@@ -482,8 +487,8 @@ operation = 2
 size = Vector3(2, 1.1, 0.5)
 
 [node name="Door" type="CSGBox3D" parent="Neighborhood/HouseG" unique_id=1664969267]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, -0.8, -5.13)
-size = Vector3(1.6, 2.2, 0.1)
+transform = Transform3D(0.99999994, 0, 0.0002443461, 0, 1, 0, -0.0002443461, 0, 0.99999994, -0.9562502, -0.7367188, -5.1300125)
+size = Vector3(1.8101562, 2.3265624, 0.1)
 material = SubResource("MatFence")
 
 [node name="Roof" type="CSGPolygon3D" parent="Neighborhood/HouseG" unique_id=1758895014]
@@ -525,8 +530,8 @@ operation = 2
 size = Vector3(2, 1.1, 0.5)
 
 [node name="Door" type="CSGBox3D" parent="Neighborhood/HouseH" unique_id=616118303]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, -0.8, -7.13)
-size = Vector3(1.6, 2.2, 0.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.049961, -0.74306643, -7.06184)
+size = Vector3(1.6774414, 2.313867, 0.1)
 material = SubResource("MatFence")
 
 [node name="Porch" type="CSGBox3D" parent="Neighborhood/HouseH" unique_id=770577910]
@@ -1366,3 +1371,43 @@ material = SubResource("MatTrunk")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 10, 60)
 radius = 5.5
 material = SubResource("MatForestMid")
+
+[node name="Boundaries" type="StaticBody3D" parent="." unique_id=1179529337]
+
+[node name="NorthWall" type="CollisionShape3D" parent="Boundaries" unique_id=608529345]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -55)
+shape = SubResource("ShapeNS")
+
+[node name="SouthWall" type="CollisionShape3D" parent="Boundaries" unique_id=1866463213]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 55)
+shape = SubResource("ShapeNS")
+
+[node name="WestWall" type="CollisionShape3D" parent="Boundaries" unique_id=74039379]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -75, 5, 0)
+shape = SubResource("ShapeEW")
+
+[node name="EastWall" type="CollisionShape3D" parent="Boundaries" unique_id=1100420343]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 5, 0)
+shape = SubResource("ShapeEW")
+
+[node name="YardNorth" type="CollisionShape3D" parent="Boundaries" unique_id=1717955683]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -17)
+shape = SubResource("ShapeYardNS")
+
+[node name="YardSouth" type="CollisionShape3D" parent="Boundaries" unique_id=677528518]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 18)
+shape = SubResource("ShapeYardNS")
+
+[node name="YardWest" type="CollisionShape3D" parent="Boundaries" unique_id=514021152]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.103727, 5, 0.5)
+shape = SubResource("ShapeYardEW")
+
+[node name="YardEast" type="CollisionShape3D" parent="Boundaries" unique_id=36479231]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.046556, 5, 0.5)
+shape = SubResource("ShapeYardEW")
+
+[node name="Shovel" parent="." unique_id=1577906131 instance=ExtResource("8_shovel")]
+transform = Transform3D(0.9659258, 0.258819, 0, -0.258819, 0.9659258, 0, 0, 0, 1, 5.6831894, 0, 8.451979)
+
+[node name="DigSpot" parent="." unique_id=2020308069 instance=ExtResource("9_dig")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.569308, 0, 7.4110394)

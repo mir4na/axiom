@@ -119,11 +119,14 @@ func _handle_movement(delta: float) -> void:
 
 func _handle_interaction() -> void:
 	var collider = interaction_ray.get_collider()
-	
 	if collider is Interactable:
+		var is_dig = collider.has_method("get_equip_hint") and collider.get_equip_hint() == GameState.slots[GameState.selected_slot]
+		
 		if last_interactable != collider:
 			last_interactable = collider
 			hud.show_prompt(collider.prompt_text)
+			
+		hud.set_crosshair_active(true, is_dig)
 			
 		if Input.is_key_pressed(KEY_E):
 			collider.interact()
@@ -131,3 +134,32 @@ func _handle_interaction() -> void:
 		if last_interactable != null:
 			last_interactable = null
 			hud.hide_prompt()
+		hud.set_crosshair_active(false)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_1:
+			GameState.select_slot(0)
+		elif event.keycode == KEY_2:
+			GameState.select_slot(1)
+		elif event.keycode == KEY_3:
+			GameState.select_slot(2)
+		elif event.keycode == KEY_Q:
+			_drop_item()
+
+func _drop_item() -> void:
+	var item_name = GameState.slots[GameState.selected_slot]
+	if item_name == "": return
+	
+	GameState.consume_selected()
+	
+	if item_name == "key_1" or item_name.begins_with("key"):
+		var key_scene = load("res://scenes/objects/key_item.tscn")
+		var k = key_scene.instantiate()
+		get_tree().root.add_child(k)
+		k.global_position = head.global_position - head.global_transform.basis.z * 1.5
+	elif item_name == "Shovel":
+		var shovel_scene = load("res://scenes/objects/shovel.tscn")
+		var s = shovel_scene.instantiate()
+		get_tree().root.add_child(s)
+		s.global_position = head.global_position - head.global_transform.basis.z * 1.5
