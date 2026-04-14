@@ -1,403 +1,258 @@
-[gd_scene format=3 uid="uid://cnxwpayn5t1s0"]
+[gd_scene load_steps=16 format=3]
 
-[ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
+[ext_resource type="Script" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="3_key"]
 [ext_resource type="PackedScene" path="res://scenes/objects/locked_door.tscn" id="4_door"]
 [ext_resource type="PackedScene" path="res://scenes/objects/exit_door.tscn" id="5_exit"]
 [ext_resource type="PackedScene" path="res://scenes/objects/platform.tscn" id="6_plat"]
-[ext_resource type="Shader" uid="uid://d270balpvvv3t" path="res://shaders/spatial_glitch.gdshader" id="7_glitch"]
+[ext_resource type="PackedScene" path="res://scenes/objects/house.tscn" id="7_house"]
+[ext_resource type="Shader" path="res://shaders/spatial_glitch.gdshader" id="8_glitch"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_qj1o7"]
-sky_top_color = Color(0.8, 0.45, 0.3, 1)
-sky_horizon_color = Color(0.9, 0.6, 0.4, 1)
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.04, 0.02, 0.12, 1)
+sky_horizon_color = Color(0.15, 0.06, 0.22, 1)
+ground_bottom_color = Color(0.0, 0.0, 0.0, 1)
+ground_horizon_color = Color(0.04, 0.02, 0.08, 1)
 
-[sub_resource type="Sky" id="Sky_y4mq1"]
-sky_material = SubResource("ProceduralSkyMaterial_qj1o7")
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
 
-[sub_resource type="Environment" id="Environment_v0s8h"]
+[sub_resource type="Environment" id="Env"]
 background_mode = 2
-sky = SubResource("Sky_y4mq1")
+sky = SubResource("Sky")
 ambient_light_source = 3
-ambient_light_color = Color(0.8, 0.7, 0.6, 1)
-ambient_light_energy = 0.5
+ambient_light_color = Color(0.2, 0.1, 0.35, 1)
+ambient_light_energy = 0.4
 tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.65
+glow_bloom = 0.08
 
 [sub_resource type="StandardMaterial3D" id="MatGrass"]
-albedo_color = Color(0.25, 0.45, 0.15, 1)
+albedo_color = Color(0.2, 0.38, 0.14, 1)
 
 [sub_resource type="StandardMaterial3D" id="MatStreet"]
-albedo_color = Color(0.15, 0.15, 0.15, 1)
-roughness = 0.9
+albedo_color = Color(0.1, 0.1, 0.1, 1)
+roughness = 0.95
 
 [sub_resource type="StandardMaterial3D" id="MatConcrete"]
-albedo_color = Color(0.6, 0.6, 0.6, 1)
-
-[sub_resource type="StandardMaterial3D" id="MatRock"]
-albedo_color = Color(0.3, 0.25, 0.2, 1)
+albedo_color = Color(0.52, 0.5, 0.48, 1)
 
 [sub_resource type="StandardMaterial3D" id="MatFence"]
-albedo_color = Color(0.4, 0.25, 0.15, 1)
+albedo_color = Color(0.38, 0.24, 0.14, 1)
 
 [sub_resource type="StandardMaterial3D" id="MatLeaves"]
-albedo_color = Color(0.2, 0.4, 0.1, 1)
+albedo_color = Color(0.18, 0.4, 0.1, 1)
 
-[sub_resource type="StandardMaterial3D" id="MatHouse"]
-albedo_color = Color(0.85, 0.8, 0.75, 1)
-
-[sub_resource type="StandardMaterial3D" id="MatWood"]
-albedo_color = Color(0.55, 0.4, 0.25, 1)
-
-[sub_resource type="StandardMaterial3D" id="MatRoof"]
-albedo_color = Color(0.25, 0.25, 0.3, 1)
-
-[sub_resource type="StandardMaterial3D" id="MatCarpet"]
-albedo_color = Color(0.7, 0.6, 0.5, 1)
-
-[sub_resource type="StandardMaterial3D" id="MatFabric"]
-albedo_color = Color(0.25, 0.35, 0.5, 1)
-
-[sub_resource type="StandardMaterial3D" id="MatScreen"]
-albedo_color = Color(0.1, 0.2, 0.4, 1)
-emission_enabled = true
-emission = Color(0.2, 0.6, 1, 1)
-emission_energy_multiplier = 2.0
+[sub_resource type="StandardMaterial3D" id="MatRock"]
+albedo_color = Color(0.25, 0.22, 0.18, 1)
+roughness = 1.0
 
 [sub_resource type="ShaderMaterial" id="MatGlitch"]
-render_priority = 0
-shader = ExtResource("7_glitch")
-shader_parameter/glitch_speed = 8.0
-shader_parameter/glitch_intensity = 0.8
-shader_parameter/base_color = Vector3(0, 1, 1)
-shader_parameter/emission_energy = 3.0
+shader = ExtResource("8_glitch")
+shader_parameter/glitch_speed = 9.0
+shader_parameter/glitch_intensity = 1.1
+shader_parameter/base_color = Vector3(0.0, 1.0, 1.0)
+shader_parameter/emission_energy = 3.5
 
-[node name="Level01" type="Node3D" unique_id=1702162034]
+[sub_resource type="ShaderMaterial" id="MatGlitchMag"]
+shader = ExtResource("8_glitch")
+shader_parameter/glitch_speed = 12.0
+shader_parameter/glitch_intensity = 0.7
+shader_parameter/base_color = Vector3(1.0, 0.0, 0.8)
+shader_parameter/emission_energy = 4.0
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=146669054]
-environment = SubResource("Environment_v0s8h")
+[node name="Level01" type="Node3D"]
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2076281601]
-transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 5, 0)
-light_color = Color(1, 0.9, 0.8, 1)
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="DimLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.766, -0.18, 0.618, 0, 0.96, 0.28, -0.642, -0.215, 0.736, 0, 5, 0)
+light_color = Color(0.55, 0.35, 0.85, 1)
+light_energy = 0.5
 shadow_enabled = true
 
-[node name="World" type="Node3D" parent="." unique_id=759899445]
+[node name="World" type="Node3D" parent="."]
 script = ExtResource("1_world")
 
-[node name="CSGCombiner3D" type="CSGCombiner3D" parent="World" unique_id=1744017318]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -72.59509)
+[node name="Terrain" type="CSGCombiner3D" parent="World"]
 use_collision = true
 
-[node name="Yard" type="CSGBox3D" parent="World/CSGCombiner3D" unique_id=2111400309]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 5)
-size = Vector3(50, 1, 50)
+[node name="IslandGrass" type="CSGBox3D" parent="World/Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3, -0.5, 2.5)
+size = Vector3(48, 1, 48)
 material = SubResource("MatGrass")
 
-[node name="Street" type="CSGBox3D" parent="World/CSGCombiner3D" unique_id=1994564049]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.45, 20)
-size = Vector3(50, 1, 8)
+[node name="Street" type="CSGBox3D" parent="World/Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3, -0.44, 20)
+size = Vector3(48, 0.95, 8.5)
 material = SubResource("MatStreet")
 
-[node name="Walkway" type="CSGBox3D" parent="World/CSGCombiner3D" unique_id=967162470]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, -0.4, 13)
-size = Vector3(3, 1, 8)
+[node name="Pavement" type="CSGBox3D" parent="World/Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.3, -0.38, 13)
+size = Vector3(2.8, 0.85, 7.5)
 material = SubResource("MatConcrete")
 
-[node name="RockChunk1" type="CSGPolygon3D" parent="World/CSGCombiner3D" unique_id=1528083490]
-transform = Transform3D(0.9957312, -0.092300996, 0, 0.092300996, 0.9957312, 0, 0, 0, 1, -22.384563, -1.3101826, 25)
-polygon = PackedVector2Array(0, 0, 50, -4, 45, -12, 10, -20, -5, -6)
-depth = 48.0
+[node name="RockChunkMain" type="CSGPolygon3D" parent="World/Terrain"]
+transform = Transform3D(0.982, -0.088, 0.166, 0.104, 0.988, -0.116, -0.155, 0.131, 0.979, -1.3, -2.5, 2.5)
+polygon = PackedVector2Array(-24, 0, 24, 0, 30, -6, 18, -14, 4, -22, -12, -16, -28, -8)
+depth = 50.0
 material = SubResource("MatRock")
 
-[node name="RockChunk2" type="CSGPolygon3D" parent="World/CSGCombiner3D" unique_id=1708076138]
-transform = Transform3D(-3.4969112e-08, 0, -0.8, 0, 0.8, 0, 0.8, 0, -3.4969112e-08, -21.576424, -5, -25)
-polygon = PackedVector2Array(0, 0, 48, -2, 35, -18, 5, -15, -8, -5)
-depth = 55.0
+[node name="RockJutRight" type="CSGPolygon3D" parent="World/Terrain"]
+transform = Transform3D(0.0, 0.0, -1.0, 0.174, 0.985, 0.0, 0.985, -0.174, 0.0, 18, -8, 2.5)
+polygon = PackedVector2Array(0, 0, 14, -3, 10, -18, -4, -12)
+depth = 28.0
 material = SubResource("MatRock")
 
-[node name="RockChunk3" type="CSGBox3D" parent="World/CSGCombiner3D" unique_id=1753599278]
-transform = Transform3D(0.99311274, -0.0068187425, 0.116181836, 0.037352774, 0.9688663, -0.25045398, -0.11161902, 0.24806097, 0.962306, 5, -18.196835, -1.0029373)
-size = Vector3(30, 20, 25)
+[node name="RockJutLeft" type="CSGPolygon3D" parent="World/Terrain"]
+transform = Transform3D(0.0, 0.0, 1.0, -0.259, 0.966, 0.0, -0.966, -0.259, 0.0, -21, -6, 2.5)
+polygon = PackedVector2Array(0, 0, 12, -2, 9, -15, -3, -10)
+depth = 22.0
 material = SubResource("MatRock")
 
-[node name="Trees" type="CSGCombiner3D" parent="World/CSGCombiner3D" unique_id=329105733]
+[node name="RockTail" type="CSGBox3D" parent="World/Terrain"]
+transform = Transform3D(0.934, 0.0, -0.358, 0.06, 0.985, 0.158, 0.353, -0.174, 0.919, -1.3, -14.5, 2.5)
+size = Vector3(22, 18, 16)
+material = SubResource("MatRock")
 
-[node name="Trunk1" type="CSGCylinder3D" parent="World/CSGCombiner3D/Trees" unique_id=846730428]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1, 10)
-radius = 0.4
-height = 3.0
+[node name="Fences" type="CSGCombiner3D" parent="World/Terrain"]
+
+[node name="FenceL" type="CSGBox3D" parent="World/Terrain/Fences"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 0.95, 1)
+size = Vector3(0.4, 1.95, 34)
 material = SubResource("MatFence")
 
-[node name="Leaves1" type="CSGSphere3D" parent="World/CSGCombiner3D/Trees/Trunk1" unique_id=463623481]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-radius = 2.0
+[node name="FenceR" type="CSGBox3D" parent="World/Terrain/Fences"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0.95, 1)
+size = Vector3(0.4, 1.95, 34)
+material = SubResource("MatFence")
+
+[node name="FenceBack" type="CSGBox3D" parent="World/Terrain/Fences"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0.95, -16)
+size = Vector3(40, 1.95, 0.4)
+material = SubResource("MatFence")
+
+[node name="FenceFrontL" type="CSGBox3D" parent="World/Terrain/Fences"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0.95, 17)
+size = Vector3(16, 1.95, 0.4)
+material = SubResource("MatFence")
+
+[node name="FenceFrontR" type="CSGBox3D" parent="World/Terrain/Fences"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0.95, 17)
+size = Vector3(12, 1.95, 0.4)
+material = SubResource("MatFence")
+
+[node name="GatePostL" type="CSGBox3D" parent="World/Terrain/Fences"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 1.4, 17)
+size = Vector3(0.55, 2.85, 0.55)
+material = SubResource("MatFence")
+
+[node name="GatePostR" type="CSGBox3D" parent="World/Terrain/Fences"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.4, 17)
+size = Vector3(0.55, 2.85, 0.55)
+material = SubResource("MatFence")
+
+[node name="Trees" type="CSGCombiner3D" parent="World/Terrain"]
+
+[node name="Trunk1" type="CSGCylinder3D" parent="World/Terrain/Trees"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 1.5, 11)
+radius = 0.38
+height = 4.0
+material = SubResource("MatFence")
+
+[node name="Canopy1a" type="CSGSphere3D" parent="World/Terrain/Trees/Trunk1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 0)
+radius = 2.1
 material = SubResource("MatLeaves")
 
-[node name="Trunk2" type="CSGCylinder3D" parent="World/CSGCombiner3D/Trees" unique_id=897574564]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 1, 6)
-radius = 0.4
-height = 3.0
-material = SubResource("MatFence")
-
-[node name="Leaves2" type="CSGSphere3D" parent="World/CSGCombiner3D/Trees/Trunk2" unique_id=1517951508]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-radius = 2.0
+[node name="Canopy1b" type="CSGSphere3D" parent="World/Terrain/Trees/Trunk1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 2.1, 0.7)
+radius = 1.4
 material = SubResource("MatLeaves")
 
-[node name="Trunk3" type="CSGCylinder3D" parent="World/CSGCombiner3D/Trees" unique_id=1186175311]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, 25)
-radius = 0.4
-height = 3.0
+[node name="Trunk2" type="CSGCylinder3D" parent="World/Terrain/Trees"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 1.5, 7)
+radius = 0.42
+height = 3.6
 material = SubResource("MatFence")
 
-[node name="Leaves3" type="CSGSphere3D" parent="World/CSGCombiner3D/Trees/Trunk3" unique_id=1611664211]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-radius = 2.0
+[node name="Canopy2a" type="CSGSphere3D" parent="World/Terrain/Trees/Trunk2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+radius = 1.9
 material = SubResource("MatLeaves")
 
-[node name="Fences" type="CSGCombiner3D" parent="World/CSGCombiner3D" unique_id=1204137683]
-
-[node name="FenceLeft" type="CSGBox3D" parent="World/CSGCombiner3D/Fences" unique_id=2025459524]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 1, 0)
-size = Vector3(0.5, 2, 32)
-material = SubResource("MatFence")
-
-[node name="FenceRight" type="CSGBox3D" parent="World/CSGCombiner3D/Fences" unique_id=1157526300]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 1, 0)
-size = Vector3(0.5, 2, 32)
-material = SubResource("MatFence")
-
-[node name="FenceBack" type="CSGBox3D" parent="World/CSGCombiner3D/Fences" unique_id=314870924]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -16)
-size = Vector3(40.5, 2, 0.5)
-material = SubResource("MatFence")
-
-[node name="FenceFrontLeft" type="CSGBox3D" parent="World/CSGCombiner3D/Fences" unique_id=1779726726]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1, 16)
-size = Vector3(16.5, 2, 0.5)
-material = SubResource("MatFence")
-
-[node name="FenceFrontRight" type="CSGBox3D" parent="World/CSGCombiner3D/Fences" unique_id=2007076459]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 1, 16)
-size = Vector3(12.5, 2, 0.5)
-material = SubResource("MatFence")
-
-[node name="HouseStructure" type="CSGCombiner3D" parent="World/CSGCombiner3D" unique_id=914918459]
+[node name="House" parent="World" instance=ExtResource("7_house")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -4)
 
-[node name="HouseOuter" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=165892472]
-size = Vector3(24, 4, 18)
-material = SubResource("MatHouse")
+[node name="GlitchFragments" type="Node3D" parent="World"]
 
-[node name="HouseInner" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=1808525926]
-operation = 2
-size = Vector3(23.6, 3.8, 17.6)
+[node name="G1" type="CSGBox3D" parent="World/GlitchFragments"]
+transform = Transform3D(0.866, -0.5, 0, 0.5, 0.866, 0, 0, 0, 1, -32, 6, 22)
+size = Vector3(6, 4, 6)
+material = SubResource("MatGlitch")
 
-[node name="Baseboards" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=1580138846]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8, 0)
-size = Vector3(23.8, 0.4, 17.8)
-material = SubResource("MatWood")
+[node name="G2" type="CSGPolygon3D" parent="World/GlitchFragments"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 38, 18, -18)
+polygon = PackedVector2Array(0, 0, 6, 9, 13, 1, 7, -2)
+depth = 6.0
+material = SubResource("MatGlitchMag")
 
-[node name="BaseboardsHollow" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure/Baseboards" unique_id=1586306434]
-operation = 2
-size = Vector3(23.6, 0.5, 17.6)
+[node name="G3" type="CSGBox3D" parent="World/GlitchFragments"]
+transform = Transform3D(0.5, -0.866, 0, 0.866, 0.5, 0, 0, 0, 1, 18, -18, 38)
+size = Vector3(9, 2.5, 9)
+material = SubResource("MatGlitch")
 
-[node name="Doorway" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=291594998]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, -1, 9)
-operation = 2
-size = Vector3(2, 2.5, 2)
+[node name="G4" type="CSGBox3D" parent="World/GlitchFragments"]
+transform = Transform3D(1, 0, 0, 0, 0.707, -0.707, 0, 0.707, 0.707, -18, 28, -35)
+size = Vector3(2.5, 12, 2.5)
+material = SubResource("MatGlitchMag")
 
-[node name="Window1" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=1363504443]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 9)
-operation = 2
-size = Vector3(3, 1.5, 2)
+[node name="G5" type="CSGBox3D" parent="World/GlitchFragments"]
+transform = Transform3D(0.866, 0.5, 0, -0.5, 0.866, 0, 0, 0, 1, 2, -32, -2)
+size = Vector3(12, 12, 12)
+material = SubResource("MatGlitch")
 
-[node name="Window2" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=1370084426]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 9)
-operation = 2
-size = Vector3(3, 1.5, 2)
+[node name="G6" type="CSGBox3D" parent="World/GlitchFragments"]
+transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 42, -6, 28)
+size = Vector3(7, 7, 7)
+material = SubResource("MatGlitchMag")
 
-[node name="Window3" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=1217491383]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, -9)
-operation = 2
-size = Vector3(3, 1.5, 2)
+[node name="G7" type="CSGBox3D" parent="World/GlitchFragments"]
+transform = Transform3D(0.707, -0.707, 0, 0.707, 0.707, 0, 0, 0, 1, -44, -12, -22)
+size = Vector3(4.5, 14, 4.5)
+material = SubResource("MatGlitch")
 
-[node name="Window4" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=1125836152]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -4)
-operation = 2
-size = Vector3(2, 1.5, 3)
+[node name="G8" type="CSGBox3D" parent="World/GlitchFragments"]
+transform = Transform3D(0.342, 0, -0.940, 0, 1, 0, 0.940, 0, 0.342, 5, 22, 30)
+size = Vector3(2.5, 2.5, 10)
+material = SubResource("MatGlitchMag")
 
-[node name="Partitions" type="CSGCombiner3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=143454964]
+[node name="G9" type="CSGPolygon3D" parent="World/GlitchFragments"]
+transform = Transform3D(-0.5, 0, 0.866, 0, 1, 0, -0.866, 0, -0.5, -28, 10, -42)
+polygon = PackedVector2Array(0, 0, 8, 0, 5, 10, -3, 6)
+depth = 4.0
+material = SubResource("MatGlitch")
 
-[node name="CenterWall" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure/Partitions" unique_id=1372959099]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
-size = Vector3(0.4, 3.8, 17.6)
+[node name="G10" type="CSGBox3D" parent="World/GlitchFragments"]
+transform = Transform3D(0.643, 0.766, 0, -0.766, 0.643, 0, 0, 0, 1, 30, 38, -30)
+size = Vector3(3.5, 3.5, 18)
+material = SubResource("MatGlitchMag")
 
-[node name="BedroomSplit" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure/Partitions" unique_id=428194967]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
-size = Vector3(8, 3.8, 0.4)
-
-[node name="MasterDoorway" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure/Partitions" unique_id=1266892218]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, -1, -4)
-operation = 2
-size = Vector3(1.5, 2.5, 1.5)
-
-[node name="GuestDoorway" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure/Partitions" unique_id=731039220]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, -1, 4)
-operation = 2
-size = Vector3(1.5, 2.5, 1.5)
-
-[node name="KitchenSplit" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure/Partitions" unique_id=871302652]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -2)
-size = Vector3(8, 3.8, 0.4)
-
-[node name="KitchenPass" type="CSGBox3D" parent="World/CSGCombiner3D/HouseStructure/Partitions" unique_id=1431409938]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, -1, -2)
-operation = 2
-size = Vector3(3, 2.5, 1.5)
-
-[node name="Roof" type="CSGPolygon3D" parent="World/CSGCombiner3D/HouseStructure" unique_id=1821790914]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.5, 2, 9.5)
-polygon = PackedVector2Array(0, 0, 12.5, 4, 25, 0)
-depth = 19.0
-material = SubResource("MatRoof")
-
-[node name="InteriorFlooring" type="CSGCombiner3D" parent="World/CSGCombiner3D" unique_id=871492303]
-
-[node name="MasterCarpet" type="CSGBox3D" parent="World/CSGCombiner3D/InteriorFlooring" unique_id=1312467885]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.05, -8.5)
-size = Vector3(7.6, 0.1, 8.6)
-material = SubResource("MatCarpet")
-
-[node name="GuestCarpet" type="CSGBox3D" parent="World/CSGCombiner3D/InteriorFlooring" unique_id=585075429]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.05, 0.5)
-size = Vector3(7.6, 0.1, 8.6)
-material = SubResource("MatCarpet")
-
-[node name="Furniture" type="CSGCombiner3D" parent="World/CSGCombiner3D" unique_id=1289240176]
-
-[node name="Sofa" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=432650935]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.5, 0)
-size = Vector3(4, 1, 1.5)
-material = SubResource("MatFabric")
-
-[node name="SofaBack" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=2090411383]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1, -1)
-size = Vector3(4, 1, 0.5)
-material = SubResource("MatFabric")
-
-[node name="CoffeeTable" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=708991786]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.4, 2)
-size = Vector3(3, 0.8, 1.5)
-material = SubResource("MatWood")
-
-[node name="TVStand" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=95356474]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.5, 4.5)
-size = Vector3(4, 1, 0.8)
-material = SubResource("MatWood")
-
-[node name="TV" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=284083770]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1.5, 4.5)
-size = Vector3(3, 1.5, 0.1)
-material = SubResource("MatScreen")
-
-[node name="KitchenCounter" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=799842833]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1, -11)
-size = Vector3(2, 2, 4)
-material = SubResource("MatWood")
-
-[node name="Fridge" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=712136118]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1.5, -8)
-size = Vector3(1.5, 3, 1.5)
-material = SubResource("MatConcrete")
-
-[node name="DiningTable" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=1991009224]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1, -9)
-size = Vector3(3, 0.2, 2)
-material = SubResource("MatWood")
-
-[node name="MasterBed" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=816443977]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.5, -9)
-size = Vector3(3, 1, 4)
-
-[node name="GuestBed" type="CSGBox3D" parent="World/CSGCombiner3D/Furniture" unique_id=689822743]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.5, -1)
-size = Vector3(2.5, 1, 4)
-
-[node name="Lights" type="Node3D" parent="World" unique_id=1683824625]
-
-[node name="LivingLight" type="OmniLight3D" parent="World/Lights" unique_id=84155365]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 3.5, 1)
-light_color = Color(1, 0.85, 0.6, 1)
-shadow_enabled = true
-omni_range = 10.0
-
-[node name="KitchenLight" type="OmniLight3D" parent="World/Lights" unique_id=578886645]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 3.5, -9)
-light_color = Color(1, 0.9, 0.7, 1)
-shadow_enabled = true
-omni_range = 10.0
-
-[node name="MasterLight" type="OmniLight3D" parent="World/Lights" unique_id=364546129]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 3.5, -8)
-light_color = Color(1, 0.85, 0.7, 1)
-omni_range = 8.0
-
-[node name="TimeBridge" parent="World" unique_id=1028066887 instance=ExtResource("6_plat")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 16)
+[node name="TimeBridge" parent="World" instance=ExtResource("6_plat")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 17)
 active_on_forward = false
 
-[node name="Player" parent="World" unique_id=927249344 instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25803232, 1, 0.3177929)
+[node name="Player" parent="World" instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 1, 12)
 
-[node name="KeyItem" parent="World" unique_id=1702325974 instance=ExtResource("3_key")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0.5, 20)
+[node name="KeyItem" parent="World" instance=ExtResource("3_key")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 0.5, 22)
 
-[node name="LockedDoor" parent="World" unique_id=1320343915 instance=ExtResource("4_door")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.25, -8)
+[node name="LockedDoor" parent="World" instance=ExtResource("4_door")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.25, -7.8)
 
-[node name="ExitDoor" parent="World" unique_id=2145382526 instance=ExtResource("5_exit")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.35, -12.5)
-
-[node name="GlitchFragments" type="CSGCombiner3D" parent="World" unique_id=1845651488]
-
-[node name="G1" type="CSGBox3D" parent="World/GlitchFragments" unique_id=589853332]
-transform = Transform3D(0.866025, -0.5, 0, 0.5, 0.866025, 0, 0, 0, 1, -30, 5, 20)
-size = Vector3(5, 5, 5)
-material = SubResource("MatGlitch")
-
-[node name="G2" type="CSGPolygon3D" parent="World/GlitchFragments" unique_id=2098632379]
-transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 35, 15, -15)
-polygon = PackedVector2Array(0, 0, 5, 8, 10, 0)
-depth = 5.0
-material = SubResource("MatGlitch")
-
-[node name="G3" type="CSGBox3D" parent="World/GlitchFragments" unique_id=1154400407]
-transform = Transform3D(0.5, -0.866, 0, 0.866, 0.5, 0, 0, 0, 1, 15, -15, 35)
-size = Vector3(8, 2, 8)
-material = SubResource("MatGlitch")
-
-[node name="G4" type="CSGBox3D" parent="World/GlitchFragments" unique_id=1077396855]
-transform = Transform3D(1, 0, 0, 0, 0.707, -0.707, 0, 0.707, 0.707, -15, 25, -30)
-size = Vector3(2, 10, 2)
-material = SubResource("MatGlitch")
-
-[node name="G5" type="CSGBox3D" parent="World/GlitchFragments" unique_id=20662218]
-transform = Transform3D(0.866, 0.5, 0, -0.5, 0.866, 0, 0, 0, 1, 0, -30, 0)
-size = Vector3(10, 10, 10)
-material = SubResource("MatGlitch")
-
-[node name="G6" type="CSGBox3D" parent="World/GlitchFragments" unique_id=581992449]
-transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 40, -5, 25)
-size = Vector3(6, 6, 6)
-material = SubResource("MatGlitch")
-
-[node name="G7" type="CSGBox3D" parent="World/GlitchFragments" unique_id=749949341]
-transform = Transform3D(0.707, -0.707, 0, 0.707, 0.707, 0, 0, 0, 1, -40, -10, -20)
-size = Vector3(4, 12, 4)
-material = SubResource("MatGlitch")
-
-[node name="G8" type="CSGBox3D" parent="World/GlitchFragments" unique_id=1695457656]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 25)
-size = Vector3(2, 2, 8)
-material = SubResource("MatGlitch")
+[node name="ExitDoor" parent="World" instance=ExtResource("5_exit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 1.35, -12.5)
