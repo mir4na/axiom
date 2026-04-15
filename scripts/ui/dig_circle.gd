@@ -2,6 +2,9 @@ extends Control
 
 var progress: float = 0.0
 
+func _ready() -> void:
+	visible = false
+
 func set_progress(val: float, is_vis: bool) -> void:
 	visible = is_vis
 	progress = val

@@ -1,30 +1,77 @@
 extends CharacterBody3D
 
-@export var speed: float = 7.5
-@export var sprint_speed: float = 10.0
-@export var crouch_speed: float = 4.0
-@export var acceleration: float = 5.0
+@export var speed: float = 3.5
+@export var sprint_speed: float = 4.5
+@export var crouch_speed: float = 2.0
+@export var acceleration: float = 4.0
 @export var gravity: float = 9.8
-@export var jump_power: float = 5.0
+@export var jump_power: float = 2.5
 @export var mouse_sensitivity: float = 0.3
-@export var normal_height: float = 1.0
-@export var crouch_height: float = 0.4
+@export var normal_height: float = 1.68
+@export var crouch_height: float = 0.9
 
-@onready var head: Node3D = $Head
-@onready var camera: Camera3D = $Head/Camera3D
+@onready var head: Node3D = $"root/Skeleton3D/BoneAttachment3D/Head"
+@onready var camera: Camera3D = $"root/Skeleton3D/BoneAttachment3D/Head/Camera3D"
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
-@onready var interaction_ray: RayCast3D = $Head/Camera3D/InteractionRay
+@onready var interaction_ray: RayCast3D = $"root/Skeleton3D/BoneAttachment3D/Head/Camera3D/InteractionRay"
 @onready var hud: CanvasLayer = $PlayerHUD
+@onready var mannequin_root: Node3D = $root
+@onready var anim_player: AnimationPlayer = $AnimationPlayer
+
+@onready var _bone_attach_head: BoneAttachment3D = $"root/Skeleton3D/BoneAttachment3D"
+@onready var _bone_attach_torso: BoneAttachment3D = $"root/Skeleton3D/BoneAttachTorso"
+@onready var _bone_attach_pelvis: BoneAttachment3D = $"root/Skeleton3D/BoneAttachPelvis"
+@onready var _bone_attach_upper_arm_r: BoneAttachment3D = $"root/Skeleton3D/BoneAttachUpperArmR"
+@onready var _bone_attach_upper_arm_l: BoneAttachment3D = $"root/Skeleton3D/BoneAttachUpperArmL"
+@onready var _bone_attach_lower_arm_r: BoneAttachment3D = $"root/Skeleton3D/BoneAttachLowerArmR"
+@onready var _bone_attach_lower_arm_l: BoneAttachment3D = $"root/Skeleton3D/BoneAttachLowerArmL"
+@onready var _bone_attach_thigh_r: BoneAttachment3D = $"root/Skeleton3D/BoneAttachThighR"
+@onready var _bone_attach_thigh_l: BoneAttachment3D = $"root/Skeleton3D/BoneAttachThighL"
+@onready var _bone_attach_calf_r: BoneAttachment3D = $"root/Skeleton3D/BoneAttachCalfR"
+@onready var _bone_attach_calf_l: BoneAttachment3D = $"root/Skeleton3D/BoneAttachCalfL"
+
+@onready var _hitbox_head: Area3D = $"root/Skeleton3D/BoneAttachment3D/HitboxHead"
+@onready var _hitbox_torso: Area3D = $"root/Skeleton3D/BoneAttachTorso/HitboxTorso"
+@onready var _hitbox_pelvis: Area3D = $"root/Skeleton3D/BoneAttachPelvis/HitboxPelvis"
+@onready var _hitbox_upper_arm_r: Area3D = $"root/Skeleton3D/BoneAttachUpperArmR/HitboxUpperArmR"
+@onready var _hitbox_upper_arm_l: Area3D = $"root/Skeleton3D/BoneAttachUpperArmL/HitboxUpperArmL"
+@onready var _hitbox_lower_arm_r: Area3D = $"root/Skeleton3D/BoneAttachLowerArmR/HitboxLowerArmR"
+@onready var _hitbox_lower_arm_l: Area3D = $"root/Skeleton3D/BoneAttachLowerArmL/HitboxLowerArmL"
+@onready var _hitbox_thigh_r: Area3D = $"root/Skeleton3D/BoneAttachThighR/HitboxThighR"
+@onready var _hitbox_thigh_l: Area3D = $"root/Skeleton3D/BoneAttachThighL/HitboxThighL"
+@onready var _hitbox_calf_r: Area3D = $"root/Skeleton3D/BoneAttachCalfR/HitboxCalfR"
+@onready var _hitbox_calf_l: Area3D = $"root/Skeleton3D/BoneAttachCalfL/HitboxCalfL"
 
 var camera_x_rotation: float = 0.0
 var is_crouching: bool = false
 var is_sprinting: bool = false
-
 var last_interactable: Node3D = null
+
+var _hitbox_pairs: Array = []
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	add_to_group("time_actor")
+	_hitbox_pairs = [
+		[_bone_attach_head, _hitbox_head],
+		[_bone_attach_torso, _hitbox_torso],
+		[_bone_attach_pelvis, _hitbox_pelvis],
+		[_bone_attach_upper_arm_r, _hitbox_upper_arm_r],
+		[_bone_attach_upper_arm_l, _hitbox_upper_arm_l],
+		[_bone_attach_lower_arm_r, _hitbox_lower_arm_r],
+		[_bone_attach_lower_arm_l, _hitbox_lower_arm_l],
+		[_bone_attach_thigh_r, _hitbox_thigh_r],
+		[_bone_attach_thigh_l, _hitbox_thigh_l],
+		[_bone_attach_calf_r, _hitbox_calf_r],
+		[_bone_attach_calf_l, _hitbox_calf_l],
+	]
+
+func _sync_hitboxes() -> void:
+	for pair in _hitbox_pairs:
+		var attach: BoneAttachment3D = pair[0]
+		var hitbox: Area3D = pair[1]
+		var t: Transform3D = attach.global_transform
+		hitbox.global_transform = Transform3D(t.basis.orthonormalized(), t.origin)
 
 func _input(event: InputEvent) -> void:
 	if Input.is_action_just_pressed("ui_cancel"):
@@ -33,8 +80,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		if GameState.time_direction == 1 and GameState.is_scrubbing_past:
 			GameState.prune_timeline()
-		
-		head.rotate_y(deg_to_rad(-event.relative.x * mouse_sensitivity))
+		rotate_y(deg_to_rad(-event.relative.x * mouse_sensitivity))
 		var x_delta = event.relative.y * mouse_sensitivity
 		camera_x_rotation = clamp(camera_x_rotation + x_delta, -90.0, 90.0)
 		camera.rotation_degrees.x = -camera_x_rotation
@@ -47,37 +93,49 @@ func _input(event: InputEvent) -> void:
 		elif event.keycode == KEY_3:
 			GameState.select_slot(2)
 		elif event.keycode == KEY_G:
-			# Drop or consume selected item
 			var dropped = GameState.consume_selected()
 			if dropped != "":
 				print("Dropped item: ", dropped)
 
 func _physics_process(delta: float) -> void:
 	var dir = GameState.time_direction
-	
 	if dir == 1 and not GameState.is_scrubbing_past:
 		var has_input = Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_SPACE)
-		
 		if has_input and GameState.is_scrubbing_past:
 			GameState.prune_timeline()
-			
 		_handle_movement(delta)
-		
 	_handle_interaction()
+	_sync_hitboxes()
 
 func _handle_movement(delta: float) -> void:
 	var movement_vector = Vector3.ZERO
 
 	if Input.is_key_pressed(KEY_W):
-		movement_vector -= head.basis.z
+		movement_vector -= global_transform.basis.z
 	if Input.is_key_pressed(KEY_S):
-		movement_vector += head.basis.z
+		movement_vector += global_transform.basis.z
 	if Input.is_key_pressed(KEY_A):
-		movement_vector -= head.basis.x
+		movement_vector -= global_transform.basis.x
 	if Input.is_key_pressed(KEY_D):
-		movement_vector += head.basis.x
+		movement_vector += global_transform.basis.x
 
 	movement_vector = movement_vector.normalized()
+
+	if anim_player:
+		var current_anim = "idle"
+		if is_on_floor():
+			if movement_vector.length() > 0:
+				current_anim = "run"
+			else:
+				current_anim = "idle"
+		else:
+			if velocity.y > 0:
+				current_anim = "air_jump"
+			else:
+				current_anim = "air_land"
+		if anim_player.has_animation(current_anim):
+			if anim_player.current_animation != current_anim:
+				anim_player.play(current_anim, 0.2)
 
 	var wants_crouch = Input.is_key_pressed(KEY_CTRL)
 	var wants_sprint = Input.is_key_pressed(KEY_SHIFT) and not wants_crouch
@@ -86,12 +144,11 @@ func _handle_movement(delta: float) -> void:
 		is_crouching = true
 		is_sprinting = false
 		collision_shape.shape.height = crouch_height
-		head.position.y = 0.0
+		collision_shape.position.y = crouch_height * 0.5
 	elif not wants_crouch and is_crouching:
 		is_crouching = false
-		collision_shape.shape.height = normal_height * 2.0
-		position.y += (normal_height * 2.0 - crouch_height) / 2.0
-		head.position.y = 0.5
+		collision_shape.shape.height = normal_height
+		collision_shape.position.y = normal_height * 0.5
 
 	if wants_sprint and not is_crouching:
 		is_sprinting = true
@@ -109,8 +166,10 @@ func _handle_movement(delta: float) -> void:
 	velocity.x = lerpf(velocity.x, movement_vector.x * current_speed, acceleration * delta)
 	velocity.z = lerpf(velocity.z, movement_vector.z * current_speed, acceleration * delta)
 
-	if not is_on_floor():
-		velocity.y -= gravity * delta
+	if is_on_floor():
+		velocity.y = 0.0
+	else:
+		velocity.y = max(velocity.y - gravity * delta, -30.0)
 
 	if Input.is_key_pressed(KEY_SPACE) and is_on_floor() and not is_crouching:
 		velocity.y = jump_power
@@ -118,14 +177,14 @@ func _handle_movement(delta: float) -> void:
 	move_and_slide()
 
 func _handle_interaction() -> void:
+	if not interaction_ray:
+		return
 	var collider = interaction_ray.get_collider()
 	if collider is Interactable:
 		var is_dig = collider.has_method("get_equip_hint") and collider.get_equip_hint() == GameState.slots[GameState.selected_slot]
-		
 		if last_interactable != null and last_interactable != collider and last_interactable.has_method("reset_minigame"):
 			last_interactable.reset_minigame()
 			hud.set_dig_progress(0, false)
-			
 		last_interactable = collider
 		if collider.prompt_text == "":
 			hud.hide_prompt()
@@ -165,10 +224,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _drop_item() -> void:
 	var item_name = GameState.slots[GameState.selected_slot]
-	if item_name == "": return
-	
+	if item_name == "":
+		return
 	GameState.consume_selected()
-	
 	if item_name == "key_1" or item_name.begins_with("key"):
 		var key_scene = load("res://scenes/objects/key_item.tscn")
 		var k = key_scene.instantiate()

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://1errma2o8an2"]
 
 [ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://b8a0iv5ab4rc5" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
 [ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
 [ext_resource type="PackedScene" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
@@ -101,7 +101,7 @@ script = ExtResource("1_world")
 environment = SubResource("Env")
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1430240478]
-transform = Transform3D(0.866025, -0.35, 0.358, 0, 0.715, 0.699, -0.5, -0.606, 0.619, 0, 6, 0)
+transform = Transform3D(0.8660253, -0.34973788, 0.35732847, 0, 0.7146567, 0.6994754, -0.50000024, -0.60576344, 0.61891073, 0, 49.391502, 0)
 light_color = Color(1, 0.93, 0.82, 1)
 light_energy = 1.2
 shadow_enabled = true
@@ -223,6 +223,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -4)
 
 [node name="Player" parent="." unique_id=758033891 instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.660072, 1, -7.59978)
+safe_margin = 0.001
 
 [node name="Neighborhood" type="Node3D" parent="." unique_id=663843665]
 
@@ -448,11 +449,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0061512, -0.7450806, -7.020
 size = Vector3(1.7095703, 2.3098388, 0.1)
 material = SubResource("MatFence")
 
-[node name="Porch" type="CSGBox3D" parent="Neighborhood/HouseF" unique_id=410390329]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, -1.9, -8.55)
-size = Vector3(4, 0.2, 3)
-material = SubResource("MatConcrete")
-
 [node name="Roof" type="CSGPolygon3D" parent="Neighborhood/HouseF" unique_id=803999263]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 2, 7.5)
 polygon = PackedVector2Array(0, 0, 9.5, 3.5, 19, 0)
@@ -603,11 +599,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, 0.75, 13.4)
 size = Vector3(8, 1.5, 0.3)
 material = SubResource("MatFenceNeighbor")
 
-[node name="DriveA" type="CSGBox3D" parent="Neighborhood" unique_id=1777157549]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -37, -0.38, 16)
-size = Vector3(3.5, 0.9, 8)
-material = SubResource("MatConcrete")
-
 [node name="FB_Back" type="CSGBox3D" parent="Neighborhood" unique_id=1790160014]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64, 0.75, -12.4)
 size = Vector3(23, 1.5, 0.3)
@@ -627,11 +618,6 @@ material = SubResource("MatFenceNeighbor")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57, 0.75, 12.4)
 size = Vector3(8, 1.5, 0.3)
 material = SubResource("MatFenceNeighbor")
-
-[node name="DriveB" type="CSGBox3D" parent="Neighborhood" unique_id=1641516267]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63, -0.38, 16)
-size = Vector3(3.5, 0.9, 8)
-material = SubResource("MatConcrete")
 
 [node name="FC_Back" type="CSGBox3D" parent="Neighborhood" unique_id=1835828652]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0.75, -14.4)
@@ -653,11 +639,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 47, 0.75, 14.4)
 size = Vector3(12, 1.5, 0.3)
 material = SubResource("MatFenceNeighbor")
 
-[node name="DriveC" type="CSGBox3D" parent="Neighborhood" unique_id=14895494]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, -0.38, 16)
-size = Vector3(3.5, 0.9, 6)
-material = SubResource("MatConcrete")
-
 [node name="FD_Back" type="CSGBox3D" parent="Neighborhood" unique_id=856979580]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 0.75, -11.4)
 size = Vector3(23, 1.5, 0.3)
@@ -677,11 +658,6 @@ material = SubResource("MatFenceNeighbor")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 0.75, 11.4)
 size = Vector3(8, 1.5, 0.3)
 material = SubResource("MatFenceNeighbor")
-
-[node name="DriveD" type="CSGBox3D" parent="Neighborhood" unique_id=1761227438]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, -0.38, 16)
-size = Vector3(3.5, 0.9, 9)
-material = SubResource("MatConcrete")
 
 [node name="FE_Fr_L" type="CSGBox3D" parent="Neighborhood" unique_id=149526715]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54, 0.75, 32.6)
@@ -709,7 +685,7 @@ size = Vector3(0.3, 1.5, 24)
 material = SubResource("MatFenceNeighbor")
 
 [node name="DriveE" type="CSGBox3D" parent="Neighborhood" unique_id=1858932368]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, -0.38, 32)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -49.642372, -0.38, 36.829857)
 size = Vector3(3, 0.9, 4)
 material = SubResource("MatConcrete")
 
@@ -737,11 +713,6 @@ material = SubResource("MatFenceNeighbor")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.6, 0.75, 44.5)
 size = Vector3(0.3, 1.5, 24)
 material = SubResource("MatFenceNeighbor")
-
-[node name="DriveF" type="CSGBox3D" parent="Neighborhood" unique_id=1586861096]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28, -0.38, 32)
-size = Vector3(3, 0.9, 4)
-material = SubResource("MatConcrete")
 
 [node name="FG_Fr_L" type="CSGBox3D" parent="Neighborhood" unique_id=1816481092]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.75, 32.6)
@@ -798,11 +769,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.4, 0.75, 44.5)
 size = Vector3(0.3, 1.5, 24)
 material = SubResource("MatFenceNeighbor")
 
-[node name="DriveH" type="CSGBox3D" parent="Neighborhood" unique_id=1029997661]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, -0.38, 32)
-size = Vector3(3.5, 0.9, 4)
-material = SubResource("MatConcrete")
-
 [node name="FI_Fr_L" type="CSGBox3D" parent="Neighborhood" unique_id=2034448095]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0.75, 32.6)
 size = Vector3(10, 1.5, 0.3)
@@ -827,11 +793,6 @@ material = SubResource("MatFenceNeighbor")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58.4, 0.75, 44.5)
 size = Vector3(0.3, 1.5, 24)
 material = SubResource("MatFenceNeighbor")
-
-[node name="DriveI" type="CSGBox3D" parent="Neighborhood" unique_id=1182665745]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, -0.38, 32)
-size = Vector3(3, 0.9, 4)
-material = SubResource("MatConcrete")
 
 [node name="Cars" type="Node3D" parent="." unique_id=1150938945]
 
@@ -1160,15 +1121,10 @@ radius = 6.2
 material = SubResource("MatForest")
 
 [node name="LT6" type="CSGCylinder3D" parent="BackgroundForest/LeftForest" unique_id=439060507]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64, 4, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -74.66144, 4, 35.3635)
 radius = 0.68
 height = 9.5
 material = SubResource("MatTrunk")
-
-[node name="LC6" type="CSGSphere3D" parent="BackgroundForest/LeftForest" unique_id=117263343]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64, 9.5, 22)
-radius = 5.8
-material = SubResource("MatForestMid")
 
 [node name="LT7" type="CSGCylinder3D" parent="BackgroundForest/LeftForest" unique_id=591825075]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66, 4, 38)
@@ -1227,25 +1183,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 9.5, -20)
 radius = 6.2
 material = SubResource("MatForest")
 
-[node name="RT6" type="CSGCylinder3D" parent="BackgroundForest/RightForest" unique_id=628401922]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 4, 22)
-radius = 0.68
-height = 9.5
-material = SubResource("MatTrunk")
-
-[node name="RC6" type="CSGSphere3D" parent="BackgroundForest/RightForest" unique_id=238153284]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 9.5, 22)
-radius = 5.8
-material = SubResource("MatForestMid")
-
 [node name="RT7" type="CSGCylinder3D" parent="BackgroundForest/RightForest" unique_id=240108766]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 4, 38)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71.92099, 4, 38)
 radius = 0.75
 height = 10.0
 material = SubResource("MatTrunk")
 
 [node name="RC7" type="CSGSphere3D" parent="BackgroundForest/RightForest" unique_id=700783174]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 10, 38)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72.26493, 10, 38)
 radius = 6.2
 material = SubResource("MatForest")
 
