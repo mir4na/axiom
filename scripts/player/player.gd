@@ -1,7 +1,7 @@
 extends CharacterBody3D
 
-@export var speed: float = 3.5
-@export var sprint_speed: float = 4.5
+@export var speed: float = 4.0
+@export var sprint_speed: float = 6.5
 @export var crouch_speed: float = 2.0
 @export var acceleration: float = 4.0
 @export var gravity: float = 9.8
@@ -50,10 +50,12 @@ func _sync_hitboxes(delta: float) -> void:
 		var bone_pose = skeleton.get_bone_global_pose(attach.bone_idx)
 		var t: Transform3D = skeleton.global_transform * bone_pose
 		hitbox.global_transform = Transform3D(t.basis.orthonormalized(), t.origin)
-	
 	# Advanced anti-clip camera logic using Sphere Cast (thick ray)
 	# Decouple raw target from raw bone to completely negate side-to-side animation jitter tracking
-	var raw_target_pos = to_global(_camera_origin_offset)
+	var current_offset = _camera_origin_offset
+	# if is_crouching:
+	# 	current_offset.y -= (normal_height - crouch_height)
+	var raw_target_pos = to_global(current_offset)
 	
 	# Stabilize the camera's Y axis depending on the movement state
 	var is_walking = is_on_floor() and velocity.length_squared() > 1.0 and not is_sprinting
@@ -159,28 +161,28 @@ func _handle_movement(delta: float) -> void:
 			if anim_player.current_animation != current_anim:
 				anim_player.play(current_anim, 0.2)
 
-	var wants_crouch = Input.is_key_pressed(KEY_CTRL)
-	var wants_sprint = Input.is_key_pressed(KEY_SHIFT) and not wants_crouch
+	# var wants_crouch = Input.is_key_pressed(KEY_CTRL)
+	var wants_sprint = Input.is_key_pressed(KEY_SHIFT) # and not wants_crouch
 
-	if wants_crouch and not is_crouching:
-		is_crouching = true
-		is_sprinting = false
-		collision_shape.shape.height = crouch_height
-		collision_shape.position.y = crouch_height * 0.5
-	elif not wants_crouch and is_crouching:
-		is_crouching = false
-		collision_shape.shape.height = normal_height
-		collision_shape.position.y = normal_height * 0.5
+	# if wants_crouch and not is_crouching:
+	# 	is_crouching = true
+	# 	is_sprinting = false
+	# 	collision_shape.shape.height = crouch_height
+	# 	collision_shape.position.y = crouch_height * 0.5
+	# elif not wants_crouch and is_crouching:
+	# 	is_crouching = false
+	# 	collision_shape.shape.height = normal_height
+	# 	collision_shape.position.y = normal_height * 0.5
 
-	if wants_sprint and not is_crouching:
+	if wants_sprint: # and not is_crouching:
 		is_sprinting = true
 	elif is_sprinting and not wants_sprint:
 		is_sprinting = false
 
 	var current_speed: float
-	if is_crouching:
-		current_speed = crouch_speed
-	elif is_sprinting:
+	# if is_crouching:
+	# 	current_speed = crouch_speed
+	if is_sprinting:
 		current_speed = sprint_speed
 	else:
 		current_speed = speed
