@@ -22,6 +22,8 @@ var _hitbox_pairs: Array = []
 
 
 var camera_x_rotation: float = 0.0
+var _smoothed_head_y: float = 0.0
+var _camera_origin_offset: Vector3 = Vector3.ZERO
 var is_crouching: bool = false
 var is_sprinting: bool = false
 var last_interactable: Node3D = null
@@ -29,6 +31,9 @@ var last_interactable: Node3D = null
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	add_to_group("time_actor")
+	_camera_origin_offset = to_local(camera.global_position)
+	_smoothed_head_y = camera.global_position.y
+	camera.set_as_top_level(true)
 	
 	_hitbox_pairs.clear()
 	for child in skeleton.get_children():
@@ -38,7 +43,7 @@ func _ready() -> void:
 					subchild.set_as_top_level(true)
 					_hitbox_pairs.append([child, subchild])
 
-func _sync_hitboxes() -> void:
+func _sync_hitboxes(delta: float) -> void:
 	for pair in _hitbox_pairs:
 		var attach: BoneAttachment3D = pair[0]
 		var hitbox: Area3D = pair[1]
@@ -47,7 +52,19 @@ func _sync_hitboxes() -> void:
 		hitbox.global_transform = Transform3D(t.basis.orthonormalized(), t.origin)
 	
 	# Advanced anti-clip camera logic using Sphere Cast (thick ray)
-	var target_pos = head.global_position
+	# Decouple raw target from raw bone to completely negate side-to-side animation jitter tracking
+	var raw_target_pos = to_global(_camera_origin_offset)
+	
+	# Stabilize the camera's Y axis depending on the movement state
+	var is_walking = is_on_floor() and velocity.length_squared() > 1.0 and not is_sprinting
+	if is_walking:
+		# Heavy stabilization for smooth aiming while walking
+		_smoothed_head_y = lerpf(_smoothed_head_y, raw_target_pos.y, 5.0 * delta)
+	else:
+		# Natural bone following for running/jumping
+		_smoothed_head_y = lerpf(_smoothed_head_y, raw_target_pos.y, 25.0 * delta)
+		
+	var target_pos = Vector3(raw_target_pos.x, _smoothed_head_y, raw_target_pos.z)
 	var center_pos = global_position
 	center_pos.y = target_pos.y
 	
@@ -67,6 +84,11 @@ func _sync_hitboxes() -> void:
 		camera.global_position = center_pos + query.motion * safe_fraction
 	else:
 		camera.global_position = target_pos
+		
+	# Synchronize absolute rotations manually to avoid bone roll/pitch jitter
+	camera.global_rotation.y = global_rotation.y
+	camera.global_rotation.x = deg_to_rad(-camera_x_rotation)
+	camera.global_rotation.z = 0.0
 
 
 
@@ -80,7 +102,6 @@ func _input(event: InputEvent) -> void:
 		rotate_y(deg_to_rad(-event.relative.x * mouse_sensitivity))
 		var x_delta = event.relative.y * mouse_sensitivity
 		camera_x_rotation = clamp(camera_x_rotation + x_delta, -90.0, 90.0)
-		camera.rotation_degrees.x = -camera_x_rotation
 
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_1:
@@ -119,13 +140,21 @@ func _handle_movement(delta: float) -> void:
 		if is_on_floor():
 			if movement_vector.length() > 0:
 				current_anim = "run"
+				# Differentiate walk vs run natively by animation speed
+				if is_sprinting:
+					anim_player.speed_scale = 1.0
+				else:
+					anim_player.speed_scale = 0.55
 			else:
 				current_anim = "idle"
+				anim_player.speed_scale = 1.0
 		else:
 			if velocity.y > 0:
 				current_anim = "air_jump"
 			else:
 				current_anim = "air_land"
+			anim_player.speed_scale = 1.0
+			
 		if anim_player.has_animation(current_anim):
 			if anim_player.current_animation != current_anim:
 				anim_player.play(current_anim, 0.2)
@@ -170,7 +199,7 @@ func _handle_movement(delta: float) -> void:
 	move_and_slide()
 	
 	# Keep hitboxes in sync at all times
-	_sync_hitboxes()
+	_sync_hitboxes(delta)
 
 func _handle_interaction() -> void:
 	if not interaction_ray:
