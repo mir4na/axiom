@@ -176,17 +176,27 @@ func _handle_interaction() -> void:
 	if not interaction_ray:
 		return
 	var collider = interaction_ray.get_collider()
-	if collider and collider.has_method("interact") and "prompt_text" in collider:
-		var is_dig = collider.has_method("get_equip_hint") and collider.get_equip_hint() == GameState.slots[GameState.selected_slot]
-		if last_interactable != null and last_interactable != collider and last_interactable.has_method("reset_minigame"):
-			last_interactable.reset_minigame()
-			hud.set_dig_progress(0, false)
-		last_interactable = collider
-		if collider.prompt_text == "":
-			hud.hide_prompt()
+	if collider and collider.has_method("interact"):
+		var p_text = collider.get("prompt_text")
+		if typeof(p_text) == TYPE_STRING:
+			var is_dig = collider.has_method("get_equip_hint") and collider.get_equip_hint() == GameState.slots[GameState.selected_slot]
+			if last_interactable != null and last_interactable != collider and last_interactable.has_method("reset_minigame"):
+				last_interactable.reset_minigame()
+				hud.set_dig_progress(0, false)
+			last_interactable = collider
+			if p_text == "":
+				hud.hide_prompt()
+			else:
+				hud.show_prompt(p_text)
+			hud.set_crosshair_active(true, is_dig)
 		else:
-			hud.show_prompt(collider.prompt_text)
-		hud.set_crosshair_active(true, is_dig)
+			if last_interactable != null:
+				if last_interactable.has_method("reset_minigame"):
+					last_interactable.reset_minigame()
+				last_interactable = null
+				hud.hide_prompt()
+				hud.set_dig_progress(0, false)
+			hud.set_crosshair_active(false)
 	else:
 		if last_interactable != null:
 			if last_interactable.has_method("reset_minigame"):
