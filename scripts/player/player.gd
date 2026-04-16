@@ -27,6 +27,7 @@ var _camera_origin_offset: Vector3 = Vector3.ZERO
 var is_crouching: bool = false
 var is_sprinting: bool = false
 var last_interactable: Node3D = null
+var _rewind_scroll_hold_time: float = 0.0
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -101,6 +102,18 @@ func _input(event: InputEvent) -> void:
 	if Input.is_action_just_pressed("ui_cancel"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
+	if GameState.rewind_mode_active:
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.keycode == KEY_SPACE:
+				GameState.deactivate_rewind_mode(true)
+		return
+
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_R:
+			if GameState.world_history.size() > 0:
+				GameState.activate_rewind_mode()
+			return
+
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		if GameState.time_direction == 1 and GameState.is_scrubbing_past:
 			GameState.prune_timeline()
@@ -117,13 +130,31 @@ func _input(event: InputEvent) -> void:
 			GameState.select_slot(2)
 
 func _physics_process(delta: float) -> void:
+	if GameState.rewind_mode_active:
+		var r_held = Input.is_key_pressed(KEY_R)
+		var f_held = Input.is_key_pressed(KEY_F)
+		if r_held or f_held:
+			_rewind_scroll_hold_time += delta
+			var speed = 1.0 + _rewind_scroll_hold_time * 6.0
+			var steps_per_frame = int(speed * delta * 60.0)
+			if steps_per_frame < 1:
+				steps_per_frame = 1
+			var dir_val = -1 if r_held else 1
+			for _i in range(steps_per_frame):
+				GameState.move_rewind_pointer(dir_val)
+			hud.trigger_pointer_glitch()
+		else:
+			_rewind_scroll_hold_time = 0.0
+		_sync_hitboxes(delta)
+		return
+
 	var dir = GameState.time_direction
 	if dir == 1 and not GameState.is_scrubbing_past:
 		var has_input = Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_SPACE)
 		if has_input and GameState.is_scrubbing_past:
 			GameState.prune_timeline()
 		_handle_movement(delta)
-	_handle_interaction()
+	_handle_interaction(delta)
 
 
 func _handle_movement(delta: float) -> void:
@@ -206,7 +237,7 @@ func _handle_movement(delta: float) -> void:
 	# Keep hitboxes in sync at all times
 	_sync_hitboxes(delta)
 
-func _handle_interaction() -> void:
+func _handle_interaction(delta: float) -> void:
 	if not interaction_ray:
 		return
 	var collider = interaction_ray.get_collider()
@@ -218,6 +249,21 @@ func _handle_interaction() -> void:
 				last_interactable.reset_minigame()
 				hud.set_dig_progress(0, false)
 			last_interactable = collider
+			
+			# Handle Continuous Hold Mechanic (like digging)
+			if collider.has_method("progress_minigame"):
+				if Input.is_key_pressed(KEY_E):
+					var prog = collider.progress_minigame(delta)
+					if prog >= 0:
+						hud.set_dig_progress(prog, true)
+					if prog >= 100.0:
+						hud.set_dig_progress(0, false)
+						hud.set_crosshair_active(false, false)
+						p_text = ""
+				else:
+					collider.reset_minigame()
+					hud.set_dig_progress(0, false)
+					
 			if p_text == "":
 				hud.hide_prompt()
 			else:
@@ -225,19 +271,21 @@ func _handle_interaction() -> void:
 			hud.set_crosshair_active(true, is_dig)
 		else:
 			if last_interactable != null:
-				if last_interactable.has_method("reset_minigame"):
-					last_interactable.reset_minigame()
+				if is_instance_valid(last_interactable):
+					if last_interactable.has_method("reset_minigame"):
+						last_interactable.reset_minigame()
 				last_interactable = null
-				hud.hide_prompt()
-				hud.set_dig_progress(0, false)
+			hud.hide_prompt()
+			hud.set_dig_progress(0, false)
 			hud.set_crosshair_active(false)
 	else:
 		if last_interactable != null:
-			if last_interactable.has_method("reset_minigame"):
-				last_interactable.reset_minigame()
+			if is_instance_valid(last_interactable):
+				if last_interactable.has_method("reset_minigame"):
+					last_interactable.reset_minigame()
 			last_interactable = null
-			hud.hide_prompt()
-			hud.set_dig_progress(0, false)
+		hud.hide_prompt()
+		hud.set_dig_progress(0, false)
 		hud.set_crosshair_active(false)
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -252,14 +300,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_drop_item()
 		elif event.keycode == KEY_E:
 			if last_interactable:
-				if last_interactable.has_method("progress_minigame"):
-					var prog = last_interactable.progress_minigame()
-					if prog >= 0:
-						hud.set_dig_progress(prog, true)
-					if prog >= 100.0:
-						hud.set_dig_progress(0, false)
-						hud.set_crosshair_active(false, false)
-				else:
+				if not last_interactable.has_method("progress_minigame"):
 					last_interactable.interact()
 
 func _drop_item() -> void:

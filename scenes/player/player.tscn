@@ -18,15 +18,15 @@ roughness = 0.72
 resource_name = "Pants"
 cull_mode = 2
 vertex_color_use_as_albedo = true
-albedo_color = Color(0.118, 0.149, 0.22, 1)
-roughness = 0.85
+albedo_color = Color(0.1, 0.11, 0.14, 1)
+roughness = 0.9
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rffej"]
 resource_name = "Shirt"
 cull_mode = 2
 vertex_color_use_as_albedo = true
-albedo_color = Color(0.58, 0.67, 0.82, 1)
-roughness = 0.78
+albedo_color = Color(0.18, 0.22, 0.32, 1)
+roughness = 0.88
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_dovo2"]
 resource_name = "mannequiny-0_3_0_bony_body_002"

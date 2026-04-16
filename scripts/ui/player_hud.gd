@@ -8,21 +8,27 @@ extends CanvasLayer
 @onready var label_1: Label = $InventoryBar/Slot1/Label
 @onready var label_2: Label = $InventoryBar/Slot2/Label
 @onready var label_3: Label = $InventoryBar/Slot3/Label
-
 @onready var glitch_overlay: ColorRect = $GlitchOverlay
-@onready var timeline_meter: ProgressBar = $TimelineMeter
+@onready var timeline_bar_container: Control = $TimelineBarContainer
+@onready var film_strip: Control = $TimelineBarContainer/FilmStrip
+@onready var pointer_marker: Control = $TimelineBarContainer/FilmStrip/PointerMarker
+@onready var timeline_label: Label = $TimelineBarContainer/FilmStrip/TimelineLabel
+@onready var rewind_hint: Label = $TimelineBarContainer/RewindHint
+@onready var inventory_bar: HBoxContainer = $InventoryBar
+@onready var dig_progress_bar: Control = $DigProgress
 
 var normal_style: StyleBoxFlat
 var selected_style: StyleBoxFlat
 
-@onready var dig_progress_bar: Control = $DigProgress
+var _invert_tween: Tween
+var _glitch_tween: Tween
 
 func set_dig_progress(val: float, is_vis: bool) -> void:
 	dig_progress_bar.set_progress(val, is_vis)
 
 func _ready() -> void:
 	prompt_label.visible = false
-	
+
 	normal_style = StyleBoxFlat.new()
 	normal_style.bg_color = Color(0, 0, 0, 0.6)
 	normal_style.border_width_left = 2
@@ -30,34 +36,91 @@ func _ready() -> void:
 	normal_style.border_width_top = 2
 	normal_style.border_width_bottom = 2
 	normal_style.border_color = Color(0.2, 0.2, 0.2, 1)
-	
+
 	selected_style = normal_style.duplicate()
 	selected_style.border_color = Color(1, 0.9, 0.2, 1)
-	
+
 	GameState.inventory_changed.connect(_update_inventory_ui)
 	GameState.time_direction_changed.connect(_on_time_direction_changed)
-	
+	GameState.rewind_mode_changed.connect(_on_rewind_mode_changed)
+
 	_update_inventory_ui()
 
+func _set_shader_param(param: String, value: float) -> void:
+	if glitch_overlay.material is ShaderMaterial:
+		(glitch_overlay.material as ShaderMaterial).set_shader_parameter(param, value)
+
+func _get_shader_param(param: String) -> float:
+	if glitch_overlay.material is ShaderMaterial:
+		return (glitch_overlay.material as ShaderMaterial).get_shader_parameter(param) as float
+	return 0.0
+
 func _process(_delta: float) -> void:
-	timeline_meter.value = GameState.timeline_position
+	if GameState.rewind_mode_active:
+		var ratio = GameState.get_pointer_ratio()
+		var strip_w = film_strip.size.x
+		pointer_marker.position.x = ratio * strip_w - pointer_marker.size.x * 0.5
+		var secs_ago = int((1.0 - ratio) * GameState.world_history.size() / 60.0)
+		timeline_label.text = "-%ds" % secs_ago if secs_ago > 0 else "NOW"
 
 func _on_time_direction_changed(dir: int) -> void:
-	var target_intensity = 0.0
-	if dir != 1:  # If rewinding or fast-forwarding, trigger glitch!
-		target_intensity = 0.8
-		
-	var tween = create_tween()
-	tween.tween_method(_set_glitch_intensity, _get_glitch_intensity(), target_intensity, 0.2)
+	if GameState.rewind_mode_active:
+		return
+	var target = 0.8 if dir != 1 else 0.0
+	if _glitch_tween:
+		_glitch_tween.kill()
+	_glitch_tween = create_tween()
+	_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
+		_get_shader_param("glitch_intensity"), target, 0.2)
 
-func _set_glitch_intensity(val: float) -> void:
-	if glitch_overlay.material is ShaderMaterial:
-		(glitch_overlay.material as ShaderMaterial).set_shader_parameter("glitch_intensity", val)
+func _on_rewind_mode_changed(active: bool) -> void:
+	if _invert_tween:
+		_invert_tween.kill()
+	if _glitch_tween:
+		_glitch_tween.kill()
 
-func _get_glitch_intensity() -> float:
-	if glitch_overlay.material is ShaderMaterial:
-		return (glitch_overlay.material as ShaderMaterial).get_shader_parameter("glitch_intensity") as float
-	return 0.0
+	_invert_tween = create_tween().set_parallel(true)
+
+	if active:
+		_invert_tween.tween_method(func(v): _set_shader_param("invert_amount", v),
+			_get_shader_param("invert_amount"), 1.0, 0.4)
+		_invert_tween.tween_method(func(v): _set_shader_param("vignette_strength", v),
+			_get_shader_param("vignette_strength"), 0.8, 0.4)
+		_glitch_tween = create_tween()
+		_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
+			_get_shader_param("glitch_intensity"), 0.3, 0.3)
+
+		var tween_ui = create_tween().set_parallel(true)
+		tween_ui.tween_property(inventory_bar, "modulate:a", 0.0, 0.25)
+		tween_ui.tween_property(crosshair, "modulate:a", 0.0, 0.25)
+		tween_ui.tween_property(prompt_label, "modulate:a", 0.0, 0.25)
+		tween_ui.tween_property(timeline_bar_container, "scale", Vector2(1.0, 1.0), 0.3).set_trans(Tween.TRANS_BACK)
+		tween_ui.tween_property(timeline_bar_container, "modulate:a", 1.0, 0.3)
+
+	else:
+		_invert_tween.tween_method(func(v): _set_shader_param("invert_amount", v),
+			_get_shader_param("invert_amount"), 0.0, 0.5)
+		_invert_tween.tween_method(func(v): _set_shader_param("vignette_strength", v),
+			_get_shader_param("vignette_strength"), 0.0, 0.5)
+		_glitch_tween = create_tween()
+		_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
+			_get_shader_param("glitch_intensity"), 0.0, 0.5)
+
+		var tween_ui = create_tween().set_parallel(true)
+		tween_ui.tween_property(inventory_bar, "modulate:a", 1.0, 0.3)
+		tween_ui.tween_property(crosshair, "modulate:a", 1.0, 0.3)
+		tween_ui.tween_property(prompt_label, "modulate:a", 1.0, 0.3)
+		tween_ui.tween_property(timeline_bar_container, "scale", Vector2(1.0, 0.3), 0.3).set_trans(Tween.TRANS_BACK)
+		tween_ui.tween_property(timeline_bar_container, "modulate:a", 0.0, 0.2)
+
+func trigger_pointer_glitch() -> void:
+	if _glitch_tween:
+		_glitch_tween.kill()
+	_glitch_tween = create_tween()
+	_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
+		_get_shader_param("glitch_intensity"), 1.0, 0.05)
+	_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
+		1.0, 0.3, 0.15)
 
 func show_prompt(text: String) -> void:
 	prompt_label.text = text
@@ -83,11 +146,11 @@ func set_crosshair_active(active: bool, is_dig: bool = false) -> void:
 func _update_inventory_ui() -> void:
 	var slots = GameState.slots
 	var sel = GameState.selected_slot
-	
+
 	label_1.text = "1: " + (slots[0] if slots[0] != "" else "Empty")
 	label_2.text = "2: " + (slots[1] if slots[1] != "" else "Empty")
 	label_3.text = "3: " + (slots[2] if slots[2] != "" else "Empty")
-	
+
 	slot_1.add_theme_stylebox_override("panel", selected_style if sel == 0 else normal_style)
 	slot_2.add_theme_stylebox_override("panel", selected_style if sel == 1 else normal_style)
 	slot_3.add_theme_stylebox_override("panel", selected_style if sel == 2 else normal_style)

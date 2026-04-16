@@ -4,7 +4,7 @@ var dig_progress: float = 0.0
 var is_digging: bool = false
 
 func _ready() -> void:
-	prompt_text = "Press E to dig"
+	prompt_text = "Hold E to dig"
 
 func get_equip_hint() -> String:
 	return "Shovel"
@@ -12,14 +12,14 @@ func get_equip_hint() -> String:
 func interact() -> void:
 	pass
 
-func progress_minigame() -> float:
+func progress_minigame(delta: float) -> float:
 	if GameState.slots[GameState.selected_slot] == "Shovel":
 		if not is_digging:
 			is_digging = true
-			prompt_text = "Press E repeatedly to dig!"
+			prompt_text = "Keep Holding E!"
 			return 0.0
 		else:
-			dig_progress += 15.0
+			dig_progress += 40.0 * delta # Takes 2.5 seconds of holding
 			if dig_progress >= 100.0:
 				_finish_dig()
 			return dig_progress
@@ -39,4 +39,4 @@ func reset_minigame() -> void:
 	if is_digging:
 		is_digging = false
 		dig_progress = 0.0
-		prompt_text = "Press E to dig"
+		prompt_text = "Hold E to dig"

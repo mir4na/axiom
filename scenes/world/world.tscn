@@ -1,8 +1,7 @@
-[gd_scene format=3 uid="uid://1errma2o8an2"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
-[ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
-[ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/objects/house.tscn" id="7_house"]
 [ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
 [ext_resource type="PackedScene" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
 
@@ -95,15 +94,14 @@ size = Vector3(43, 10, 1)
 size = Vector3(1, 10, 35)
 
 [node name="World" type="Node3D" unique_id=921239400]
-script = ExtResource("1_world")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=745126488]
 environment = SubResource("Env")
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1430240478]
-transform = Transform3D(0.8660253, -0.34973788, 0.35732847, 0, 0.7146567, 0.6994754, -0.50000024, -0.60576344, 0.61891073, 0, 49.391502, 0)
-light_color = Color(1, 0.93, 0.82, 1)
-light_energy = 1.2
+transform = Transform3D(0.70710677, -0.1830127, 0.68301266, 0, 0.9659258, 0.25881904, -0.70710677, -0.1830127, 0.68301266, 0, 49.391502, 0)
+light_color = Color(1, 0.6, 0.25, 1)
+light_energy = 1.5
 shadow_enabled = true
 
 [node name="Terrain" type="CSGCombiner3D" parent="." unique_id=270278886]
@@ -218,12 +216,12 @@ visible = false
 size = Vector3(5.8, 1.95, 0.2)
 material = SubResource("MatFence")
 
-[node name="House" parent="." unique_id=65160958 instance=ExtResource("7_house")]
+[node name="House" type="CSGCombiner3D" parent="." unique_id=65160958 instance=ExtResource("7_house")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -4)
+use_collision = true
 
-[node name="Player" parent="." unique_id=758033891 instance=ExtResource("2_player")]
+[node name="Player" type="CharacterBody3D" parent="." unique_id=758033891 groups=["player"] instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.660072, 1, -7.59978)
-safe_margin = 0.001
 
 [node name="Neighborhood" type="Node3D" parent="." unique_id=663843665]
 
@@ -1351,8 +1349,8 @@ shape = SubResource("ShapeYardEW")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.046556, 5, 0.5)
 shape = SubResource("ShapeYardEW")
 
-[node name="Shovel" parent="." unique_id=1577906131 instance=ExtResource("8_shovel")]
+[node name="Shovel" type="RigidBody3D" parent="." unique_id=1577906131 instance=ExtResource("8_shovel")]
 transform = Transform3D(0.9659258, 0.258819, 0, -0.258819, 0.9659258, 0, 0, 0, 1, 5.6831894, 0, 8.451979)
 
-[node name="DigSpot" parent="." unique_id=2020308069 instance=ExtResource("9_dig")]
+[node name="DigSpot" type="StaticBody3D" parent="." unique_id=2020308069 instance=ExtResource("9_dig")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.569308, 0, 7.4110394)
