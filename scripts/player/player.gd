@@ -5,7 +5,7 @@ extends CharacterBody3D
 @export var crouch_speed: float = 2.0
 @export var acceleration: float = 4.0
 @export var gravity: float = 9.8
-@export var jump_power: float = 2.5
+@export var jump_power: float = 4.0
 @export var mouse_sensitivity: float = 0.3
 @export var normal_height: float = 1.68
 @export var crouch_height: float = 0.9
@@ -15,63 +15,60 @@ extends CharacterBody3D
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var interaction_ray: RayCast3D = $"root/Skeleton3D/BoneAttachment3D/Head/Camera3D/InteractionRay"
 @onready var hud: CanvasLayer = $PlayerHUD
-@onready var mannequin_root: Node3D = $root
 @onready var anim_player: AnimationPlayer = $AnimationPlayer
+@onready var skeleton: Skeleton3D = $"root/Skeleton3D"
 
-@onready var _bone_attach_head: BoneAttachment3D = $"root/Skeleton3D/BoneAttachment3D"
-@onready var _bone_attach_torso: BoneAttachment3D = $"root/Skeleton3D/BoneAttachTorso"
-@onready var _bone_attach_pelvis: BoneAttachment3D = $"root/Skeleton3D/BoneAttachPelvis"
-@onready var _bone_attach_upper_arm_r: BoneAttachment3D = $"root/Skeleton3D/BoneAttachUpperArmR"
-@onready var _bone_attach_upper_arm_l: BoneAttachment3D = $"root/Skeleton3D/BoneAttachUpperArmL"
-@onready var _bone_attach_lower_arm_r: BoneAttachment3D = $"root/Skeleton3D/BoneAttachLowerArmR"
-@onready var _bone_attach_lower_arm_l: BoneAttachment3D = $"root/Skeleton3D/BoneAttachLowerArmL"
-@onready var _bone_attach_thigh_r: BoneAttachment3D = $"root/Skeleton3D/BoneAttachThighR"
-@onready var _bone_attach_thigh_l: BoneAttachment3D = $"root/Skeleton3D/BoneAttachThighL"
-@onready var _bone_attach_calf_r: BoneAttachment3D = $"root/Skeleton3D/BoneAttachCalfR"
-@onready var _bone_attach_calf_l: BoneAttachment3D = $"root/Skeleton3D/BoneAttachCalfL"
+var _hitbox_pairs: Array = []
 
-@onready var _hitbox_head: Area3D = $"root/Skeleton3D/BoneAttachment3D/HitboxHead"
-@onready var _hitbox_torso: Area3D = $"root/Skeleton3D/BoneAttachTorso/HitboxTorso"
-@onready var _hitbox_pelvis: Area3D = $"root/Skeleton3D/BoneAttachPelvis/HitboxPelvis"
-@onready var _hitbox_upper_arm_r: Area3D = $"root/Skeleton3D/BoneAttachUpperArmR/HitboxUpperArmR"
-@onready var _hitbox_upper_arm_l: Area3D = $"root/Skeleton3D/BoneAttachUpperArmL/HitboxUpperArmL"
-@onready var _hitbox_lower_arm_r: Area3D = $"root/Skeleton3D/BoneAttachLowerArmR/HitboxLowerArmR"
-@onready var _hitbox_lower_arm_l: Area3D = $"root/Skeleton3D/BoneAttachLowerArmL/HitboxLowerArmL"
-@onready var _hitbox_thigh_r: Area3D = $"root/Skeleton3D/BoneAttachThighR/HitboxThighR"
-@onready var _hitbox_thigh_l: Area3D = $"root/Skeleton3D/BoneAttachThighL/HitboxThighL"
-@onready var _hitbox_calf_r: Area3D = $"root/Skeleton3D/BoneAttachCalfR/HitboxCalfR"
-@onready var _hitbox_calf_l: Area3D = $"root/Skeleton3D/BoneAttachCalfL/HitboxCalfL"
 
 var camera_x_rotation: float = 0.0
 var is_crouching: bool = false
 var is_sprinting: bool = false
 var last_interactable: Node3D = null
 
-var _hitbox_pairs: Array = []
-
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	add_to_group("time_actor")
-	_hitbox_pairs = [
-		[_bone_attach_head, _hitbox_head],
-		[_bone_attach_torso, _hitbox_torso],
-		[_bone_attach_pelvis, _hitbox_pelvis],
-		[_bone_attach_upper_arm_r, _hitbox_upper_arm_r],
-		[_bone_attach_upper_arm_l, _hitbox_upper_arm_l],
-		[_bone_attach_lower_arm_r, _hitbox_lower_arm_r],
-		[_bone_attach_lower_arm_l, _hitbox_lower_arm_l],
-		[_bone_attach_thigh_r, _hitbox_thigh_r],
-		[_bone_attach_thigh_l, _hitbox_thigh_l],
-		[_bone_attach_calf_r, _hitbox_calf_r],
-		[_bone_attach_calf_l, _hitbox_calf_l],
-	]
+	
+	_hitbox_pairs.clear()
+	for child in skeleton.get_children():
+		if child is BoneAttachment3D:
+			for subchild in child.get_children():
+				if subchild is Area3D and subchild.name.begins_with("Hitbox"):
+					subchild.set_as_top_level(true)
+					_hitbox_pairs.append([child, subchild])
 
 func _sync_hitboxes() -> void:
 	for pair in _hitbox_pairs:
 		var attach: BoneAttachment3D = pair[0]
 		var hitbox: Area3D = pair[1]
-		var t: Transform3D = attach.global_transform
+		var bone_pose = skeleton.get_bone_global_pose(attach.bone_idx)
+		var t: Transform3D = skeleton.global_transform * bone_pose
 		hitbox.global_transform = Transform3D(t.basis.orthonormalized(), t.origin)
+	
+	# Advanced anti-clip camera logic using Sphere Cast (thick ray)
+	var target_pos = head.global_position
+	var center_pos = global_position
+	center_pos.y = target_pos.y
+	
+	var space_state = get_world_3d().direct_space_state
+	var shape = SphereShape3D.new()
+	shape.radius = 0.15 # roughly size of head/camera near-plane padding
+	
+	var query = PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.transform = Transform3D(Basis(), center_pos)
+	query.motion = target_pos - center_pos
+	query.exclude = [self.get_rid()]
+	
+	var result = space_state.cast_motion(query)
+	if result.size() == 2:
+		var safe_fraction = result[0]
+		camera.global_position = center_pos + query.motion * safe_fraction
+	else:
+		camera.global_position = target_pos
+
+
 
 func _input(event: InputEvent) -> void:
 	if Input.is_action_just_pressed("ui_cancel"):
@@ -92,10 +89,6 @@ func _input(event: InputEvent) -> void:
 			GameState.select_slot(1)
 		elif event.keycode == KEY_3:
 			GameState.select_slot(2)
-		elif event.keycode == KEY_G:
-			var dropped = GameState.consume_selected()
-			if dropped != "":
-				print("Dropped item: ", dropped)
 
 func _physics_process(delta: float) -> void:
 	var dir = GameState.time_direction
@@ -105,7 +98,7 @@ func _physics_process(delta: float) -> void:
 			GameState.prune_timeline()
 		_handle_movement(delta)
 	_handle_interaction()
-	_sync_hitboxes()
+
 
 func _handle_movement(delta: float) -> void:
 	var movement_vector = Vector3.ZERO
@@ -175,12 +168,15 @@ func _handle_movement(delta: float) -> void:
 		velocity.y = jump_power
 
 	move_and_slide()
+	
+	# Keep hitboxes in sync at all times
+	_sync_hitboxes()
 
 func _handle_interaction() -> void:
 	if not interaction_ray:
 		return
 	var collider = interaction_ray.get_collider()
-	if collider is Interactable:
+	if collider and collider.has_method("interact") and "prompt_text" in collider:
 		var is_dig = collider.has_method("get_equip_hint") and collider.get_equip_hint() == GameState.slots[GameState.selected_slot]
 		if last_interactable != null and last_interactable != collider and last_interactable.has_method("reset_minigame"):
 			last_interactable.reset_minigame()

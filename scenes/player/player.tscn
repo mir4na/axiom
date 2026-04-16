@@ -5,29 +5,28 @@
 
 [sub_resource type="CapsuleShape3D" id="capsule_standing"]
 radius = 0.3
-height = 1.68
+height = 1.6666601
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_55w04"]
-resource_name = "Azul"
+resource_name = "Skin"
 cull_mode = 2
 vertex_color_use_as_albedo = true
-albedo_color = Color(0.20552307, 0.5223771, 0.74531287, 1)
-metallic = 0.109933764
-roughness = 0.4045273
+albedo_color = Color(0.827, 0.635, 0.541, 1)
+roughness = 0.72
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fdxcj"]
-resource_name = "Negro"
+resource_name = "Pants"
 cull_mode = 2
 vertex_color_use_as_albedo = true
-albedo_color = Color(0.25490284, 0.25097927, 0.25882286, 1)
-metallic = 0.27483442
-roughness = 0.11192054
+albedo_color = Color(0.118, 0.149, 0.22, 1)
+roughness = 0.85
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rffej"]
-resource_name = "Blanco"
+resource_name = "Shirt"
 cull_mode = 2
 vertex_color_use_as_albedo = true
-roughness = 0.5
+albedo_color = Color(0.58, 0.67, 0.82, 1)
+roughness = 0.78
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_dovo2"]
 resource_name = "mannequiny-0_3_0_bony_body_002"
@@ -217,6 +216,9 @@ bind/43/pose = Transform3D(0.0063606594, -0.010583598, 0.99992377, 0.9994514, 0.
 bind/44/name = &"index_03.l"
 bind/44/bone = -1
 bind/44/pose = Transform3D(-0.042496253, -0.016009897, 0.9989683, 0.99889, 0.019658333, 0.042807996, -0.020323472, 0.9996787, 0.015156765, 0.034462586, -0.8171357, -1.4159155)
+
+[sub_resource type="SphereShape3D" id="SolidHeadShape"]
+radius = 0.2
 
 [sub_resource type="SphereShape3D" id="shape_head"]
 radius = 0.12
@@ -7180,7 +7182,7 @@ safe_margin = 0.005
 script = ExtResource("1_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=172552551]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.84, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.83333004, 0)
 shape = SubResource("capsule_standing")
 
 [node name="PlayerHUD" parent="." unique_id=34264012 instance=ExtResource("2_hud")]
@@ -7521,10 +7523,15 @@ transform = Transform3D(-0.9999999, -7.450581e-09, -8.940697e-08, -1.4901161e-08
 [node name="Camera3D" type="Camera3D" parent="root/Skeleton3D/BoneAttachment3D/Head" unique_id=901234003]
 
 [node name="InteractionRay" type="RayCast3D" parent="root/Skeleton3D/BoneAttachment3D/Head/Camera3D" unique_id=901234004]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, 0, 0)
 target_position = Vector3(0, 0, -1.2)
 
+[node name="SolidHeadCol" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachment3D" unique_id=599213977]
+transform = Transform3D(0.9999999, -7.450581e-09, 0, 1.4901161e-08, 1, 0, 0, 2.9802322e-08, 1, -0.007389486, 0.0693205, 0.04162264)
+shape = SubResource("SolidHeadShape")
+
 [node name="HitboxHead" type="Area3D" parent="root/Skeleton3D/BoneAttachment3D" unique_id=901234010]
-top_level = true
+visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachment3D/HitboxHead" unique_id=901234011]
 shape = SubResource("shape_head")
@@ -7535,7 +7542,6 @@ bone_name = "spine_02"
 bone_idx = 10
 
 [node name="HitboxTorso" type="Area3D" parent="root/Skeleton3D/BoneAttachTorso" unique_id=901234021]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachTorso/HitboxTorso" unique_id=901234022]
 shape = SubResource("shape_torso")
@@ -7546,7 +7552,6 @@ bone_name = "pelvis"
 bone_idx = 0
 
 [node name="HitboxPelvis" type="Area3D" parent="root/Skeleton3D/BoneAttachPelvis" unique_id=901234031]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachPelvis/HitboxPelvis" unique_id=901234032]
 shape = SubResource("shape_pelvis")
@@ -7557,7 +7562,6 @@ bone_name = "upperarm.r"
 bone_idx = 14
 
 [node name="HitboxUpperArmR" type="Area3D" parent="root/Skeleton3D/BoneAttachUpperArmR" unique_id=901234041]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachUpperArmR/HitboxUpperArmR" unique_id=901234042]
 shape = SubResource("shape_upper_arm_r")
@@ -7568,7 +7572,6 @@ bone_name = "upperarm.l"
 bone_idx = 30
 
 [node name="HitboxUpperArmL" type="Area3D" parent="root/Skeleton3D/BoneAttachUpperArmL" unique_id=901234044]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachUpperArmL/HitboxUpperArmL" unique_id=901234045]
 shape = SubResource("shape_upper_arm_l")
@@ -7579,7 +7582,6 @@ bone_name = "lowerarm.r"
 bone_idx = 15
 
 [node name="HitboxLowerArmR" type="Area3D" parent="root/Skeleton3D/BoneAttachLowerArmR" unique_id=901234051]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachLowerArmR/HitboxLowerArmR" unique_id=901234052]
 shape = SubResource("shape_lower_arm_r")
@@ -7590,7 +7592,6 @@ bone_name = "lowerarm.l"
 bone_idx = 31
 
 [node name="HitboxLowerArmL" type="Area3D" parent="root/Skeleton3D/BoneAttachLowerArmL" unique_id=901234054]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachLowerArmL/HitboxLowerArmL" unique_id=901234055]
 shape = SubResource("shape_lower_arm_l")
@@ -7601,7 +7602,6 @@ bone_name = "thigh.r"
 bone_idx = 5
 
 [node name="HitboxThighR" type="Area3D" parent="root/Skeleton3D/BoneAttachThighR" unique_id=901234061]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachThighR/HitboxThighR" unique_id=901234062]
 shape = SubResource("shape_thigh_r")
@@ -7612,7 +7612,6 @@ bone_name = "thigh.l"
 bone_idx = 1
 
 [node name="HitboxThighL" type="Area3D" parent="root/Skeleton3D/BoneAttachThighL" unique_id=901234064]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachThighL/HitboxThighL" unique_id=901234065]
 shape = SubResource("shape_thigh_l")
@@ -7623,7 +7622,6 @@ bone_name = "calf.r"
 bone_idx = 6
 
 [node name="HitboxCalfR" type="Area3D" parent="root/Skeleton3D/BoneAttachCalfR" unique_id=901234071]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachCalfR/HitboxCalfR" unique_id=901234072]
 shape = SubResource("shape_calf_r")
@@ -7634,7 +7632,6 @@ bone_name = "calf.l"
 bone_idx = 2
 
 [node name="HitboxCalfL" type="Area3D" parent="root/Skeleton3D/BoneAttachCalfL" unique_id=901234074]
-top_level = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachCalfL/HitboxCalfL" unique_id=901234075]
 shape = SubResource("shape_calf_l")
