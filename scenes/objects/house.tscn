@@ -203,6 +203,7 @@ door_path = NodePath("../FrontDoor")
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="FrontDoorBtnOut" unique_id=2059471058]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.10930586, -1.8960494, 0)
 mesh = SubResource("ButtonMesh")
 
 [node name="FrontDoorBtnIn" type="StaticBody3D" parent="." unique_id=134702199]
@@ -214,6 +215,7 @@ door_path = NodePath("../FrontDoor")
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="FrontDoorBtnIn" unique_id=797142927]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8976461, 0.1444664)
 mesh = SubResource("ButtonMesh")
 
 [node name="MasterDoorBtnOut" type="StaticBody3D" parent="." unique_id=578179226]
@@ -261,6 +263,7 @@ door_path = NodePath("../GuestDoor")
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="GuestDoorBtnOut" unique_id=877408326]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55505705, -1.7507482, -1.0656121)
 mesh = SubResource("ButtonMesh")
 
 [node name="GuestDoorBtnIn" type="StaticBody3D" parent="." unique_id=1904349629]
@@ -272,6 +275,7 @@ door_path = NodePath("../GuestDoor")
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="GuestDoorBtnIn" unique_id=1712343817]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22363234, -1.7802808, -0.6181426)
 mesh = SubResource("ButtonMesh")
 
 [node name="FloorLiving" type="CSGBox3D" parent="." unique_id=2118314862]
