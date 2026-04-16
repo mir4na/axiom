@@ -1,4 +1,4 @@
-[gd_scene format=4 uid="uid://b8a0iv5ab4rc5"]
+[gd_scene format=4 uid="uid://chacrc38nmcij"]
 
 [ext_resource type="Script" uid="uid://3ccmihnukr3q" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/ui/player_hud.tscn" id="2_hud"]
@@ -7523,7 +7523,7 @@ transform = Transform3D(-0.9999999, -7.450581e-09, -8.940697e-08, -1.4901161e-08
 [node name="Camera3D" type="Camera3D" parent="root/Skeleton3D/BoneAttachment3D/Head" unique_id=901234003]
 
 [node name="InteractionRay" type="RayCast3D" parent="root/Skeleton3D/BoneAttachment3D/Head/Camera3D" unique_id=901234004]
-transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, 0, 0)
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, 0, 0, 0)
 target_position = Vector3(0, 0, -1.2)
 
 [node name="SolidHeadCol" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachment3D" unique_id=599213977]
@@ -7531,6 +7531,7 @@ transform = Transform3D(0.9999999, -7.450581e-09, 0, 1.4901161e-08, 1, 0, 0, 2.9
 shape = SubResource("SolidHeadShape")
 
 [node name="HitboxHead" type="Area3D" parent="root/Skeleton3D/BoneAttachment3D" unique_id=901234010]
+top_level = true
 visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachment3D/HitboxHead" unique_id=901234011]

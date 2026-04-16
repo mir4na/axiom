@@ -13,7 +13,7 @@ albedo_color = Color(0.7, 0.7, 0.7, 1)
 metallic = 0.8
 roughness = 0.3
 
-[node name="Shovel" type="StaticBody3D"]
+[node name="Shovel" type="RigidBody3D"]
 script = ExtResource("1_shov")
 
 [node name="Collision" type="CollisionShape3D" parent="."]

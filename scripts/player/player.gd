@@ -53,6 +53,9 @@ func _sync_hitboxes(delta: float) -> void:
 	# Advanced anti-clip camera logic using Sphere Cast (thick ray)
 	# Decouple raw target from raw bone to completely negate side-to-side animation jitter tracking
 	var current_offset = _camera_origin_offset
+	#current_offset.z -= 0.10
+	#current_offset.y += 0.05
+	
 	# if is_crouching:
 	# 	current_offset.y -= (normal_height - crouch_height)
 	var raw_target_pos = to_global(current_offset)
