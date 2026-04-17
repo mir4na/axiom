@@ -28,6 +28,7 @@ var is_crouching: bool = false
 var is_sprinting: bool = false
 var last_interactable: Node3D = null
 var _rewind_scroll_hold_time: float = 0.0
+var cinematic_locked: bool = false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -99,6 +100,8 @@ func _sync_hitboxes(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if cinematic_locked:
+		return
 	if Input.is_action_just_pressed("ui_cancel"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
@@ -106,18 +109,21 @@ func _input(event: InputEvent) -> void:
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_SPACE:
 				GameState.deactivate_rewind_mode(true)
-			elif event.keycode == KEY_X:
+			elif event.keycode == KEY_X and _can_use_axiom():
 				GameState.cancel_rewind_mode()
 		return
 
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_R:
+			if not _can_use_axiom():
+				return
 			if GameState.world_history.size() > 0:
 				GameState.activate_rewind_mode()
 			return
 		elif event.keycode == KEY_X:
-			GameState.add_mark_current()
-			hud.show_mark_screenshot_effect()
+			if _can_use_axiom():
+				GameState.add_mark_current()
+				hud.show_mark_screenshot_effect()
 
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		if GameState.time_direction == 1 and GameState.is_scrubbing_past:
@@ -135,6 +141,10 @@ func _input(event: InputEvent) -> void:
 			GameState.select_slot(2)
 
 func _physics_process(delta: float) -> void:
+	if cinematic_locked:
+		velocity = Vector3.ZERO
+		_sync_hitboxes(delta)
+		return
 	if GameState.rewind_mode_active:
 		var r_held = Input.is_key_pressed(KEY_R)
 		var f_held = Input.is_key_pressed(KEY_F)
@@ -323,3 +333,23 @@ func _drop_item() -> void:
 		var s = shovel_scene.instantiate()
 		get_tree().root.add_child(s)
 		s.global_position = head.global_position - head.global_transform.basis.z * 1.5
+	elif item_name == "Axiom":
+		var axiom_scene = load("res://scenes/objects/axiom_item.tscn")
+		var a = axiom_scene.instantiate()
+		get_tree().root.add_child(a)
+		a.global_position = head.global_position - head.global_transform.basis.z * 1.5
+
+func _can_use_axiom() -> bool:
+	return GameState.selected_slot >= 0 and GameState.selected_slot < GameState.slots.size() and GameState.slots[GameState.selected_slot] == "Axiom"
+
+func set_cinematic_lock(active: bool) -> void:
+	cinematic_locked = active
+	if active:
+		velocity = Vector3.ZERO
+
+func set_cinematic_pose(target_position: Vector3, target_yaw: float, target_pitch: float) -> void:
+	global_position = target_position
+	rotation.y = target_yaw
+	camera_x_rotation = target_pitch
+	velocity = Vector3.ZERO
+	_sync_hitboxes(1.0 / 60.0)

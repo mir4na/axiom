@@ -1,7 +1,10 @@
 extends Interactable
 
+signal dig_completed(spot: Node3D)
+
 var dig_progress: float = 0.0
 var is_digging: bool = false
+var is_finished: bool = false
 
 func _ready() -> void:
 	prompt_text = "Hold E to dig"
@@ -13,6 +16,8 @@ func interact() -> void:
 	pass
 
 func progress_minigame(delta: float) -> float:
+	if is_finished:
+		return -1.0
 	if GameState.slots[GameState.selected_slot] == "Shovel":
 		if not is_digging:
 			is_digging = true
@@ -26,17 +31,14 @@ func progress_minigame(delta: float) -> float:
 	return -1.0
 
 func _finish_dig() -> void:
-	GameState.consume_selected()
-	var shovel_scene = load("res://scenes/objects/shovel.tscn")
-	var s = shovel_scene.instantiate()
-	s.global_position = global_position + Vector3(0, 0.05, 0)
-	s.rotation_degrees = Vector3(90, 45, 0)
-	s.is_dropped = true
-	get_tree().root.add_child(s)
+	is_finished = true
+	is_digging = false
+	prompt_text = ""
+	dig_completed.emit(self)
 	queue_free()
 
 func reset_minigame() -> void:
-	if is_digging:
+	if is_digging and not is_finished:
 		is_digging = false
 		dig_progress = 0.0
 		prompt_text = "Hold E to dig"
