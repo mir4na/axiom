@@ -106,6 +106,8 @@ func _input(event: InputEvent) -> void:
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_SPACE:
 				GameState.deactivate_rewind_mode(true)
+			elif event.keycode == KEY_X:
+				GameState.cancel_rewind_mode()
 		return
 
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -113,6 +115,9 @@ func _input(event: InputEvent) -> void:
 			if GameState.world_history.size() > 0:
 				GameState.activate_rewind_mode()
 			return
+		elif event.keycode == KEY_X:
+			GameState.add_mark_current()
+			hud.show_mark_screenshot_effect()
 
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		if GameState.time_direction == 1 and GameState.is_scrubbing_past:

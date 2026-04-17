@@ -28,8 +28,9 @@ var current_level_index: int = 0
 
 var world_history: Array[Dictionary] = []
 var history_index: int = -1
-const MAX_HISTORY: int = 1200
+const MAX_HISTORY: int = 10800
 var is_scrubbing_past: bool = false
+var mark_indices: Array[int] = []
 
 var timeline_position: float = 100.0
 const TIMELINE_MAX: float = 100.0
@@ -84,6 +85,19 @@ func activate_rewind_mode() -> void:
 		rewind_pointer_index = 0
 	rewind_mode_changed.emit(true)
 
+func cancel_rewind_mode() -> void:
+	if world_history.size() > 0 and rewind_pointer_index >= 0:
+		var snap = world_history[history_index]
+		var actors = get_tree().get_nodes_in_group("time_actor")
+		for actor in actors:
+			var path = actor.get_path()
+			if snap.has(path):
+				_apply_actor_state(actor, snap[path])
+	rewind_mode_active = false
+	is_scrubbing_past = false
+	time_direction = TIME_FORWARD
+	rewind_mode_changed.emit(false)
+
 func deactivate_rewind_mode(jump: bool) -> void:
 	if jump and world_history.size() > 0:
 		var target = clampi(rewind_pointer_index, 0, world_history.size() - 1)
@@ -97,11 +111,16 @@ func deactivate_rewind_mode(jump: bool) -> void:
 		world_history = world_history.slice(0, target + 1)
 		history_index = world_history.size() - 1
 		timeline_position = (float(history_index) / float(MAX_HISTORY)) * 100.0
+		mark_indices = mark_indices.filter(func(i): return i < world_history.size())
 
 	rewind_mode_active = false
 	is_scrubbing_past = false
 	time_direction = TIME_FORWARD
 	rewind_mode_changed.emit(false)
+
+func add_mark_current() -> void:
+	if history_index >= 0 and not mark_indices.has(history_index):
+		mark_indices.append(history_index)
 
 func move_rewind_pointer(direction: int) -> void:
 	if not rewind_mode_active:
@@ -127,6 +146,7 @@ func prune_timeline() -> void:
 	if history_index < world_history.size() - 1 and history_index >= 0:
 		world_history = world_history.slice(0, history_index + 1)
 		is_scrubbing_past = false
+		mark_indices = mark_indices.filter(func(i): return i < world_history.size())
 
 func _get_actor_state(actor: Node) -> Dictionary:
 	var state = {"pos": actor.position, "rot": actor.rotation}

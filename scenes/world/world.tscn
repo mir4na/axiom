@@ -1,7 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://1errma2o8an2"]
 
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
-[ext_resource type="PackedScene" path="res://scenes/objects/house.tscn" id="7_house"]
+[ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
 [ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
 [ext_resource type="PackedScene" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
 
@@ -216,11 +216,10 @@ visible = false
 size = Vector3(5.8, 1.95, 0.2)
 material = SubResource("MatFence")
 
-[node name="House" type="CSGCombiner3D" parent="." unique_id=65160958 instance=ExtResource("7_house")]
+[node name="House" parent="." unique_id=65160958 instance=ExtResource("7_house")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -4)
-use_collision = true
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=758033891 groups=["player"] instance=ExtResource("2_player")]
+[node name="Player" parent="." unique_id=758033891 instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.660072, 1, -7.59978)
 
 [node name="Neighborhood" type="Node3D" parent="." unique_id=663843665]
@@ -1349,8 +1348,8 @@ shape = SubResource("ShapeYardEW")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.046556, 5, 0.5)
 shape = SubResource("ShapeYardEW")
 
-[node name="Shovel" type="RigidBody3D" parent="." unique_id=1577906131 instance=ExtResource("8_shovel")]
+[node name="Shovel" parent="." unique_id=1577906131 instance=ExtResource("8_shovel")]
 transform = Transform3D(0.9659258, 0.258819, 0, -0.258819, 0.9659258, 0, 0, 0, 1, 5.6831894, 0, 8.451979)
 
-[node name="DigSpot" type="StaticBody3D" parent="." unique_id=2020308069 instance=ExtResource("9_dig")]
+[node name="DigSpot" parent="." unique_id=2020308069 instance=ExtResource("9_dig")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.569308, 0, 7.4110394)

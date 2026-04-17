@@ -3,6 +3,7 @@ shader_type canvas_item;
 uniform float glitch_intensity : hint_range(0.0, 1.0) = 0.0;
 uniform float invert_amount : hint_range(0.0, 1.0) = 0.0;
 uniform float vignette_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float screenshot_flash : hint_range(0.0, 1.0) = 0.0;
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
 
 float rand(vec2 co) {
@@ -36,6 +37,19 @@ void fragment() {
 	vec2 center = uv - 0.5;
 	float vignette = 1.0 - dot(center, center) * 2.5 * vignette_strength;
 	col *= clamp(vignette, 0.0, 1.0);
+
+	if (screenshot_flash > 0.0) {
+		float flash = screenshot_flash;
+		col = mix(col, vec3(1.0), flash * 0.85);
+
+		float border_x = step(uv.x, 0.04 * flash) + step(1.0 - 0.04 * flash, uv.x);
+		float border_y = step(uv.y, 0.06 * flash) + step(1.0 - 0.06 * flash, uv.y);
+		float border = clamp(border_x + border_y, 0.0, 1.0);
+		col = mix(col, vec3(0.9, 0.9, 0.85), border * flash);
+
+		float desat = dot(col, vec3(0.299, 0.587, 0.114));
+		col = mix(col, vec3(desat), (1.0 - flash) * 0.5);
+	}
 
 	COLOR = vec4(col, 1.0);
 }

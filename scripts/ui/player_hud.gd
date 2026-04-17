@@ -11,15 +11,15 @@ extends CanvasLayer
 @onready var glitch_overlay: ColorRect = $GlitchOverlay
 @onready var timeline_bar_container: Control = $TimelineBarContainer
 @onready var film_strip: Control = $TimelineBarContainer/FilmStrip
-@onready var pointer_marker: Control = $TimelineBarContainer/FilmStrip/PointerMarker
+@onready var pointer_line: ColorRect = $TimelineBarContainer/FilmStrip/PointerLine
 @onready var timeline_label: Label = $TimelineBarContainer/FilmStrip/TimelineLabel
-@onready var rewind_hint: Label = $TimelineBarContainer/RewindHint
+@onready var marks_container: Control = $TimelineBarContainer/FilmStrip/MarksContainer
 @onready var inventory_bar: HBoxContainer = $InventoryBar
 @onready var dig_progress_bar: Control = $DigProgress
 
 var normal_style: StyleBoxFlat
 var selected_style: StyleBoxFlat
-
+var _mark_nodes: Dictionary = {}
 var _invert_tween: Tween
 var _glitch_tween: Tween
 
@@ -59,9 +59,68 @@ func _process(_delta: float) -> void:
 	if GameState.rewind_mode_active:
 		var ratio = GameState.get_pointer_ratio()
 		var strip_w = film_strip.size.x
-		pointer_marker.position.x = ratio * strip_w - pointer_marker.size.x * 0.5
+		var strip_h = film_strip.size.y
+		pointer_line.position.x = ratio * strip_w
+		pointer_line.size.y = strip_h
+
 		var secs_ago = int((1.0 - ratio) * GameState.world_history.size() / 60.0)
 		timeline_label.text = "-%ds" % secs_ago if secs_ago > 0 else "NOW"
+		timeline_label.position.x = clampf(pointer_line.position.x + 4.0, 0.0, strip_w - 64.0)
+
+		_update_mark_nodes()
+
+func _update_mark_nodes() -> void:
+	var strip_w = film_strip.size.x
+	var strip_h = film_strip.size.y
+	var history_size = GameState.world_history.size()
+
+	var active_marks = GameState.mark_indices.duplicate()
+	var old_keys = _mark_nodes.keys()
+	for key in old_keys:
+		if not active_marks.has(key):
+			_mark_nodes[key].queue_free()
+			_mark_nodes.erase(key)
+
+	for idx in active_marks:
+		if history_size <= 1:
+			break
+		var ratio = float(idx) / float(history_size - 1)
+		var px = ratio * strip_w
+
+		if not _mark_nodes.has(idx):
+			var lbl = Label.new()
+			lbl.text = "×"
+			lbl.add_theme_color_override("font_color", Color(1, 0.4, 0.1, 1))
+			lbl.add_theme_font_size_override("font_size", 14)
+			marks_container.add_child(lbl)
+			_mark_nodes[idx] = lbl
+
+		var node = _mark_nodes[idx]
+		node.position = Vector2(px - 6.0, strip_h * 0.5 - 10.0)
+
+func show_mark_screenshot_effect() -> void:
+	var t = create_tween()
+	t.tween_method(func(v): _set_shader_param("screenshot_flash", v), 0.0, 1.0, 0.07)
+	t.tween_method(func(v): _set_shader_param("screenshot_flash", v), 1.0, 0.0, 0.55)
+
+func remove_mark_current() -> void:
+	var idx = GameState.history_index
+	GameState.mark_indices.erase(idx)
+	if _mark_nodes.has(idx):
+		_mark_nodes[idx].queue_free()
+		_mark_nodes.erase(idx)
+
+func place_or_remove_mark() -> void:
+	if not GameState.rewind_mode_active:
+		return
+	var idx = GameState.rewind_pointer_index
+	if GameState.mark_indices.has(idx):
+		GameState.mark_indices.erase(idx)
+		if _mark_nodes.has(idx):
+			_mark_nodes[idx].queue_free()
+			_mark_nodes.erase(idx)
+	else:
+		GameState.mark_indices.append(idx)
 
 func _on_time_direction_changed(dir: int) -> void:
 	if GameState.rewind_mode_active:
@@ -96,7 +155,6 @@ func _on_rewind_mode_changed(active: bool) -> void:
 		tween_ui.tween_property(prompt_label, "modulate:a", 0.0, 0.25)
 		tween_ui.tween_property(timeline_bar_container, "scale", Vector2(1.0, 1.0), 0.3).set_trans(Tween.TRANS_BACK)
 		tween_ui.tween_property(timeline_bar_container, "modulate:a", 1.0, 0.3)
-
 	else:
 		_invert_tween.tween_method(func(v): _set_shader_param("invert_amount", v),
 			_get_shader_param("invert_amount"), 0.0, 0.5)
@@ -112,6 +170,10 @@ func _on_rewind_mode_changed(active: bool) -> void:
 		tween_ui.tween_property(prompt_label, "modulate:a", 1.0, 0.3)
 		tween_ui.tween_property(timeline_bar_container, "scale", Vector2(1.0, 0.3), 0.3).set_trans(Tween.TRANS_BACK)
 		tween_ui.tween_property(timeline_bar_container, "modulate:a", 0.0, 0.2)
+
+		for key in _mark_nodes.keys():
+			_mark_nodes[key].queue_free()
+		_mark_nodes.clear()
 
 func trigger_pointer_glitch() -> void:
 	if _glitch_tween:
