@@ -3,10 +3,10 @@
 [ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
 [ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
-[ext_resource type="PackedScene" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
+[ext_resource type="PackedScene" uid="uid://df54f57tnrpkk" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
-sky_top_color = Color(0.48, 0.68, 0.95, 1)
+sky_top_color = Color(0.71349037, 0.5589468, 0.25426564, 1)
 sky_horizon_color = Color(0.78, 0.88, 0.98, 1)
 ground_bottom_color = Color(0.25, 0.45, 0.2, 1)
 ground_horizon_color = Color(0.38, 0.55, 0.3, 1)
@@ -18,7 +18,7 @@ sky_material = SubResource("SkyMat")
 background_mode = 2
 sky = SubResource("Sky")
 ambient_light_source = 3
-ambient_light_color = Color(0.78, 0.82, 0.9, 1)
+ambient_light_color = Color(0.86040014, 0.5442803, 0.42804527, 1)
 ambient_light_energy = 0.55
 tonemap_mode = 2
 

@@ -18,6 +18,7 @@ const SCALE_STEP := 0.1
 
 const LEVELS: Array[String] = [
 	"res://scenes/levels/level_01.tscn",
+	"res://scenes/levels/level_02.tscn",
 ]
 
 var time_direction: int = TIME_FORWARD

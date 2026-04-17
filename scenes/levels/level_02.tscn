@@ -1,0 +1,470 @@
+[gd_scene load_steps=21 format=3]
+
+[ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
+[ext_resource type="PackedScene" uid="uid://b8a0iv5ab4rc5" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/objects/locked_door.tscn" id="3_door"]
+[ext_resource type="PackedScene" path="res://scenes/objects/exit_door.tscn" id="4_exit"]
+[ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="5_key"]
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 1
+background_color = Color(0.01, 0.015, 0.013, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.04, 0.08, 0.06, 1)
+ambient_light_energy = 0.16
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 1.2
+glow_bloom = 0.18
+fog_enabled = true
+fog_light_color = Color(0.03, 0.08, 0.06, 1)
+fog_density = 0.055
+
+[sub_resource type="StandardMaterial3D" id="MatWall"]
+albedo_color = Color(0.28, 0.26, 0.23, 1)
+roughness = 0.97
+
+[sub_resource type="StandardMaterial3D" id="MatWallWet"]
+albedo_color = Color(0.15, 0.14, 0.12, 1)
+roughness = 0.62
+metallic = 0.08
+
+[sub_resource type="StandardMaterial3D" id="MatFloor"]
+albedo_color = Color(0.27, 0.26, 0.22, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="MatCeiling"]
+albedo_color = Color(0.2, 0.19, 0.17, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="MatWater"]
+transparency = 1
+albedo_color = Color(0.04, 0.16, 0.12, 0.76)
+roughness = 0.03
+metallic = 0.82
+
+[sub_resource type="StandardMaterial3D" id="MatRust"]
+albedo_color = Color(0.36, 0.19, 0.08, 1)
+roughness = 0.88
+metallic = 0.35
+
+[sub_resource type="StandardMaterial3D" id="MatPillar"]
+albedo_color = Color(0.32, 0.29, 0.26, 1)
+roughness = 0.94
+
+[sub_resource type="StandardMaterial3D" id="MatMoss"]
+albedo_color = Color(0.14, 0.23, 0.11, 1)
+roughness = 0.96
+
+[sub_resource type="StandardMaterial3D" id="MatRail"]
+albedo_color = Color(0.4, 0.36, 0.28, 1)
+roughness = 0.7
+metallic = 0.65
+
+[sub_resource type="StandardMaterial3D" id="MatRubble"]
+albedo_color = Color(0.23, 0.21, 0.18, 1)
+roughness = 0.98
+
+[sub_resource type="StandardMaterial3D" id="MatStallBack"]
+albedo_color = Color(0.19, 0.17, 0.14, 1)
+roughness = 0.96
+
+[sub_resource type="StandardMaterial3D" id="MatWalkway"]
+albedo_color = Color(0.34, 0.33, 0.29, 1)
+roughness = 0.84
+
+[sub_resource type="StandardMaterial3D" id="MatChannel"]
+albedo_color = Color(0.11, 0.12, 0.11, 1)
+roughness = 0.98
+
+[sub_resource type="StandardMaterial3D" id="MatGrate"]
+albedo_color = Color(0.22, 0.24, 0.23, 1)
+roughness = 0.72
+metallic = 0.55
+
+[node name="Level02" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="World" type="Node3D" parent="."]
+script = ExtResource("1_world")
+
+[node name="TunnelShell" type="CSGCombiner3D" parent="World"]
+use_collision = true
+
+[node name="WalkwayLeft" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.05, -0.1, 0)
+size = Vector3(1.9, 0.4, 56.0)
+material = SubResource("MatWalkway")
+
+[node name="WalkwayRight" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.05, -0.1, 0)
+size = Vector3(1.9, 0.4, 56.0)
+material = SubResource("MatWalkway")
+
+[node name="ChannelFloor" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.65, 0)
+size = Vector3(2.6, 0.7, 56.0)
+material = SubResource("MatChannel")
+
+[node name="WallLeft" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 2.1, 0)
+size = Vector3(0.4, 4.2, 56.0)
+material = SubResource("MatWallWet")
+
+[node name="WallRight" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 2.1, 0)
+size = Vector3(0.4, 4.2, 56.0)
+material = SubResource("MatWall")
+
+[node name="Ceiling" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.15, 0)
+size = Vector3(6.8, 0.3, 56.0)
+flip_faces = true
+material = SubResource("MatCeiling")
+
+[node name="ArchStripLeft" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(0.707, 0.707, 0, -0.707, 0.707, 0, 0, 0, 1, -2.85, 3.85, 0)
+size = Vector3(0.32, 0.32, 56.0)
+material = SubResource("MatCeiling")
+
+[node name="ArchStripRight" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(0.707, -0.707, 0, 0.707, 0.707, 0, 0, 0, 1, 2.85, 3.85, 0)
+size = Vector3(0.32, 0.32, 56.0)
+material = SubResource("MatCeiling")
+
+[node name="EndCapFar" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, -28.2)
+size = Vector3(6.8, 4.6, 0.5)
+material = SubResource("MatWallWet")
+
+[node name="EndCapNear" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 28.2)
+size = Vector3(6.8, 4.6, 0.5)
+material = SubResource("MatWall")
+
+[node name="DoorCut1" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 1.45, -14.0)
+size = Vector3(0.6, 2.9, 2.4)
+operation = 2
+
+[node name="DoorCut2" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 1.45, 2.0)
+size = Vector3(0.6, 2.9, 2.4)
+operation = 2
+
+[node name="DoorCut3" type="CSGBox3D" parent="World/TunnelShell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 1.45, 18.0)
+size = Vector3(0.6, 2.9, 2.4)
+operation = 2
+
+[node name="Stall1" type="CSGCombiner3D" parent="World"]
+use_collision = true
+
+[node name="Floor" type="CSGBox3D" parent="World/Stall1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, -0.15, -14.0)
+size = Vector3(5.2, 0.3, 4.8)
+material = SubResource("MatFloor")
+
+[node name="BackWall" type="CSGBox3D" parent="World/Stall1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.65, 2.1, -14.0)
+size = Vector3(0.4, 4.4, 5.2)
+material = SubResource("MatStallBack")
+
+[node name="SideWallN" type="CSGBox3D" parent="World/Stall1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, -16.55)
+size = Vector3(5.5, 4.4, 0.4)
+material = SubResource("MatWall")
+
+[node name="SideWallP" type="CSGBox3D" parent="World/Stall1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, -11.45)
+size = Vector3(5.5, 4.4, 0.4)
+material = SubResource("MatWall")
+
+[node name="Ceiling" type="CSGBox3D" parent="World/Stall1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, 4.15, -14.0)
+size = Vector3(5.6, 0.3, 5.2)
+flip_faces = true
+material = SubResource("MatCeiling")
+
+[node name="Stall2" type="CSGCombiner3D" parent="World"]
+use_collision = true
+
+[node name="Floor" type="CSGBox3D" parent="World/Stall2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, -0.15, 2.0)
+size = Vector3(5.2, 0.3, 4.8)
+material = SubResource("MatFloor")
+
+[node name="BackWall" type="CSGBox3D" parent="World/Stall2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.65, 2.1, 2.0)
+size = Vector3(0.4, 4.4, 5.2)
+material = SubResource("MatStallBack")
+
+[node name="SideWallN" type="CSGBox3D" parent="World/Stall2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, -0.55)
+size = Vector3(5.5, 4.4, 0.4)
+material = SubResource("MatWall")
+
+[node name="SideWallP" type="CSGBox3D" parent="World/Stall2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, 4.55)
+size = Vector3(5.5, 4.4, 0.4)
+material = SubResource("MatWall")
+
+[node name="Ceiling" type="CSGBox3D" parent="World/Stall2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, 4.15, 2.0)
+size = Vector3(5.6, 0.3, 5.2)
+flip_faces = true
+material = SubResource("MatCeiling")
+
+[node name="Stall3" type="CSGCombiner3D" parent="World"]
+use_collision = true
+
+[node name="Floor" type="CSGBox3D" parent="World/Stall3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, -0.15, 18.0)
+size = Vector3(5.2, 0.3, 4.8)
+material = SubResource("MatFloor")
+
+[node name="BackWall" type="CSGBox3D" parent="World/Stall3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.65, 2.1, 18.0)
+size = Vector3(0.4, 4.4, 5.2)
+material = SubResource("MatStallBack")
+
+[node name="SideWallN" type="CSGBox3D" parent="World/Stall3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, 15.45)
+size = Vector3(5.5, 4.4, 0.4)
+material = SubResource("MatWall")
+
+[node name="SideWallP" type="CSGBox3D" parent="World/Stall3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, 20.55)
+size = Vector3(5.5, 4.4, 0.4)
+material = SubResource("MatWall")
+
+[node name="Ceiling" type="CSGBox3D" parent="World/Stall3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, 4.15, 18.0)
+size = Vector3(5.6, 0.3, 5.2)
+flip_faces = true
+material = SubResource("MatCeiling")
+
+[node name="Pillars" type="CSGCombiner3D" parent="World"]
+use_collision = true
+
+[node name="PillarL1" type="CSGBox3D" parent="World/Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75, 2.1, -10.0)
+size = Vector3(0.35, 4.2, 0.35)
+material = SubResource("MatPillar")
+
+[node name="PillarL2" type="CSGBox3D" parent="World/Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75, 2.1, 6.0)
+size = Vector3(0.35, 4.2, 0.35)
+material = SubResource("MatPillar")
+
+[node name="PillarL3" type="CSGBox3D" parent="World/Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75, 2.1, 22.0)
+size = Vector3(0.35, 4.2, 0.35)
+material = SubResource("MatPillar")
+
+[node name="PillarR1" type="CSGBox3D" parent="World/Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.75, 2.1, -21.0)
+size = Vector3(0.35, 4.2, 0.35)
+material = SubResource("MatPillar")
+
+[node name="PillarR2" type="CSGBox3D" parent="World/Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.75, 2.1, -6.0)
+size = Vector3(0.35, 4.2, 0.35)
+material = SubResource("MatPillar")
+
+[node name="Details" type="CSGCombiner3D" parent="World"]
+use_collision = true
+
+[node name="ChannelLipLeft" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.95, 0.06, 0)
+size = Vector3(0.18, 0.16, 56.0)
+material = SubResource("MatPillar")
+
+[node name="ChannelLipRight" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.95, 0.06, 0)
+size = Vector3(0.18, 0.16, 56.0)
+material = SubResource("MatPillar")
+
+[node name="WalkwayEdgeLeft" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.92, 0.14, 0)
+size = Vector3(0.12, 0.28, 56.0)
+material = SubResource("MatPillar")
+
+[node name="WalkwayEdgeRight" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.92, 0.14, 0)
+size = Vector3(0.12, 0.28, 56.0)
+material = SubResource("MatPillar")
+
+[node name="RubblePile1" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(0.98, 0, 0.2, 0, 1, 0, -0.2, 0, 0.98, -2.0, 0.12, -20.0)
+size = Vector3(0.65, 0.25, 0.85)
+material = SubResource("MatRubble")
+
+[node name="RubblePile2" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(0.95, 0, -0.3, 0, 1, 0, 0.3, 0, 0.95, 2.1, 0.1, 9.0)
+size = Vector3(0.5, 0.2, 0.6)
+material = SubResource("MatRubble")
+
+[node name="RubblePile3" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0.09, 21.0)
+size = Vector3(0.75, 0.18, 0.5)
+material = SubResource("MatRubble")
+
+[node name="MossBlob1" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.18, 2.6, -6.0)
+size = Vector3(0.08, 1.1, 0.25)
+material = SubResource("MatMoss")
+
+[node name="MossBlob2" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.18, 1.3, 14.0)
+size = Vector3(0.08, 0.8, 0.3)
+material = SubResource("MatMoss")
+
+[node name="MossBlob3" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.18, 2.1, -16.0)
+size = Vector3(0.08, 0.9, 0.2)
+material = SubResource("MatMoss")
+
+[node name="VentGrate1" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.18, 3.2, -22.0)
+size = Vector3(0.08, 0.35, 0.6)
+material = SubResource("MatRust")
+
+[node name="VentGrate2" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.18, 3.4, 10.0)
+size = Vector3(0.08, 0.35, 0.6)
+material = SubResource("MatRust")
+
+[node name="CableBox1" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 3.7, -4.0)
+size = Vector3(0.2, 0.15, 18.0)
+material = SubResource("MatRust")
+
+[node name="DoorFrame1L" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, -15.2)
+size = Vector3(0.3, 4.2, 0.18)
+material = SubResource("MatRust")
+
+[node name="DoorFrame1R" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, -12.8)
+size = Vector3(0.3, 4.2, 0.18)
+material = SubResource("MatRust")
+
+[node name="DoorFrame2L" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, 0.8)
+size = Vector3(0.3, 4.2, 0.18)
+material = SubResource("MatRust")
+
+[node name="DoorFrame2R" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, 3.2)
+size = Vector3(0.3, 4.2, 0.18)
+material = SubResource("MatRust")
+
+[node name="DoorFrame3L" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, 16.8)
+size = Vector3(0.3, 4.2, 0.18)
+material = SubResource("MatRust")
+
+[node name="DoorFrame3R" type="CSGBox3D" parent="World/Details"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, 19.2)
+size = Vector3(0.3, 4.2, 0.18)
+material = SubResource("MatRust")
+
+[node name="Water" type="CSGBox3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28, 0)
+size = Vector3(2.15, 0.08, 53.0)
+material = SubResource("MatWater")
+
+[node name="BridgeNorth" type="CSGBox3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.02, -18.0)
+size = Vector3(2.3, 0.24, 1.3)
+material = SubResource("MatWalkway")
+
+[node name="BridgeMid" type="CSGBox3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.02, 1.5)
+size = Vector3(2.3, 0.24, 1.3)
+material = SubResource("MatWalkway")
+
+[node name="BridgeSouth" type="CSGBox3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.02, 20.0)
+size = Vector3(2.3, 0.24, 1.3)
+material = SubResource("MatWalkway")
+
+[node name="DrainGrate1" type="CSGBox3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.18, -0.35, -9.0)
+size = Vector3(0.65, 0.04, 1.2)
+material = SubResource("MatGrate")
+
+[node name="DrainGrate2" type="CSGBox3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.18, -0.35, 12.0)
+size = Vector3(0.65, 0.04, 1.2)
+material = SubResource("MatGrate")
+
+[node name="Lighting" type="Node3D" parent="World"]
+
+[node name="TunnelLight1" type="OmniLight3D" parent="World/Lighting"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, -22.0)
+light_color = Color(0.3, 0.54, 0.38, 1)
+light_energy = 1.35
+omni_range = 10.0
+shadow_enabled = true
+
+[node name="TunnelLight2" type="OmniLight3D" parent="World/Lighting"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, -7.0)
+light_color = Color(0.28, 0.48, 0.36, 1)
+light_energy = 1.0
+omni_range = 9.0
+shadow_enabled = true
+
+[node name="TunnelLight3" type="OmniLight3D" parent="World/Lighting"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 8.0)
+light_color = Color(0.24, 0.44, 0.32, 1)
+light_energy = 0.88
+omni_range = 9.5
+shadow_enabled = true
+
+[node name="TunnelLight4" type="OmniLight3D" parent="World/Lighting"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 23.0)
+light_color = Color(0.22, 0.38, 0.29, 1)
+light_energy = 0.72
+omni_range = 8.0
+shadow_enabled = true
+
+[node name="WaterGlow" type="OmniLight3D" parent="World/Lighting"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 1.5)
+light_color = Color(0.06, 0.44, 0.32, 1)
+light_energy = 0.55
+omni_range = 7.0
+
+[node name="StallLight1" type="OmniLight3D" parent="World/Lighting"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 3.6, -14.0)
+light_color = Color(0.5, 0.7, 0.36, 1)
+light_energy = 1.0
+omni_range = 6.0
+
+[node name="StallLight2" type="OmniLight3D" parent="World/Lighting"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 3.6, 2.0)
+light_color = Color(0.44, 0.64, 0.3, 1)
+light_energy = 0.85
+omni_range = 5.5
+
+[node name="StallLight3" type="OmniLight3D" parent="World/Lighting"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 3.6, 18.0)
+light_color = Color(0.38, 0.58, 0.26, 1)
+light_energy = 0.7
+omni_range = 5.0
+
+[node name="Door2" parent="World" instance=ExtResource("3_door")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.8, 1.25, 2.0)
+required_key = "key_1"
+
+[node name="KeyItem" parent="World" instance=ExtResource("5_key")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0, 0.5, -15.5)
+
+[node name="ExitDoor" parent="World" instance=ExtResource("4_exit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 27.5)
+
+[node name="Player" parent="World" instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, -24.0)

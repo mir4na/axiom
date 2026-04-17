@@ -1,10 +1,8 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene format=3 uid="uid://d1btx5xvtov5u"]
 
-[ext_resource type="Script" path="res://scripts/ui/player_hud.gd" id="1_hud"]
-[ext_resource type="Shader" path="res://shaders/glitch.gdshader" id="GlitchShader"]
-[ext_resource type="Texture2D" uid="uid://circlebg" path="res://assets/circle_bg.png" id="bg_tex"]
-[ext_resource type="Texture2D" uid="uid://circlefg" path="res://assets/circle_fg.png" id="fg_tex"]
-[ext_resource type="Script" path="res://scripts/ui/dig_circle.gd" id="dig_script"]
+[ext_resource type="Script" uid="uid://hppn4sb4bmv2" path="res://scripts/ui/player_hud.gd" id="1_hud"]
+[ext_resource type="Script" uid="uid://uvs2ahcgel2m" path="res://scripts/ui/dig_circle.gd" id="dig_script"]
+[ext_resource type="Shader" uid="uid://c2eica5ena84e" path="res://shaders/glitch.gdshader" id="GlitchShader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_glitch"]
 shader = ExtResource("GlitchShader")
@@ -16,26 +14,19 @@ shader_parameter/screenshot_flash = 0.0
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_filmstrip"]
 bg_color = Color(0.04, 0.04, 0.06, 0.95)
 border_width_left = 2
-border_width_right = 2
 border_width_top = 2
+border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.8, 0.7, 0.2, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
-corner_radius_bottom_left = 4
 corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_markbg"]
-bg_color = Color(1, 0.4, 0.1, 0.9)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_left = 2
-corner_radius_bottom_right = 2
-
-[node name="PlayerHUD" type="CanvasLayer"]
+[node name="PlayerHUD" type="CanvasLayer" unique_id=1264597277]
 script = ExtResource("1_hud")
 
-[node name="GlitchOverlay" type="ColorRect" parent="."]
+[node name="GlitchOverlay" type="ColorRect" parent="." unique_id=1845665311]
 material = SubResource("ShaderMaterial_glitch")
 anchors_preset = 15
 anchor_right = 1.0
@@ -44,8 +35,10 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="TimelineBarContainer" type="Control" parent="."]
-anchors_preset = 8
+[node name="TimelineBarContainer" type="Control" parent="." unique_id=1004871688]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 3
+anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -56,13 +49,11 @@ offset_right = 320.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0
-scale = Vector2(1.0, 0.3)
-modulate = Color(1, 1, 1, 0)
+scale = Vector2(1, 0.3)
 
-[node name="RewindHint" type="Label" parent="TimelineBarContainer"]
+[node name="RewindHint" type="Label" parent="TimelineBarContainer" unique_id=682546585]
 layout_mode = 1
-anchors_preset = 6
-anchor_left = 0.0
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -70,12 +61,13 @@ offset_top = -24.0
 offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 0
-text = "[Hold R] Past   [Hold F] Future   [X] Mark   [SPACE] JUMP"
-horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.9, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 13
+text = "[Hold R] Past   [Hold F] Future   [X] Mark   [SPACE] JUMP"
+horizontal_alignment = 1
 
-[node name="FilmStrip" type="Control" parent="TimelineBarContainer"]
+[node name="FilmStrip" type="Control" parent="TimelineBarContainer" unique_id=1667494030]
+clip_contents = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -83,19 +75,18 @@ anchor_bottom = 1.0
 offset_bottom = -28.0
 grow_horizontal = 2
 grow_vertical = 2
-clip_contents = true
 
-[node name="FilmBG" type="Panel" parent="TimelineBarContainer/FilmStrip"]
+[node name="FilmBG" type="Panel" parent="TimelineBarContainer/FilmStrip" unique_id=1330512054]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_filmstrip")
-mouse_filter = 2
 
-[node name="MarksContainer" type="Control" parent="TimelineBarContainer/FilmStrip"]
+[node name="MarksContainer" type="Control" parent="TimelineBarContainer/FilmStrip" unique_id=1085100436]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -104,41 +95,38 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PointerLine" type="ColorRect" parent="TimelineBarContainer/FilmStrip"]
+[node name="PointerLine" type="ColorRect" parent="TimelineBarContainer/FilmStrip" unique_id=235822303]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
 offset_right = 2.0
-offset_bottom = 0.0
-color = Color(1, 0.95, 0.1, 1)
 mouse_filter = 2
+color = Color(1, 0.95, 0.1, 1)
 
-[node name="TimelineLabel" type="Label" parent="TimelineBarContainer/FilmStrip"]
+[node name="TimelineLabel" type="Label" parent="TimelineBarContainer/FilmStrip" unique_id=1197540184]
 layout_mode = 0
 offset_left = 4.0
 offset_top = 4.0
 offset_right = 64.0
 offset_bottom = 20.0
-text = "NOW"
 theme_override_colors/font_color = Color(1, 0.95, 0.5, 1)
 theme_override_font_sizes/font_size = 10
+text = "NOW"
 
-[node name="PromptLabel" type="Label" parent="."]
+[node name="PromptLabel" type="Label" parent="." unique_id=1344094755]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -100.0
-offset_top = 20.0
+offset_top = 120.0
 offset_right = 100.0
-offset_bottom = 46.0
+offset_bottom = 146.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Press E to interact"
 horizontal_alignment = 1
 
-[node name="Crosshair" type="Label" parent="."]
+[node name="Crosshair" type="Label" parent="." unique_id=282870827]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -153,7 +141,7 @@ grow_vertical = 2
 text = "+"
 horizontal_alignment = 1
 
-[node name="InventoryBar" type="HBoxContainer" parent="."]
+[node name="InventoryBar" type="HBoxContainer" parent="." unique_id=28450471]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -167,35 +155,35 @@ grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
 
-[node name="Slot1" type="PanelContainer" parent="InventoryBar"]
+[node name="Slot1" type="PanelContainer" parent="InventoryBar" unique_id=1832687523]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="InventoryBar/Slot1"]
+[node name="Label" type="Label" parent="InventoryBar/Slot1" unique_id=535350285]
 layout_mode = 2
 text = "1: Empty"
 horizontal_alignment = 1
 
-[node name="Slot2" type="PanelContainer" parent="InventoryBar"]
+[node name="Slot2" type="PanelContainer" parent="InventoryBar" unique_id=2036262513]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="InventoryBar/Slot2"]
+[node name="Label" type="Label" parent="InventoryBar/Slot2" unique_id=1766480401]
 layout_mode = 2
 text = "2: Empty"
 horizontal_alignment = 1
 
-[node name="Slot3" type="PanelContainer" parent="InventoryBar"]
+[node name="Slot3" type="PanelContainer" parent="InventoryBar" unique_id=864482991]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="InventoryBar/Slot3"]
+[node name="Label" type="Label" parent="InventoryBar/Slot3" unique_id=821137336]
 layout_mode = 2
 text = "3: Empty"
 horizontal_alignment = 1
 
-[node name="DigProgress" type="Control" parent="."]
-script = ExtResource("dig_script")
+[node name="DigProgress" type="Control" parent="." unique_id=1359921087]
+layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -207,3 +195,4 @@ offset_right = 32.0
 offset_bottom = 32.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("dig_script")
