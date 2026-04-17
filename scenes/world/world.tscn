@@ -221,6 +221,15 @@ material = SubResource("MatFence")
 [node name="House" parent="." unique_id=65160958 instance=ExtResource("7_house")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -4)
 
+[node name="GuestDoorGap" parent="House/Partitions" parent_id_path=PackedInt32Array(65160958, 1022552114) index="3" unique_id=237832774]
+visible = false
+
+[node name="GuestDoorBtnOut" parent="House" index="10" unique_id=1413763975]
+visible = false
+
+[node name="GuestDoorBtnIn" parent="House" index="11" unique_id=1904349629]
+visible = false
+
 [node name="Player" parent="." unique_id=758033891 instance=ExtResource("2_player")]
 transform = Transform3D(-0.9893817, 0, 0.14534062, 0, 1, 0, -0.14534062, 0, -0.9893817, 8.660072, 0.16559601, -7.59978)
 
@@ -1367,3 +1376,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.461405, 0, 14.975068)
 
 [node name="DigSpot5" parent="." unique_id=676412522 instance=ExtResource("9_dig")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.002481, 0, -11.203118)
+
+[editable path="House"]

@@ -49,8 +49,10 @@ func _ready() -> void:
 	GameState.world_scaled.connect(_on_world_scaled)
 	GameState.world_rotated.connect(_on_world_rotated)
 	GameState.inventory_changed.connect(_on_inventory_changed)
+	_apply_player_spawn()
 	if not _is_world_intro_scene():
 		return
+	_configure_world_house()
 	_collect_dig_spots()
 	_total_dig_spots = _dig_spots.size()
 	GameState.reset_world_state()
@@ -203,6 +205,59 @@ func _collect_dig_spots() -> void:
 			_dig_spots.append(child)
 			if child.has_signal("dig_completed"):
 				child.dig_completed.connect(_on_dig_spot_completed)
+
+func _apply_player_spawn() -> void:
+	if player == null:
+		return
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		return
+	if current_scene.scene_file_path != LEVEL_ONE_SCENE_PATH:
+		return
+	var spawner := current_scene.get_node_or_null("PlayerSpawner") as Marker3D
+	if spawner == null:
+		spawner = current_scene.get_node_or_null("PlayerSpawn") as Marker3D
+	if spawner == null:
+		return
+	_player_spawn_position = spawner.global_position
+	_player_spawn_rotation_y = spawner.global_rotation.y
+	player.global_position = _player_spawn_position
+	player.rotation.y = _player_spawn_rotation_y
+
+func _configure_world_house() -> void:
+	var house := get_node_or_null("House")
+	if house == null:
+		return
+	var guest_door_gap := house.get_node_or_null("GuestDoorGap") as CSGBox3D
+	var guest_door = house.get_node_or_null("GuestDoor")
+	var guest_btn_out = house.get_node_or_null("GuestDoorBtnOut")
+	var guest_btn_in = house.get_node_or_null("GuestDoorBtnIn")
+	if guest_door_gap != null:
+		guest_door_gap.operation = CSGShape3D.OPERATION_UNION
+		guest_door_gap.material = _make_house_wall_material()
+	if guest_door != null:
+		guest_door.visible = false
+		guest_door.process_mode = Node.PROCESS_MODE_DISABLED
+		var guest_door_collision = guest_door.get_node_or_null("Collision") as CollisionShape3D
+		if guest_door_collision != null:
+			guest_door_collision.disabled = true
+	if guest_btn_out != null:
+		guest_btn_out.visible = false
+		guest_btn_out.process_mode = Node.PROCESS_MODE_DISABLED
+		var guest_btn_out_collision = guest_btn_out.get_node_or_null("Collision") as CollisionShape3D
+		if guest_btn_out_collision != null:
+			guest_btn_out_collision.disabled = true
+	if guest_btn_in != null:
+		guest_btn_in.visible = false
+		guest_btn_in.process_mode = Node.PROCESS_MODE_DISABLED
+		var guest_btn_in_collision = guest_btn_in.get_node_or_null("Collision") as CollisionShape3D
+		if guest_btn_in_collision != null:
+			guest_btn_in_collision.disabled = true
+
+func _make_house_wall_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.92, 0.88, 0.82, 1.0)
+	return mat
 
 func _set_intro_lock(locked: bool) -> void:
 	_intro_running = locked
