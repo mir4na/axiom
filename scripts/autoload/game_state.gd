@@ -9,6 +9,7 @@ signal paused(state: bool)
 signal inventory_changed
 signal ui_updated
 signal rewind_mode_changed(active: bool)
+signal axiom_equipped_changed
 
 const TIME_FORWARD := 1
 const TIME_REWIND := -1
@@ -38,6 +39,8 @@ const TIMELINE_MAX: float = 100.0
 
 var slots: Array[String] = ["", "", ""]
 var selected_slot: int = 0
+var axiom_equipped: bool = false
+var recording_enabled: bool = true
 
 var rewind_mode_active: bool = false
 var rewind_pointer_index: int = -1
@@ -47,6 +50,9 @@ func _physics_process(_delta: float) -> void:
 		return
 
 	if rewind_mode_active:
+		return
+
+	if not recording_enabled:
 		return
 
 	var actors = get_tree().get_nodes_in_group("time_actor")
@@ -211,6 +217,7 @@ func reset_world_state() -> void:
 func full_reset_inventory() -> void:
 	slots = ["", "", ""]
 	selected_slot = 0
+	axiom_equipped = false
 	inventory_changed.emit()
 	ui_updated.emit()
 
@@ -225,6 +232,27 @@ func add_item(item_id: String) -> bool:
 			inventory_changed.emit()
 			return true
 	return false
+
+func consume_item(item_id: String) -> bool:
+	for i in range(slots.size()):
+		if slots[i] == item_id:
+			slots[i] = ""
+			inventory_changed.emit()
+			return true
+	return false
+
+func equip_axiom() -> void:
+	if axiom_equipped:
+		return
+	axiom_equipped = true
+	recording_enabled = true
+	world_history.clear()
+	history_index = -1
+	rewind_pointer_index = -1
+	mark_indices.clear()
+	timeline_position = 0.0
+	axiom_equipped_changed.emit()
+	ui_updated.emit()
 
 func consume_selected() -> String:
 	var item = slots[selected_slot]

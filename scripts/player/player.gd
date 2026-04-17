@@ -340,7 +340,7 @@ func _drop_item() -> void:
 		a.global_position = head.global_position - head.global_transform.basis.z * 1.5
 
 func _can_use_axiom() -> bool:
-	return GameState.selected_slot >= 0 and GameState.selected_slot < GameState.slots.size() and GameState.slots[GameState.selected_slot] == "Axiom"
+	return GameState.axiom_equipped
 
 func set_cinematic_lock(active: bool) -> void:
 	cinematic_locked = active

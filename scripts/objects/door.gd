@@ -1,5 +1,8 @@
 extends AnimatableBody3D
 
+signal opened
+signal closed
+
 var is_open: bool = false
 var is_moving: bool = false
 var original_position: Vector3
@@ -25,6 +28,7 @@ func _open_door() -> void:
 	await tween.finished
 	is_open = true
 	is_moving = false
+	opened.emit()
 
 func _close_door() -> void:
 	is_moving = true
@@ -33,3 +37,4 @@ func _close_door() -> void:
 	await tween.finished
 	is_open = false
 	is_moving = false
+	closed.emit()
