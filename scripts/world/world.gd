@@ -72,10 +72,12 @@ func _process(delta: float) -> void:
 	_pulse_time += delta * 3.6
 
 	if _objective_state == "scoop" and is_instance_valid(shovel):
+		_update_target_highlight()
 		_update_scoop_hint()
 	else:
 		_hint_marker.visible = false
 		_hint_label.visible = false
+		_clear_target_highlight()
 
 func _on_world_scaled(scale_factor: float) -> void:
 	_target_scale = scale_factor
@@ -295,6 +297,15 @@ func _update_scoop_hint() -> void:
 	_hint_label.text = "SCOOP %.1fm" % distance
 	_hint_label.position = screen_target + Vector2(16.0, -14.0)
 	_hint_label.visible = true
+
+func _update_target_highlight() -> void:
+	if shovel != null and is_instance_valid(shovel) and shovel.has_method("set_highlight_enabled") and shovel.has_method("set_highlight_strength"):
+		shovel.set_highlight_enabled(true)
+		shovel.set_highlight_strength(0.55 + (sin(_pulse_time * 1.35) * 0.5 + 0.5) * 0.7)
+
+func _clear_target_highlight() -> void:
+	if shovel != null and is_instance_valid(shovel) and shovel.has_method("set_highlight_enabled"):
+		shovel.set_highlight_enabled(false)
 
 func _get_screen_hint_target(world_target: Vector3, viewport_size: Vector2) -> Vector2:
 	if not player_camera.is_position_behind(world_target):

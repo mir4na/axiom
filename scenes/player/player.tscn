@@ -7508,7 +7508,6 @@ bones/44/rotation = Quaternion(-0.59926534, -0.007764767, 0.029895777, 0.7999544
 bones/44/scale = Vector3(0.9999992, 1.0000014, 0.99999845)
 
 [node name="body_001" type="MeshInstance3D" parent="root/Skeleton3D" unique_id=2090604155]
-layers = 2
 mesh = SubResource("ArrayMesh_dovo2")
 skin = SubResource("Skin_gmlin")
 skeleton = NodePath("..")
@@ -7522,7 +7521,6 @@ bone_idx = 12
 transform = Transform3D(-0.9999999, -7.450581e-09, -8.940697e-08, -1.4901161e-08, 1, -2.9802322e-08, 8.940697e-08, 2.9802322e-08, -1, 0.024338715, 0.067745745, 0.13831139)
 
 [node name="Camera3D" type="Camera3D" parent="root/Skeleton3D/BoneAttachment3D/Head" unique_id=901234003]
-cull_mask = 1048573
 
 [node name="InteractionRay" type="RayCast3D" parent="root/Skeleton3D/BoneAttachment3D/Head/Camera3D" unique_id=901234004]
 transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, 0, 0, 0)

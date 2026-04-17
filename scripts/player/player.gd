@@ -19,7 +19,8 @@ extends CharacterBody3D
 @onready var skeleton: Skeleton3D = $"root/Skeleton3D"
 
 var _hitbox_pairs: Array = []
-
+var _camera_collision_shape: SphereShape3D
+var _camera_collision_query: PhysicsShapeQueryParameters3D
 
 var camera_x_rotation: float = 0.0
 var _smoothed_head_y: float = 0.0
@@ -36,6 +37,11 @@ func _ready() -> void:
 	_camera_origin_offset = to_local(camera.global_position)
 	_smoothed_head_y = camera.global_position.y
 	camera.set_as_top_level(true)
+	_camera_collision_shape = SphereShape3D.new()
+	_camera_collision_shape.radius = 0.15
+	_camera_collision_query = PhysicsShapeQueryParameters3D.new()
+	_camera_collision_query.shape = _camera_collision_shape
+	_camera_collision_query.exclude = [self.get_rid()]
 	
 	_hitbox_pairs.clear()
 	for child in skeleton.get_children():
@@ -55,8 +61,8 @@ func _sync_hitboxes(delta: float) -> void:
 	# Advanced anti-clip camera logic using Sphere Cast (thick ray)
 	# Decouple raw target from raw bone to completely negate side-to-side animation jitter tracking
 	var current_offset = _camera_origin_offset
-	#current_offset.z -= 0.10
-	#current_offset.y += 0.05
+	current_offset.z -= 0.22
+	current_offset.y += 0.04
 	
 	# if is_crouching:
 	# 	current_offset.y -= (normal_height - crouch_height)
@@ -76,19 +82,13 @@ func _sync_hitboxes(delta: float) -> void:
 	center_pos.y = target_pos.y
 	
 	var space_state = get_world_3d().direct_space_state
-	var shape = SphereShape3D.new()
-	shape.radius = 0.15 # roughly size of head/camera near-plane padding
+	_camera_collision_query.transform = Transform3D(Basis(), center_pos)
+	_camera_collision_query.motion = target_pos - center_pos
 	
-	var query = PhysicsShapeQueryParameters3D.new()
-	query.shape = shape
-	query.transform = Transform3D(Basis(), center_pos)
-	query.motion = target_pos - center_pos
-	query.exclude = [self.get_rid()]
-	
-	var result = space_state.cast_motion(query)
+	var result = space_state.cast_motion(_camera_collision_query)
 	if result.size() == 2:
 		var safe_fraction = result[0]
-		camera.global_position = center_pos + query.motion * safe_fraction
+		camera.global_position = center_pos + _camera_collision_query.motion * safe_fraction
 	else:
 		camera.global_position = target_pos
 		
