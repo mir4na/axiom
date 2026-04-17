@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://1errma2o8an2"]
 
+[ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
 [ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
@@ -94,6 +95,7 @@ size = Vector3(43, 10, 1)
 size = Vector3(1, 10, 35)
 
 [node name="World" type="Node3D" unique_id=921239400]
+script = ExtResource("1_world")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=745126488]
 environment = SubResource("Env")
