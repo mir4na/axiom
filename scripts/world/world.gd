@@ -47,6 +47,7 @@ var _wake_overlay: ColorRect
 var _blink_overlay: ColorRect
 var _fade_overlay: ColorRect
 var _white_overlay: ColorRect
+var _glitch_overlay: ColorRect
 var _subtitle_label: Label
 var _objective_panel: PanelContainer
 var _objective_label: Label
@@ -66,6 +67,7 @@ func _ready() -> void:
 	GameState.inventory_changed.connect(_on_inventory_changed)
 	_apply_player_spawn()
 	if _is_level_one_scene():
+		_configure_level_one_house()
 		if player_hud != null:
 			player_hud.visible = true
 		if GameState.has_meta(LEVEL_ONE_WHITE_META) and bool(GameState.get_meta(LEVEL_ONE_WHITE_META)):
@@ -160,6 +162,15 @@ func _create_intro_ui() -> void:
 	_white_overlay.modulate.a = 0.0
 	_intro_ui.add_child(_white_overlay)
 
+	_glitch_overlay = ColorRect.new()
+	_glitch_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_glitch_overlay.color = Color(1, 1, 1, 1)
+	var glitch_material := ShaderMaterial.new()
+	glitch_material.shader = load("res://shaders/arrival_glitch.gdshader")
+	_glitch_overlay.material = glitch_material
+	_glitch_overlay.visible = false
+	_intro_ui.add_child(_glitch_overlay)
+
 	_top_bar = ColorRect.new()
 	_top_bar.anchor_left = 0.0
 	_top_bar.anchor_top = 0.0
@@ -250,7 +261,7 @@ func _create_intro_ui() -> void:
 	_loading_label.anchor_bottom = 1.0
 	_loading_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_loading_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_loading_label.add_theme_font_size_override("font_size", 34)
+	_loading_label.add_theme_font_size_override("font_size", 120)
 	_loading_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
 	_loading_label.visible = false
 	_intro_ui.add_child(_loading_label)
@@ -356,6 +367,21 @@ func _cache_world_targets() -> void:
 	_sofa_target = house.get_node_or_null("Living/Sofa") as Node3D
 	_window_target = house.get_node_or_null("Shell/Win2") as Node3D
 
+func _configure_level_one_house() -> void:
+	if house == null:
+		return
+	for node_name in ["Glass1", "Glass2"]:
+		var glass := house.get_node_or_null(node_name) as CSGBox3D
+		if glass == null:
+			continue
+		var material := glass.material
+		if material is StandardMaterial3D:
+			var copy := material.duplicate() as StandardMaterial3D
+			copy.albedo_color = Color(0.72, 0.8, 0.88, 0.82)
+			copy.roughness = 0.9
+			copy.metallic = 0.15
+			glass.material = copy
+
 func _apply_player_spawn() -> void:
 	if player == null:
 		return
@@ -452,12 +478,29 @@ func _play_intro_sequence() -> void:
 func _play_level_one_arrival() -> void:
 	if player_hud != null:
 		player_hud.visible = false
+	if player != null:
+		player.visible = true
+	if player_camera != null:
+		player_camera.make_current()
 	if _white_overlay != null:
 		_white_overlay.modulate.a = 1.0
+	if _glitch_overlay != null:
+		_glitch_overlay.visible = true
+		_glitch_overlay.modulate.a = 1.0
+		_set_arrival_glitch_strength(0.95)
 	if _fade_overlay != null:
 		_fade_overlay.modulate.a = 0.0
 	await get_tree().process_frame
-	await _fade_white(0.0, 1.8)
+	await get_tree().process_frame
+	var arrival_tween := create_tween()
+	if _white_overlay != null:
+		arrival_tween.tween_property(_white_overlay, "modulate:a", 0.0, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	arrival_tween.parallel().tween_method(_set_arrival_glitch_strength, 0.95, 0.0, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if _glitch_overlay != null:
+		arrival_tween.parallel().tween_property(_glitch_overlay, "modulate:a", 0.0, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await arrival_tween.finished
+	if _glitch_overlay != null:
+		_glitch_overlay.visible = false
 	_set_intro_lock(false)
 	if player_hud != null:
 		player_hud.visible = true
@@ -683,6 +726,9 @@ func _finish_world_phase() -> void:
 func _play_rest_cinematic() -> void:
 	if _sofa_interactable != null:
 		_sofa_interactable.set_interactable_enabled(false)
+	_objective_state = ""
+	if player != null:
+		player.visible = false
 	_objective_panel.visible = false
 	_hint_marker.visible = false
 	_hint_label.visible = false
@@ -693,7 +739,9 @@ func _play_rest_cinematic() -> void:
 	await _drop_to_sofa_pov()
 	await _show_subtitle("I just need to close my eyes for a moment.", 2.1)
 	await _fade_black(1.0, 1.6)
+	await get_tree().create_timer(2).timeout
 	await _play_loading_dots()
+	_set_world_night_state()
 	_activate_window_camera()
 	await _fade_black(0.0, 1.4)
 	await get_tree().create_timer(3.2).timeout
@@ -767,7 +815,7 @@ func _drop_to_sofa_pov() -> void:
 		return
 	var start_transform := player_camera.global_transform if player_camera != null else _intro_camera.global_transform
 	var sofa_eye := _sofa_target.to_global(Vector3(0.0, -0.82, -0.18))
-	var sofa_focus := _sofa_target.to_global(Vector3(0.0, -0.95, 1.35))
+	var sofa_focus := _sofa_target.to_global(Vector3(0.0, 1.25, 0.45))
 	var end_transform := Transform3D(Basis(), sofa_eye).looking_at(sofa_focus, Vector3.UP)
 	_intro_camera.global_transform = start_transform
 	_intro_camera.make_current()
@@ -793,6 +841,26 @@ func _fade_white(target_alpha: float, duration: float) -> void:
 	var tween := create_tween()
 	tween.tween_property(_white_overlay, "modulate:a", target_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await tween.finished
+
+func _set_arrival_glitch_strength(value: float) -> void:
+	if _glitch_overlay != null and _glitch_overlay.material is ShaderMaterial:
+		_glitch_overlay.material.set_shader_parameter("glitch_strength", value)
+
+func _set_world_night_state() -> void:
+	var world_environment := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if world_environment != null and world_environment.environment != null and world_environment.environment.sky != null:
+		var sky_material := world_environment.environment.sky.sky_material
+		if sky_material is ProceduralSkyMaterial:
+			sky_material.sky_top_color = Color(0.02, 0.02, 0.08, 1.0)
+			sky_material.sky_horizon_color = Color(0.06, 0.08, 0.16, 1.0)
+			sky_material.ground_bottom_color = Color(0.01, 0.01, 0.03, 1.0)
+			sky_material.ground_horizon_color = Color(0.03, 0.04, 0.08, 1.0)
+		world_environment.environment.ambient_light_color = Color(0.12, 0.13, 0.2, 1.0)
+		world_environment.environment.ambient_light_energy = 0.18
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	if sun != null:
+		sun.light_color = Color(0.34, 0.42, 0.62, 1.0)
+		sun.light_energy = 0.18
 
 func _set_cinematic_bars(visible: bool, duration: float) -> void:
 	if _top_bar == null or _bottom_bar == null:
