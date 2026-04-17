@@ -11,13 +11,16 @@ const INTRO_LINES := [
 ]
 const SCOOP_OBJECTIVE := "OBJECTIVE: Pick up the scoop"
 const DIG_OBJECTIVE := "OBJECTIVE: Bury the old stuff"
+const REST_OBJECTIVE := "OBJECTIVE: Rest on the sofa"
 const WORLD_SCENE_PATH := "res://scenes/world/world.tscn"
 const LEVEL_ONE_SCENE_PATH := "res://scenes/levels/level_01.tscn"
+const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 
 @onready var player: CharacterBody3D = get_node_or_null("Player") as CharacterBody3D
 @onready var player_camera: Camera3D = get_node_or_null("Player/root/Skeleton3D/BoneAttachment3D/Head/Camera3D") as Camera3D
 @onready var player_hud: CanvasLayer = get_node_or_null("Player/PlayerHUD") as CanvasLayer
 @onready var shovel: Node3D = get_node_or_null("Shovel") as Node3D
+@onready var house: Node3D = get_node_or_null("House") as Node3D
 
 var _target_scale: float = 1.0
 var _yaw: float = 0.0
@@ -34,30 +37,54 @@ var _total_dig_spots: int = 0
 var _completed_dig_spots: int = 0
 var _transition_started: bool = false
 var _dig_spots: Array[Node3D] = []
+var _sofa_target: Node3D
+var _window_target: Node3D
+var _sofa_interactable
 
 var _intro_ui: CanvasLayer
 var _intro_camera: Camera3D
 var _wake_overlay: ColorRect
 var _blink_overlay: ColorRect
+var _fade_overlay: ColorRect
+var _white_overlay: ColorRect
 var _subtitle_label: Label
 var _objective_panel: PanelContainer
 var _objective_label: Label
 var _hint_marker: ColorRect
 var _hint_label: Label
+var _loading_label: Label
+var _top_bar: ColorRect
+var _bottom_bar: ColorRect
+var _sofa_aura: MeshInstance3D
+var _sofa_light: OmniLight3D
+var _meteor: MeshInstance3D
+var _meteor_light: OmniLight3D
 
 func _ready() -> void:
 	GameState.world_scaled.connect(_on_world_scaled)
 	GameState.world_rotated.connect(_on_world_rotated)
 	GameState.inventory_changed.connect(_on_inventory_changed)
 	_apply_player_spawn()
+	if _is_level_one_scene():
+		if player_hud != null:
+			player_hud.visible = true
+		if GameState.has_meta(LEVEL_ONE_WHITE_META) and bool(GameState.get_meta(LEVEL_ONE_WHITE_META)):
+			_create_intro_ui()
+			_set_intro_lock(true)
+			call_deferred("_play_level_one_arrival")
+		return
 	if not _is_world_intro_scene():
 		return
 	_configure_world_house()
+	_cache_world_targets()
 	_collect_dig_spots()
 	_total_dig_spots = _dig_spots.size()
 	GameState.reset_world_state()
 	_create_intro_ui()
 	_create_intro_camera()
+	_create_sofa_interactable()
+	_create_sofa_highlight()
+	_create_meteor_nodes()
 	_prepare_world_phase()
 	_set_intro_lock(true)
 	call_deferred("_play_intro_sequence")
@@ -79,12 +106,15 @@ func _process(delta: float) -> void:
 		_update_intro_camera_motion()
 
 	if _objective_state == "scoop" and is_instance_valid(shovel):
-		_update_target_highlight()
-		_update_scoop_hint()
+		_update_shovel_highlight()
+		_update_hint_marker(shovel.global_position + Vector3(0.0, 1.1, 0.0), "SCOOP", shovel.global_position)
+	elif _objective_state == "rest" and is_instance_valid(_sofa_target):
+		_update_sofa_highlight()
+		_update_hint_marker(_sofa_target.global_position + Vector3(0.0, -0.8, 0.25), "SOFA", _sofa_target.global_position)
 	else:
 		_hint_marker.visible = false
 		_hint_label.visible = false
-		_clear_target_highlight()
+		_clear_target_highlights()
 
 func _on_world_scaled(scale_factor: float) -> void:
 	_target_scale = scale_factor
@@ -117,6 +147,44 @@ func _create_intro_ui() -> void:
 	_blink_overlay.color = Color(0, 0, 0, 1)
 	_blink_overlay.modulate.a = 1.0
 	_intro_ui.add_child(_blink_overlay)
+
+	_fade_overlay = ColorRect.new()
+	_fade_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fade_overlay.color = Color(0, 0, 0, 1)
+	_fade_overlay.modulate.a = 0.0
+	_intro_ui.add_child(_fade_overlay)
+
+	_white_overlay = ColorRect.new()
+	_white_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_white_overlay.color = Color(1, 1, 1, 1)
+	_white_overlay.modulate.a = 0.0
+	_intro_ui.add_child(_white_overlay)
+
+	_top_bar = ColorRect.new()
+	_top_bar.anchor_left = 0.0
+	_top_bar.anchor_top = 0.0
+	_top_bar.anchor_right = 1.0
+	_top_bar.anchor_bottom = 0.0
+	_top_bar.offset_left = 0.0
+	_top_bar.offset_top = 0.0
+	_top_bar.offset_right = 0.0
+	_top_bar.offset_bottom = 0.0
+	_top_bar.color = Color(0, 0, 0, 1)
+	_top_bar.visible = false
+	_intro_ui.add_child(_top_bar)
+
+	_bottom_bar = ColorRect.new()
+	_bottom_bar.anchor_left = 0.0
+	_bottom_bar.anchor_top = 1.0
+	_bottom_bar.anchor_right = 1.0
+	_bottom_bar.anchor_bottom = 1.0
+	_bottom_bar.offset_left = 0.0
+	_bottom_bar.offset_top = 0.0
+	_bottom_bar.offset_right = 0.0
+	_bottom_bar.offset_bottom = 0.0
+	_bottom_bar.color = Color(0, 0, 0, 1)
+	_bottom_bar.visible = false
+	_intro_ui.add_child(_bottom_bar)
 
 	_objective_panel = PanelContainer.new()
 	_objective_panel.anchor_left = 0.0
@@ -157,9 +225,7 @@ func _create_intro_ui() -> void:
 	_subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_subtitle_label.visible = false
 	_subtitle_label.add_theme_font_size_override("font_size", 28)
-	_subtitle_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96, 1.0))
-	_subtitle_label.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.02, 0.9))
-	_subtitle_label.add_theme_constant_override("outline_size", 12)
+	_set_subtitle_palette(false)
 	_intro_ui.add_child(_subtitle_label)
 
 	_hint_marker = ColorRect.new()
@@ -177,6 +243,18 @@ func _create_intro_ui() -> void:
 	_hint_label.add_theme_constant_override("outline_size", 10)
 	_intro_ui.add_child(_hint_label)
 
+	_loading_label = Label.new()
+	_loading_label.anchor_left = 0.0
+	_loading_label.anchor_top = 0.0
+	_loading_label.anchor_right = 1.0
+	_loading_label.anchor_bottom = 1.0
+	_loading_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_loading_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_loading_label.add_theme_font_size_override("font_size", 34)
+	_loading_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
+	_loading_label.visible = false
+	_intro_ui.add_child(_loading_label)
+
 func _create_intro_camera() -> void:
 	_intro_camera = Camera3D.new()
 	_intro_camera.name = "IntroCamera"
@@ -184,6 +262,71 @@ func _create_intro_camera() -> void:
 	_intro_camera.position = _intro_camera_position
 	_intro_camera.look_at(_intro_camera_target, Vector3.FORWARD)
 	add_child(_intro_camera)
+
+func _create_sofa_interactable() -> void:
+	if _sofa_target == null:
+		return
+	_sofa_interactable = StaticBody3D.new()
+	_sofa_interactable.name = "SofaInteractable"
+	_sofa_interactable.set_script(load("res://scripts/objects/sofa_rest.gd"))
+	_sofa_interactable.collision_layer = 1
+	_sofa_interactable.collision_mask = 1
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(3.8, 1.3, 1.9)
+	collision.shape = shape
+	_sofa_interactable.add_child(collision)
+	_sofa_interactable.position = Vector3(0.0, -1.25, 0.2)
+	_sofa_target.add_child(_sofa_interactable)
+	_sofa_interactable.rest_requested.connect(_on_sofa_rest_requested)
+	_sofa_interactable.set_interactable_enabled(false)
+
+func _create_sofa_highlight() -> void:
+	if _sofa_target == null:
+		return
+	_sofa_aura = MeshInstance3D.new()
+	var aura_mesh := BoxMesh.new()
+	aura_mesh.size = Vector3(4.4, 1.6, 2.25)
+	_sofa_aura.mesh = aura_mesh
+	var aura_mat := ShaderMaterial.new()
+	aura_mat.shader = load("res://shaders/objective_highlight.gdshader")
+	aura_mat.set_shader_parameter("glow_color", Color(1.0, 0.72, 0.38, 1.0))
+	aura_mat.set_shader_parameter("highlight_strength", 0.0)
+	_sofa_aura.material_override = aura_mat
+	_sofa_aura.position = Vector3(0.0, -1.32, 0.32)
+	_sofa_aura.visible = false
+	_sofa_target.add_child(_sofa_aura)
+
+	_sofa_light = OmniLight3D.new()
+	_sofa_light.position = Vector3(0.0, -1.0, 0.2)
+	_sofa_light.light_color = Color(1.0, 0.66, 0.28, 1.0)
+	_sofa_light.light_energy = 0.0
+	_sofa_light.omni_range = 4.8
+	_sofa_light.visible = false
+	_sofa_target.add_child(_sofa_light)
+
+func _create_meteor_nodes() -> void:
+	_meteor = MeshInstance3D.new()
+	var meteor_mesh := SphereMesh.new()
+	meteor_mesh.radius = 0.22
+	_meteor.mesh = meteor_mesh
+	var meteor_mat := StandardMaterial3D.new()
+	meteor_mat.emission_enabled = true
+	meteor_mat.emission = Color(1.0, 0.46, 0.12, 1.0)
+	meteor_mat.emission_energy_multiplier = 9.0
+	meteor_mat.albedo_color = Color(1.0, 0.68, 0.25, 1.0)
+	meteor_mat.metallic = 0.15
+	meteor_mat.roughness = 0.18
+	_meteor.material_override = meteor_mat
+	_meteor.visible = false
+	add_child(_meteor)
+
+	_meteor_light = OmniLight3D.new()
+	_meteor_light.light_color = Color(1.0, 0.58, 0.2, 1.0)
+	_meteor_light.light_energy = 0.0
+	_meteor_light.omni_range = 8.0
+	_meteor_light.visible = false
+	add_child(_meteor_light)
 
 func _prepare_world_phase() -> void:
 	GameState.full_reset_inventory()
@@ -194,6 +337,7 @@ func _prepare_world_phase() -> void:
 	GameState.rewind_pointer_index = -1
 	_completed_dig_spots = 0
 	_objective_state = ""
+	_transition_started = false
 	if player != null:
 		player.global_position = _player_spawn_position
 		player.rotation.y = _player_spawn_rotation_y
@@ -206,6 +350,12 @@ func _collect_dig_spots() -> void:
 			if child.has_signal("dig_completed"):
 				child.dig_completed.connect(_on_dig_spot_completed)
 
+func _cache_world_targets() -> void:
+	if house == null:
+		return
+	_sofa_target = house.get_node_or_null("Living/Sofa") as Node3D
+	_window_target = house.get_node_or_null("Shell/Win2") as Node3D
+
 func _apply_player_spawn() -> void:
 	if player == null:
 		return
@@ -216,6 +366,8 @@ func _apply_player_spawn() -> void:
 		return
 	var spawner := current_scene.get_node_or_null("PlayerSpawner") as Marker3D
 	if spawner == null:
+		spawner = current_scene.get_node_or_null("SpawnPlayer") as Marker3D
+	if spawner == null:
 		spawner = current_scene.get_node_or_null("PlayerSpawn") as Marker3D
 	if spawner == null:
 		return
@@ -225,10 +377,9 @@ func _apply_player_spawn() -> void:
 	player.rotation.y = _player_spawn_rotation_y
 
 func _configure_world_house() -> void:
-	var house := get_node_or_null("House")
 	if house == null:
 		return
-	var guest_door_gap := house.get_node_or_null("GuestDoorGap") as CSGBox3D
+	var guest_door_gap := house.get_node_or_null("Partitions/GuestDoorGap") as CSGBox3D
 	var guest_door = house.get_node_or_null("GuestDoor")
 	var guest_btn_out = house.get_node_or_null("GuestDoorBtnOut")
 	var guest_btn_in = house.get_node_or_null("GuestDoorBtnIn")
@@ -238,19 +389,19 @@ func _configure_world_house() -> void:
 	if guest_door != null:
 		guest_door.visible = false
 		guest_door.process_mode = Node.PROCESS_MODE_DISABLED
-		var guest_door_collision = guest_door.get_node_or_null("Collision") as CollisionShape3D
+		var guest_door_collision := guest_door.get_node_or_null("Collision") as CollisionShape3D
 		if guest_door_collision != null:
 			guest_door_collision.disabled = true
 	if guest_btn_out != null:
 		guest_btn_out.visible = false
 		guest_btn_out.process_mode = Node.PROCESS_MODE_DISABLED
-		var guest_btn_out_collision = guest_btn_out.get_node_or_null("Collision") as CollisionShape3D
+		var guest_btn_out_collision := guest_btn_out.get_node_or_null("Collision") as CollisionShape3D
 		if guest_btn_out_collision != null:
 			guest_btn_out_collision.disabled = true
 	if guest_btn_in != null:
 		guest_btn_in.visible = false
 		guest_btn_in.process_mode = Node.PROCESS_MODE_DISABLED
-		var guest_btn_in_collision = guest_btn_in.get_node_or_null("Collision") as CollisionShape3D
+		var guest_btn_in_collision := guest_btn_in.get_node_or_null("Collision") as CollisionShape3D
 		if guest_btn_in_collision != null:
 			guest_btn_in_collision.disabled = true
 
@@ -297,6 +448,22 @@ func _play_intro_sequence() -> void:
 	_objective_state = "scoop"
 	await _show_subtitle("I should grab the scoop before I start digging.", 2.5)
 	_set_intro_lock(false)
+
+func _play_level_one_arrival() -> void:
+	if player_hud != null:
+		player_hud.visible = false
+	if _white_overlay != null:
+		_white_overlay.modulate.a = 1.0
+	if _fade_overlay != null:
+		_fade_overlay.modulate.a = 0.0
+	await get_tree().process_frame
+	await _fade_white(0.0, 1.8)
+	_set_intro_lock(false)
+	if player_hud != null:
+		player_hud.visible = true
+	if _intro_ui != null:
+		_intro_ui.queue_free()
+	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
 
 func _activate_intro_camera() -> void:
 	if _intro_camera == null:
@@ -421,33 +588,51 @@ func _update_objective_text() -> void:
 		_show_objective(SCOOP_OBJECTIVE)
 	elif _objective_state == "dig":
 		_show_objective("%s %d/%d" % [DIG_OBJECTIVE, _completed_dig_spots, _total_dig_spots])
+	elif _objective_state == "rest":
+		_show_objective(REST_OBJECTIVE)
 
-func _update_scoop_hint() -> void:
-	if shovel == null or not is_instance_valid(shovel) or player_camera == null or player == null:
+func _update_hint_marker(world_target: Vector3, label_text: String, distance_target: Vector3) -> void:
+	if player_camera == null or player == null:
 		_hint_marker.visible = false
 		_hint_label.visible = false
 		return
-	var target_position := shovel.global_position + Vector3(0.0, 1.1, 0.0)
 	var viewport_size := get_viewport().get_visible_rect().size
-	var screen_target := _get_screen_hint_target(target_position, viewport_size)
+	var screen_target := _get_screen_hint_target(world_target, viewport_size)
 	var pulse := 1.0 + sin(_pulse_time) * 0.14
 	var marker_size := Vector2.ONE * 16.0 * pulse
 	_hint_marker.size = marker_size
 	_hint_marker.position = screen_target - marker_size * 0.5
 	_hint_marker.visible = true
-	var distance := player.global_position.distance_to(shovel.global_position)
-	_hint_label.text = "SCOOP %.1fm" % distance
+	var distance := player.global_position.distance_to(distance_target)
+	_hint_label.text = "%s %.1fm" % [label_text, distance]
 	_hint_label.position = screen_target + Vector2(16.0, -14.0)
 	_hint_label.visible = true
 
-func _update_target_highlight() -> void:
+func _update_shovel_highlight() -> void:
 	if shovel != null and is_instance_valid(shovel) and shovel.has_method("set_highlight_enabled") and shovel.has_method("set_highlight_strength"):
 		shovel.set_highlight_enabled(true)
 		shovel.set_highlight_strength(0.55 + (sin(_pulse_time * 1.35) * 0.5 + 0.5) * 0.7)
 
-func _clear_target_highlight() -> void:
+func _update_sofa_highlight() -> void:
+	if _sofa_aura == null or _sofa_light == null:
+		return
+	var strength := 0.45 + (sin(_pulse_time * 1.18) * 0.5 + 0.5) * 0.75
+	_sofa_aura.visible = true
+	_sofa_light.visible = true
+	if _sofa_aura.material_override is ShaderMaterial:
+		_sofa_aura.material_override.set_shader_parameter("highlight_strength", strength)
+	_sofa_light.light_energy = 1.2 + strength * 1.5
+
+func _clear_target_highlights() -> void:
 	if shovel != null and is_instance_valid(shovel) and shovel.has_method("set_highlight_enabled"):
 		shovel.set_highlight_enabled(false)
+	if _sofa_aura != null:
+		_sofa_aura.visible = false
+		if _sofa_aura.material_override is ShaderMaterial:
+			_sofa_aura.material_override.set_shader_parameter("highlight_strength", 0.0)
+	if _sofa_light != null:
+		_sofa_light.visible = false
+		_sofa_light.light_energy = 0.0
 
 func _get_screen_hint_target(world_target: Vector3, viewport_size: Vector2) -> Vector2:
 	if not player_camera.is_position_behind(world_target):
@@ -468,6 +653,7 @@ func _begin_dig_phase() -> void:
 	_objective_state = "dig"
 	_hint_marker.visible = false
 	_hint_label.visible = false
+	_clear_target_highlights()
 	_update_objective_text()
 	call_deferred("_play_dig_phase_subtitle")
 
@@ -479,15 +665,171 @@ func _on_dig_spot_completed(_spot: Node3D) -> void:
 		return
 	_completed_dig_spots += 1
 	_update_objective_text()
-	if _completed_dig_spots >= _total_dig_spots and not _transition_started:
-		_transition_started = true
+	if _completed_dig_spots >= _total_dig_spots:
 		call_deferred("_finish_world_phase")
 
 func _finish_world_phase() -> void:
+	if _objective_state != "dig":
+		return
 	_show_objective("%s %d/%d" % [DIG_OBJECTIVE, _total_dig_spots, _total_dig_spots])
-	await _show_subtitle("That should take care of it. Time to rest.", 2.4)
+	await _show_subtitle("That should take care of it. I need to sit down for a minute.", 2.6)
+	_objective_state = "rest"
+	_transition_started = false
+	if _sofa_interactable != null:
+		_sofa_interactable.set_interactable_enabled(true)
+	_update_objective_text()
+	await _show_subtitle("The sofa should be enough for a quick rest.", 2.5)
+
+func _play_rest_cinematic() -> void:
+	if _sofa_interactable != null:
+		_sofa_interactable.set_interactable_enabled(false)
+	_objective_panel.visible = false
+	_hint_marker.visible = false
+	_hint_label.visible = false
+	_clear_target_highlights()
+	_set_intro_lock(true)
+	_intro_running = false
+	_set_cinematic_bars(true, 0.45)
+	await _drop_to_sofa_pov()
+	await _show_subtitle("I just need to close my eyes for a moment.", 2.1)
+	await _fade_black(1.0, 1.6)
+	await _play_loading_dots()
+	_activate_window_camera()
+	await _fade_black(0.0, 1.4)
+	await get_tree().create_timer(3.2).timeout
+	await _play_meteor_impact()
+	await _fade_white(1.0, 0.18)
+	_set_subtitle_palette(true)
+	await _show_subtitle("What was that?", 1.8)
+	await _show_subtitle("What is happening?", 2.0)
+	_set_subtitle_palette(false)
+	GameState.set_meta(LEVEL_ONE_WHITE_META, true)
 	get_tree().change_scene_to_file(LEVEL_ONE_SCENE_PATH)
+
+func _activate_window_camera() -> void:
+	if _intro_camera == null:
+		return
+	var target_position := Vector3(2.0, 0.3, 9.0)
+	var camera_position := Vector3(-1.0, -0.35, 5.25)
+	if _window_target != null:
+		target_position = _window_target.global_position
+	elif house != null:
+		target_position = house.to_global(Vector3(2.0, 0.3, 9.0))
+	if house != null:
+		camera_position = house.to_global(Vector3(-1.05, -0.35, 5.35))
+	_intro_camera.global_position = camera_position
+	_intro_camera.look_at(target_position + Vector3(0.0, 0.15, 0.0), Vector3.UP)
+	_intro_camera.make_current()
+
+func _play_loading_dots() -> void:
+	_loading_label.visible = true
+	_loading_label.text = "."
+	await get_tree().create_timer(0.9).timeout
+	_loading_label.text = ".."
+	await get_tree().create_timer(0.9).timeout
+	_loading_label.text = "..."
+	await get_tree().create_timer(1.2).timeout
+	_loading_label.visible = false
+
+func _play_meteor_impact() -> void:
+	if _meteor == null or _meteor_light == null:
+		return
+	var window_position := Vector3(2.0, 0.3, 9.0)
+	if _window_target != null:
+		window_position = _window_target.global_position
+	elif house != null:
+		window_position = house.to_global(Vector3(2.0, 0.3, 9.0))
+	var start_position := window_position + Vector3(2.6, 1.6, 18.0)
+	var impact_position := window_position + Vector3(0.35, 0.3, 1.1)
+	_meteor.visible = true
+	_meteor_light.visible = true
+	_meteor.global_position = start_position
+	_meteor.scale = Vector3.ONE * 0.7
+	_meteor.look_at(impact_position, Vector3.UP)
+	_meteor_light.global_position = start_position
+	_meteor_light.light_energy = 4.5
+	var travel := create_tween()
+	travel.tween_property(_meteor, "global_position", impact_position, 2.0).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	travel.parallel().tween_property(_meteor_light, "global_position", impact_position, 2.0).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	travel.parallel().tween_property(_meteor, "scale", Vector3.ONE * 1.18, 2.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	travel.parallel().tween_property(_meteor_light, "light_energy", 7.8, 2.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await travel.finished
+	var burst := create_tween()
+	burst.tween_property(_meteor, "scale", Vector3.ONE * 4.8, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	burst.parallel().tween_property(_meteor_light, "light_energy", 20.0, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await burst.finished
+	_meteor.visible = false
+	_meteor_light.visible = false
+	_meteor_light.light_energy = 0.0
+
+func _drop_to_sofa_pov() -> void:
+	if _intro_camera == null or _sofa_target == null:
+		return
+	var start_transform := player_camera.global_transform if player_camera != null else _intro_camera.global_transform
+	var sofa_eye := _sofa_target.to_global(Vector3(0.0, -0.82, -0.18))
+	var sofa_focus := _sofa_target.to_global(Vector3(0.0, -0.95, 1.35))
+	var end_transform := Transform3D(Basis(), sofa_eye).looking_at(sofa_focus, Vector3.UP)
+	_intro_camera.global_transform = start_transform
+	_intro_camera.make_current()
+	var fall := create_tween()
+	fall.tween_method(_blend_rest_camera.bind(start_transform, end_transform), 0.0, 1.0, 1.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	await fall.finished
+
+func _blend_rest_camera(weight: float, start_transform: Transform3D, end_transform: Transform3D) -> void:
+	if _intro_camera == null:
+		return
+	_intro_camera.global_transform = start_transform.interpolate_with(end_transform, weight)
+
+func _fade_black(target_alpha: float, duration: float) -> void:
+	if _fade_overlay == null:
+		return
+	var tween := create_tween()
+	tween.tween_property(_fade_overlay, "modulate:a", target_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+
+func _fade_white(target_alpha: float, duration: float) -> void:
+	if _white_overlay == null:
+		return
+	var tween := create_tween()
+	tween.tween_property(_white_overlay, "modulate:a", target_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+
+func _set_cinematic_bars(visible: bool, duration: float) -> void:
+	if _top_bar == null or _bottom_bar == null:
+		return
+	var target_height := 88.0 if visible else 0.0
+	_top_bar.visible = true
+	_bottom_bar.visible = true
+	var tween := create_tween()
+	tween.tween_property(_top_bar, "offset_bottom", target_height, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(_bottom_bar, "offset_top", -target_height, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+	if not visible:
+		_top_bar.visible = false
+		_bottom_bar.visible = false
+
+func _set_subtitle_palette(dark_text: bool) -> void:
+	if _subtitle_label == null:
+		return
+	if dark_text:
+		_subtitle_label.add_theme_color_override("font_color", Color(0.07, 0.07, 0.07, 1.0))
+		_subtitle_label.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.9))
+		_subtitle_label.add_theme_constant_override("outline_size", 8)
+	else:
+		_subtitle_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.96, 1.0))
+		_subtitle_label.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.02, 0.9))
+		_subtitle_label.add_theme_constant_override("outline_size", 12)
+
+func _on_sofa_rest_requested() -> void:
+	if _objective_state != "rest" or _transition_started:
+		return
+	_transition_started = true
+	call_deferred("_play_rest_cinematic")
 
 func _is_world_intro_scene() -> bool:
 	var current_scene := get_tree().current_scene
 	return current_scene != null and current_scene.scene_file_path == WORLD_SCENE_PATH
+
+func _is_level_one_scene() -> bool:
+	var current_scene := get_tree().current_scene
+	return current_scene != null and current_scene.scene_file_path == LEVEL_ONE_SCENE_PATH
