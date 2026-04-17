@@ -4,10 +4,10 @@ const SCALE_LERP_SPEED := 8.0
 const ROTATION_SPEED := 0.005
 const PITCH_LIMIT := 70.0
 const INTRO_LINES := [
-	{"text": "what time is it...?", "duration": 2.0},
-	{"text": "why does my head feel like that?", "duration": 2.2},
-	{"text": "right... i still have to clean up the yard.", "duration": 2.8},
-	{"text": "the scoop should still be outside.", "duration": 2.4}
+	{"text": "What time is it?", "duration": 2.0},
+	{"text": "Why does my head feel so heavy?", "duration": 2.2},
+	{"text": "Right... I still need to clear out the yard.", "duration": 2.8},
+	{"text": "The scoop should still be outside.", "duration": 2.4}
 ]
 const SCOOP_OBJECTIVE := "OBJECTIVE: Pick up the scoop"
 const DIG_OBJECTIVE := "OBJECTIVE: Bury the old stuff"
@@ -23,6 +23,7 @@ var _target_scale: float = 1.0
 var _yaw: float = 0.0
 var _pitch: float = 0.0
 var _pulse_time: float = 0.0
+var _intro_motion_time: float = 0.0
 var _player_spawn_position: Vector3 = Vector3(8.0, 1.0, -9.25)
 var _player_spawn_rotation_y: float = PI
 var _intro_camera_position: Vector3 = Vector3(7.3, 1.3, -10.0)
@@ -37,6 +38,7 @@ var _dig_spots: Array[Node3D] = []
 var _intro_ui: CanvasLayer
 var _intro_camera: Camera3D
 var _wake_overlay: ColorRect
+var _blink_overlay: ColorRect
 var _subtitle_label: Label
 var _objective_panel: PanelContainer
 var _objective_label: Label
@@ -70,6 +72,9 @@ func _process(delta: float) -> void:
 		return
 
 	_pulse_time += delta * 3.6
+	if _intro_running:
+		_intro_motion_time += delta
+		_update_intro_camera_motion()
 
 	if _objective_state == "scoop" and is_instance_valid(shovel):
 		_update_target_highlight()
@@ -100,8 +105,16 @@ func _create_intro_ui() -> void:
 
 	_wake_overlay = ColorRect.new()
 	_wake_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_wake_overlay.color = Color(0.84, 0.85, 0.8, 0.95)
+	var wake_shader := ShaderMaterial.new()
+	wake_shader.shader = load("res://shaders/wake_blur.gdshader")
+	_wake_overlay.material = wake_shader
 	_intro_ui.add_child(_wake_overlay)
+
+	_blink_overlay = ColorRect.new()
+	_blink_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_blink_overlay.color = Color(0, 0, 0, 1)
+	_blink_overlay.modulate.a = 1.0
+	_intro_ui.add_child(_blink_overlay)
 
 	_objective_panel = PanelContainer.new()
 	_objective_panel.anchor_left = 0.0
@@ -194,6 +207,7 @@ func _collect_dig_spots() -> void:
 func _set_intro_lock(locked: bool) -> void:
 	_intro_running = locked
 	if locked:
+		_intro_motion_time = 0.0
 		if player != null:
 			player.set_cinematic_lock(true)
 		if player_hud != null:
@@ -209,17 +223,24 @@ func _set_intro_lock(locked: bool) -> void:
 func _play_intro_sequence() -> void:
 	await get_tree().process_frame
 	_activate_intro_camera()
+	_blink_overlay.modulate.a = 1.0
+	await _open_eyes(0.26)
 	await _tween_wake_overlay(0.72, 1.0)
 	for line in INTRO_LINES:
-		await _show_subtitle(line["text"], float(line["duration"]))
-		if line["text"] == "why does my head feel like that?":
+		await _show_subtitle(line["text"], line["duration"])
+		if line["text"] == "What time is it?":
+			await _blink_once(0.18, 0.22)
+		if line["text"] == "Why does my head feel so heavy?":
 			await _tween_wake_overlay(0.42, 1.4)
+		elif line["text"] == "Right... I still need to clear out the yard.":
+			await _blink_once(0.09, 0.16)
 	await _tween_wake_overlay(0.0, 1.5)
 	_subtitle_label.visible = false
+	_intro_running = false
 	await _restore_player_camera()
 	_show_objective(SCOOP_OBJECTIVE)
 	_objective_state = "scoop"
-	await _show_subtitle("i should grab the scoop before i start digging.", 2.5)
+	await _show_subtitle("I should grab the scoop before I start digging.", 2.5)
 	_set_intro_lock(false)
 
 func _activate_intro_camera() -> void:
@@ -247,11 +268,77 @@ func _blend_intro_camera(weight: float, start_transform: Transform3D, end_transf
 	_intro_camera.global_transform = start_transform.interpolate_with(end_transform, weight)
 
 func _tween_wake_overlay(target_alpha: float, duration: float) -> void:
-	if _wake_overlay == null:
+	if _wake_overlay == null or not (_wake_overlay.material is ShaderMaterial):
 		return
 	var overlay_tween := create_tween()
-	overlay_tween.tween_property(_wake_overlay, "color:a", target_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	overlay_tween.tween_method(_set_wake_blur_strength, _get_wake_blur_strength(), target_alpha * 3.2, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	overlay_tween.parallel().tween_method(_set_wake_haze_strength, _get_wake_haze_strength(), target_alpha * 0.32, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	overlay_tween.parallel().tween_method(_set_wake_desaturate_strength, _get_wake_desaturate_strength(), target_alpha * 0.24, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await overlay_tween.finished
+
+func _blink_once(close_duration: float, open_duration: float) -> void:
+	if _blink_overlay == null:
+		return
+	var blink_close := create_tween()
+	blink_close.tween_property(_blink_overlay, "modulate:a", 1.0, close_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await blink_close.finished
+	await _open_eyes(open_duration)
+
+func _open_eyes(duration: float) -> void:
+	if _blink_overlay == null:
+		return
+	var blink_open := create_tween()
+	blink_open.tween_property(_blink_overlay, "modulate:a", 0.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await blink_open.finished
+
+func _update_intro_camera_motion() -> void:
+	if _intro_camera == null or not _intro_camera.current:
+		return
+	var bob := Vector3(
+		sin(_intro_motion_time * 1.35) * 0.035,
+		sin(_intro_motion_time * 0.82 + 0.6) * 0.022,
+		cos(_intro_motion_time * 1.08) * 0.026
+	)
+	var target_offset := Vector3(
+		sin(_intro_motion_time * 0.74) * 0.18,
+		cos(_intro_motion_time * 0.56) * 0.24,
+		sin(_intro_motion_time * 0.93) * 0.14
+	)
+	_intro_camera.global_position = _intro_camera_position + bob
+	_intro_camera.look_at(_intro_camera_target + target_offset, Vector3.FORWARD)
+
+func _set_wake_blur_strength(value: float) -> void:
+	if _wake_overlay.material is ShaderMaterial:
+		_wake_overlay.material.set_shader_parameter("blur_strength", value)
+
+func _set_wake_haze_strength(value: float) -> void:
+	if _wake_overlay.material is ShaderMaterial:
+		_wake_overlay.material.set_shader_parameter("haze_strength", value)
+
+func _set_wake_desaturate_strength(value: float) -> void:
+	if _wake_overlay.material is ShaderMaterial:
+		_wake_overlay.material.set_shader_parameter("desaturate_strength", value)
+
+func _get_wake_blur_strength() -> float:
+	if _wake_overlay.material is ShaderMaterial:
+		var value = _wake_overlay.material.get_shader_parameter("blur_strength")
+		if value is float or value is int:
+			return value
+	return 0.0
+
+func _get_wake_haze_strength() -> float:
+	if _wake_overlay.material is ShaderMaterial:
+		var value = _wake_overlay.material.get_shader_parameter("haze_strength")
+		if value is float or value is int:
+			return value
+	return 0.0
+
+func _get_wake_desaturate_strength() -> float:
+	if _wake_overlay.material is ShaderMaterial:
+		var value = _wake_overlay.material.get_shader_parameter("desaturate_strength")
+		if value is float or value is int:
+			return value
+	return 0.0
 
 func _show_subtitle(text: String, duration: float) -> void:
 	if _subtitle_label == null:
@@ -330,7 +417,7 @@ func _begin_dig_phase() -> void:
 	call_deferred("_play_dig_phase_subtitle")
 
 func _play_dig_phase_subtitle() -> void:
-	await _show_subtitle("good. now i can get the old junk buried before anyone sees it.", 2.8)
+	await _show_subtitle("Good. Now I can bury the old junk before anyone notices.", 2.8)
 
 func _on_dig_spot_completed(_spot: Node3D) -> void:
 	if _objective_state != "dig":
@@ -343,7 +430,7 @@ func _on_dig_spot_completed(_spot: Node3D) -> void:
 
 func _finish_world_phase() -> void:
 	_show_objective("%s %d/%d" % [DIG_OBJECTIVE, _total_dig_spots, _total_dig_spots])
-	await _show_subtitle("that should do it. time to move.", 2.4)
+	await _show_subtitle("That should take care of it. Time to rest.", 2.4)
 	get_tree().change_scene_to_file(LEVEL_ONE_SCENE_PATH)
 
 func _is_world_intro_scene() -> bool:

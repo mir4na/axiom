@@ -3,21 +3,19 @@ extends Interactable
 @export var is_dropped: bool = false
 var is_picked_up: bool = false
 var _highlight_enabled: bool = false
-var _base_handle_color: Color = Color(0.4, 0.2, 0.1, 1)
-var _base_blade_color: Color = Color(0.7, 0.7, 0.7, 1)
 
 @onready var handle: CSGCylinder3D = $Handle
+@onready var handle_aura: CSGCylinder3D = $HandleAura
 @onready var blade: CSGBox3D = $Blade
+@onready var blade_aura: CSGBox3D = $BladeAura
+@onready var glow_light: OmniLight3D = $GlowLight
 
 func _ready() -> void:
 	if is_dropped:
 		prompt_text = ""
 	else:
 		prompt_text = "Press E to pick up Shovel"
-	if handle.material != null:
-		_base_handle_color = handle.material.albedo_color
-	if blade.material != null:
-		_base_blade_color = blade.material.albedo_color
+	_setup_aura_materials()
 
 func interact() -> void:
 	if is_dropped or is_picked_up:
@@ -36,6 +34,9 @@ func interact() -> void:
 
 func set_highlight_enabled(enabled: bool) -> void:
 	_highlight_enabled = enabled
+	handle_aura.visible = enabled
+	blade_aura.visible = enabled
+	glow_light.visible = enabled
 	if not enabled:
 		_apply_highlight(0.0)
 
@@ -45,14 +46,21 @@ func set_highlight_strength(strength: float) -> void:
 	_apply_highlight(strength)
 
 func _apply_highlight(strength: float) -> void:
-	var glow_color := Color(0.82, 0.98, 0.62, 1.0)
-	if handle.material != null:
-		handle.material.emission_enabled = strength > 0.01
-		handle.material.emission = glow_color
-		handle.material.emission_energy_multiplier = 0.5 + strength * 1.8
-		handle.material.albedo_color = _base_handle_color.lerp(glow_color, strength * 0.3)
-	if blade.material != null:
-		blade.material.emission_enabled = strength > 0.01
-		blade.material.emission = glow_color
-		blade.material.emission_energy_multiplier = 0.8 + strength * 2.4
-		blade.material.albedo_color = _base_blade_color.lerp(glow_color, strength * 0.45)
+	if handle_aura.material is ShaderMaterial:
+		handle_aura.material.set_shader_parameter("highlight_strength", strength)
+		handle_aura.material.set_shader_parameter("glow_color", Color(1.0, 0.55, 0.16, 1.0))
+	if blade_aura.material is ShaderMaterial:
+		blade_aura.material.set_shader_parameter("highlight_strength", strength)
+		blade_aura.material.set_shader_parameter("glow_color", Color(1.0, 0.55, 0.16, 1.0))
+	glow_light.light_energy = 1.1 + strength * 2.8
+
+func _setup_aura_materials() -> void:
+	var shader := load("res://shaders/objective_highlight.gdshader")
+	var handle_material := ShaderMaterial.new()
+	handle_material.shader = shader
+	handle_material.set_shader_parameter("glow_color", Color(1.0, 0.55, 0.16, 1.0))
+	handle_aura.material = handle_material
+	var blade_material := ShaderMaterial.new()
+	blade_material.shader = shader
+	blade_material.set_shader_parameter("glow_color", Color(1.0, 0.55, 0.16, 1.0))
+	blade_aura.material = blade_material

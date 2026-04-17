@@ -62,7 +62,7 @@ func _sync_hitboxes(delta: float) -> void:
 	# Decouple raw target from raw bone to completely negate side-to-side animation jitter tracking
 	var current_offset = _camera_origin_offset
 	current_offset.z -= 0.22
-	current_offset.y += 0.04
+	current_offset.y += 0.00
 	
 	# if is_crouching:
 	# 	current_offset.y -= (normal_height - crouch_height)
