@@ -63,10 +63,16 @@ var _meteor: MeshInstance3D
 var _meteor_light: OmniLight3D
 var _level_one_flow
 
+func _screen_fx() -> CanvasLayer:
+	return get_node_or_null("/root/ScreenFX") as CanvasLayer
+
 func _ready() -> void:
 	GameState.world_scaled.connect(_on_world_scaled)
 	GameState.world_rotated.connect(_on_world_rotated)
 	GameState.inventory_changed.connect(_on_inventory_changed)
+	var screen_fx := _screen_fx()
+	if screen_fx != null:
+		screen_fx.set_gameplay_filter_enabled(true)
 	_apply_player_spawn()
 	if _is_level_one_scene():
 		_create_intro_ui()

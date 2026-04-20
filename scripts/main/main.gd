@@ -6,11 +6,17 @@ extends Node3D
 
 var _current_level: Node3D
 
+func _screen_fx() -> CanvasLayer:
+	return get_node_or_null("/root/ScreenFX") as CanvasLayer
+
 func _ready() -> void:
 	GameState.level_completed.connect(_on_level_completed)
 	GameState.paused.connect(_on_paused)
 	_pause_menu.hide()
 	_win_screen.hide()
+	var screen_fx := _screen_fx()
+	if screen_fx != null:
+		screen_fx.set_gameplay_filter_enabled(true)
 	_load_current_level()
 
 func _load_current_level() -> void:

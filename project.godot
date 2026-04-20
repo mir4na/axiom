@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GameState="*res://scripts/autoload/game_state.gd"
 TimeController="*res://scripts/autoload/time_controller.gd"
 AudioManager="*res://scripts/autoload/audio_manager.gd"
+ScreenFX="*res://scripts/autoload/screen_fx.gd"
 
 [display]
 

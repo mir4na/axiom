@@ -71,7 +71,7 @@ func play_arrival() -> void:
 	if _world.player_camera != null:
 		_world.player_camera.make_current()
 	if _world._white_overlay != null:
-		_world._white_overlay.modulate.a = 1.0
+		_world._white_overlay.modulate.a = 0.2
 	if _world._glitch_overlay != null:
 		_world._glitch_overlay.visible = true
 		_world._glitch_overlay.modulate.a = 1.0
@@ -82,7 +82,7 @@ func play_arrival() -> void:
 	await _world.get_tree().process_frame
 	var arrival_tween: Tween = _world.create_tween()
 	if _world._white_overlay != null:
-		arrival_tween.tween_property(_world._white_overlay, "modulate:a", 0.0, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		arrival_tween.tween_property(_world._white_overlay, "modulate:a", 0.0, 1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	arrival_tween.parallel().tween_method(_world._set_arrival_glitch_strength, 0.95, 0.0, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	if _world._glitch_overlay != null:
 		arrival_tween.parallel().tween_property(_world._glitch_overlay, "modulate:a", 0.0, 2.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
