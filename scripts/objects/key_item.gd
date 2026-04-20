@@ -8,6 +8,8 @@ extends Interactable
 @onready var _glow_light: OmniLight3D = get_node_or_null("GlowLight") as OmniLight3D
 
 var _highlight_enabled: bool = false
+var _persistent_highlight: bool = false
+var _collecting: bool = false
 
 func _ready() -> void:
 	_setup_aura_materials()
@@ -21,11 +23,13 @@ func set_interactable_enabled(enabled: bool) -> void:
 	prompt_text = "Press E to pick up Keycard" if enabled else ""
 	if _collision_shape != null:
 		_collision_shape.disabled = not enabled
-	if not enabled:
-		set_highlight_enabled(false)
+	_persistent_highlight = enabled
+	set_highlight_enabled(enabled)
+	if enabled:
+		set_highlight_strength(1.0)
 
 func set_highlight_enabled(enabled: bool) -> void:
-	_highlight_enabled = enabled and visible
+	_highlight_enabled = (enabled or _persistent_highlight) and visible
 	if _card_aura != null:
 		_card_aura.visible = _highlight_enabled
 	if _stripe_aura != null:
@@ -70,6 +74,20 @@ func _setup_aura_materials() -> void:
 		_glow_light.visible = false
 
 func interact() -> void:
+	if _collecting:
+		return
 	var collected = GameState.add_item(key_id)
 	if collected:
+		_collecting = true
+		prompt_text = ""
+		if _collision_shape != null:
+			_collision_shape.disabled = true
+		_persistent_highlight = false
+		set_highlight_enabled(false)
+		var tween := create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(self, "position", position + Vector3(0.0, 1.25, 0.0), 0.35)
+		tween.tween_property(self, "rotation_degrees", rotation_degrees + Vector3(0.0, 360.0, 0.0), 0.35)
+		tween.tween_property(self, "scale", Vector3.ZERO, 0.35)
+		await tween.finished
 		queue_free()

@@ -7,6 +7,7 @@ extends Interactable
 @onready var _glow_light: OmniLight3D = get_node_or_null("GlowLight") as OmniLight3D
 
 var _highlight_enabled: bool = false
+var _persistent_highlight: bool = false
 
 func _ready() -> void:
 	_setup_aura_materials()
@@ -20,11 +21,13 @@ func set_interactable_enabled(enabled: bool) -> void:
 	prompt_text = "Press E to descend" if enabled else ""
 	if _collision_shape != null:
 		_collision_shape.disabled = not enabled
-	if not enabled:
-		set_highlight_enabled(false)
+	_persistent_highlight = enabled
+	set_highlight_enabled(enabled)
+	if enabled:
+		set_highlight_strength(1.0)
 
 func set_highlight_enabled(enabled: bool) -> void:
-	_highlight_enabled = enabled and visible
+	_highlight_enabled = (enabled or _persistent_highlight) and visible
 	if _rim_aura != null:
 		_rim_aura.visible = _highlight_enabled
 	if _glow_light != null:
@@ -60,6 +63,5 @@ func _setup_aura_materials() -> void:
 func interact() -> void:
 	GameState.unpause()
 	GameState.current_level_index = target_level_index
-	var main := get_tree().root.get_node_or_null("Main")
-	if main != null and main.has_method("load_level_index"):
-		main.call_deferred("load_level_index", target_level_index)
+	if target_level_index >= 0 and target_level_index < GameState.LEVELS.size():
+		get_tree().call_deferred("change_scene_to_file", GameState.LEVELS[target_level_index])

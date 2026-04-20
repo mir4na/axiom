@@ -430,6 +430,7 @@ func play_axiom_equip_sequence() -> void:
 
 func _play_house_split_glitch() -> void:
 	_ensure_broken_house()
+	_attach_underground_hole_to_broken_house()
 	_refresh_split_origins()
 	if _glitch_fragments_root != null:
 		_glitch_fragments_root.visible = true
@@ -511,6 +512,19 @@ func _ensure_underground_hole() -> void:
 		return
 	if _underground_hole_instance.has_method("set_interactable_enabled"):
 		_underground_hole_instance.call("set_interactable_enabled", true)
+
+func _attach_underground_hole_to_broken_house() -> void:
+	if not is_instance_valid(_underground_hole_instance) or _broken_house_instance == null:
+		return
+	var back_half := _broken_house_instance.get_node_or_null("BackHalf") as Node3D
+	if back_half == null or _underground_hole_instance.get_parent() == back_half:
+		return
+	var hole_transform := _underground_hole_instance.global_transform
+	var current_parent := _underground_hole_instance.get_parent()
+	if current_parent != null:
+		current_parent.remove_child(_underground_hole_instance)
+	back_half.add_child(_underground_hole_instance)
+	_underground_hole_instance.global_transform = hole_transform
 
 func _set_house_split_weight(weight: float) -> void:
 	for node in _split_front_nodes:
