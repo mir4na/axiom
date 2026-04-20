@@ -2,6 +2,14 @@ extends RefCounted
 
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const BROKEN_HOUSE_SCENE := preload("res://scenes/objects/broken_house.tscn")
+const METEOR_SHADER := preload("res://shaders/spatial_glitch.gdshader")
+const ESCAPE_DURATION := 60.0
+const SMALL_METEOR_INTERVAL := 3.0
+const TUTORIAL_PAGES := [
+	"AXIOM lets you rewind the recorded state of the world.",
+	"Press R to enter rewind mode, then hold R or F to move the pointer through time.",
+	"Reach the underground hole before the timer ends."
+]
 const GUEST_REVEAL_EXTERIOR_START_POS := Vector3(-24.6, 16.0, 30.7)
 const GUEST_REVEAL_EXTERIOR_START_LOOK := Vector3(0.7, -0.75, 7.2)
 const GUEST_REVEAL_EXTERIOR_END_POS := Vector3(18.7, 7.8, 40.4)
@@ -36,6 +44,20 @@ var _split_original_positions: Dictionary = {}
 var _glitch_fragment_original_positions: Dictionary = {}
 var _broken_house_instance: Node3D
 var _underground_hole_instance: Node3D
+var _terrain_hidden_for_split: bool = false
+var _escape_timer_running: bool = false
+var _escape_time_left: float = 0.0
+var _tutorial_active: bool = false
+var _tutorial_page_index: int = 0
+var _tutorial_space_consumed: bool = false
+var _small_meteor_spawn_timer: float = 0.0
+var _active_small_meteors: Array = []
+var _escape_failed_sequence_started: bool = false
+var _timer_label: Label
+var _tutorial_panel: Panel
+var _tutorial_title: Label
+var _tutorial_body: Label
+var _tutorial_hint: Label
 
 func _init(world_ref) -> void:
 	_world = world_ref
@@ -43,16 +65,22 @@ func _init(world_ref) -> void:
 func initialize() -> void:
 	_cache_nodes()
 	_prepare_phase()
+	_create_escape_ui()
 	_configure_house()
 	_connect_hooks()
 
 func process_objectives() -> void:
+	_process_escape_phase(_world.get_process_delta_time())
 	if _objective_state == "guest_key" and is_instance_valid(_key_item_instance):
+		_pulse_objective_highlight(_key_item_instance, 0.55, 1.25)
 		_world._update_hint_marker(_key_item_instance.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _key_item_instance.global_position)
 	elif _objective_state == "guest_unlock" and is_instance_valid(_guest_button_out):
 		_world._update_hint_marker(_guest_button_out.global_position + Vector3(0.0, 0.35, 0.0), "DOOR", _guest_button_out.global_position)
 	elif _objective_state == "guest_axiom" and is_instance_valid(_axiom_item_instance):
 		_world._update_hint_marker(_axiom_item_instance.global_position + Vector3(0.0, 0.55, 0.0), "AXIOM", _axiom_item_instance.global_position)
+	elif _objective_state == "escape_hole" and is_instance_valid(_underground_hole_instance):
+		_pulse_objective_highlight(_underground_hole_instance, 0.7, 1.4)
+		_world._update_hint_marker(_underground_hole_instance.global_position + Vector3(0.0, 0.85, 0.0), "HOLE", _underground_hole_instance.global_position)
 	else:
 		_world._hint_marker.visible = false
 		_world._hint_label.visible = false
@@ -130,6 +158,15 @@ func _prepare_phase() -> void:
 	_objective_state = ""
 	_axiom_item_instance = null
 	_broken_house_instance = null
+	_terrain_hidden_for_split = false
+	_escape_timer_running = false
+	_escape_time_left = 0.0
+	_tutorial_active = false
+	_tutorial_page_index = 0
+	_tutorial_space_consumed = false
+	_small_meteor_spawn_timer = SMALL_METEOR_INTERVAL
+	_clear_small_meteors()
+	_escape_failed_sequence_started = false
 	_split_front_nodes.clear()
 	_split_back_nodes.clear()
 	_split_original_positions.clear()
@@ -155,6 +192,10 @@ func _prepare_phase() -> void:
 	if _world._bottom_bar != null:
 		_world._bottom_bar.visible = false
 		_world._bottom_bar.offset_top = 0.0
+	if _timer_label != null:
+		_timer_label.visible = false
+	if _tutorial_panel != null:
+		_tutorial_panel.visible = false
 
 func _configure_house() -> void:
 	if _world.house == null:
@@ -183,11 +224,97 @@ func _configure_house() -> void:
 	if _glitch_fragments_root != null:
 		_glitch_fragments_root.visible = true
 
+func _create_escape_ui() -> void:
+	if _world._intro_ui == null or _timer_label != null:
+		return
+	_timer_label = Label.new()
+	_timer_label.anchor_left = 0.5
+	_timer_label.anchor_top = 0.02
+	_timer_label.anchor_right = 0.5
+	_timer_label.anchor_bottom = 0.02
+	_timer_label.offset_left = -80.0
+	_timer_label.offset_top = 0.0
+	_timer_label.offset_right = 80.0
+	_timer_label.offset_bottom = 44.0
+	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_timer_label.add_theme_font_size_override("font_size", 30)
+	_timer_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.64, 1.0))
+	_timer_label.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.02, 0.92))
+	_timer_label.add_theme_constant_override("outline_size", 10)
+	_timer_label.visible = false
+	_world._intro_ui.add_child(_timer_label)
+	_tutorial_panel = Panel.new()
+	_tutorial_panel.anchor_left = 0.5
+	_tutorial_panel.anchor_top = 0.5
+	_tutorial_panel.anchor_right = 0.5
+	_tutorial_panel.anchor_bottom = 0.5
+	_tutorial_panel.offset_left = -280.0
+	_tutorial_panel.offset_top = -120.0
+	_tutorial_panel.offset_right = 280.0
+	_tutorial_panel.offset_bottom = 120.0
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.07, 0.1, 0.94)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(0.2, 0.88, 1.0, 0.9)
+	style.corner_radius_top_left = 10
+	style.corner_radius_top_right = 10
+	style.corner_radius_bottom_left = 10
+	style.corner_radius_bottom_right = 10
+	_tutorial_panel.add_theme_stylebox_override("panel", style)
+	_tutorial_panel.visible = false
+	_world._intro_ui.add_child(_tutorial_panel)
+	_tutorial_title = Label.new()
+	_tutorial_title.anchor_left = 0.0
+	_tutorial_title.anchor_top = 0.0
+	_tutorial_title.anchor_right = 1.0
+	_tutorial_title.anchor_bottom = 0.0
+	_tutorial_title.offset_left = 24.0
+	_tutorial_title.offset_top = 18.0
+	_tutorial_title.offset_right = -24.0
+	_tutorial_title.offset_bottom = 50.0
+	_tutorial_title.text = "AXIOM"
+	_tutorial_title.add_theme_font_size_override("font_size", 26)
+	_tutorial_title.add_theme_color_override("font_color", Color(0.92, 0.98, 1.0, 1.0))
+	_tutorial_panel.add_child(_tutorial_title)
+	_tutorial_body = Label.new()
+	_tutorial_body.anchor_left = 0.0
+	_tutorial_body.anchor_top = 0.0
+	_tutorial_body.anchor_right = 1.0
+	_tutorial_body.anchor_bottom = 1.0
+	_tutorial_body.offset_left = 24.0
+	_tutorial_body.offset_top = 60.0
+	_tutorial_body.offset_right = -24.0
+	_tutorial_body.offset_bottom = -54.0
+	_tutorial_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tutorial_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_tutorial_body.add_theme_font_size_override("font_size", 22)
+	_tutorial_body.add_theme_color_override("font_color", Color(0.88, 0.96, 0.98, 1.0))
+	_tutorial_panel.add_child(_tutorial_body)
+	_tutorial_hint = Label.new()
+	_tutorial_hint.anchor_left = 0.0
+	_tutorial_hint.anchor_top = 1.0
+	_tutorial_hint.anchor_right = 1.0
+	_tutorial_hint.anchor_bottom = 1.0
+	_tutorial_hint.offset_left = 24.0
+	_tutorial_hint.offset_top = -38.0
+	_tutorial_hint.offset_right = -24.0
+	_tutorial_hint.offset_bottom = -12.0
+	_tutorial_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_tutorial_hint.text = "[SPACE] NEXT"
+	_tutorial_hint.add_theme_font_size_override("font_size", 16)
+	_tutorial_hint.add_theme_color_override("font_color", Color(1.0, 0.84, 0.44, 1.0))
+	_tutorial_panel.add_child(_tutorial_hint)
+
 func _connect_hooks() -> void:
 	var axiom_callable := Callable(self, "_on_axiom_equipped_changed")
 	var front_door_callable := Callable(self, "_on_front_door_opened")
 	var guest_door_callable := Callable(self, "_on_guest_door_opened")
 	var guest_locked_callable := Callable(self, "_on_guest_door_locked_interaction")
+	var hole_descended_callable := Callable(self, "_on_underground_hole_descended")
 	if not GameState.axiom_equipped_changed.is_connected(axiom_callable):
 		GameState.axiom_equipped_changed.connect(axiom_callable)
 	if _front_door != null and _front_door.has_signal("opened") and not _front_door.is_connected("opened", front_door_callable):
@@ -197,6 +324,8 @@ func _connect_hooks() -> void:
 	for button in [_guest_button_out, _guest_button_in]:
 		if button != null and button.has_signal("locked_interaction") and not button.is_connected("locked_interaction", guest_locked_callable):
 			button.connect("locked_interaction", guest_locked_callable)
+	if _underground_hole_instance != null and _underground_hole_instance.has_signal("descended") and not _underground_hole_instance.is_connected("descended", hole_descended_callable):
+		_underground_hole_instance.connect("descended", hole_descended_callable)
 
 func _set_guest_entry_visible(visible: bool) -> void:
 	if _guest_door_gap != null:
@@ -292,9 +421,80 @@ func _set_objective_state(state: String) -> void:
 			_world._show_objective(_world._objective_text("guest_unlock", "OBJECTIVE: Open the guest room door"))
 		"guest_axiom":
 			_world._show_objective(_world._objective_text("guest_axiom", "OBJECTIVE: Take the Axiom"))
+		"escape_hole":
+			_world._show_objective("OBJECTIVE: Reach the underground hole before time runs out")
 		_:
 			if _world._objective_panel != null:
 				_world._objective_panel.visible = false
+
+func _process_escape_phase(delta: float) -> void:
+	if _tutorial_active:
+		if Input.is_key_pressed(KEY_SPACE):
+			if not _tutorial_space_consumed:
+				_tutorial_space_consumed = true
+				_tutorial_page_index += 1
+				if _tutorial_page_index >= TUTORIAL_PAGES.size():
+					_end_axiom_tutorial()
+				else:
+					_update_axiom_tutorial_page()
+		else:
+			_tutorial_space_consumed = false
+	if not _escape_timer_running or _escape_failed_sequence_started:
+		return
+	_escape_time_left = maxf(0.0, _escape_time_left - delta)
+	_update_escape_timer_label()
+	_small_meteor_spawn_timer -= delta
+	if _small_meteor_spawn_timer <= 0.0:
+		_small_meteor_spawn_timer = SMALL_METEOR_INTERVAL
+		_spawn_small_meteor()
+	_update_small_meteors(delta)
+	if _escape_time_left <= 0.0:
+		_escape_failed_sequence_started = true
+		_world.call_deferred("_play_level_one_escape_fail_sequence")
+
+func _begin_post_split_escape_phase() -> void:
+	_set_objective_state("escape_hole")
+	_start_axiom_tutorial()
+
+func _start_axiom_tutorial() -> void:
+	_tutorial_active = true
+	_tutorial_page_index = 0
+	_tutorial_space_consumed = true
+	_world._set_intro_lock(true)
+	if _tutorial_panel != null:
+		_tutorial_panel.visible = true
+	_update_axiom_tutorial_page()
+
+func _update_axiom_tutorial_page() -> void:
+	if _tutorial_body != null:
+		_tutorial_body.text = TUTORIAL_PAGES[_tutorial_page_index]
+	if _tutorial_hint != null:
+		_tutorial_hint.text = "[SPACE] CLOSE" if _tutorial_page_index == TUTORIAL_PAGES.size() - 1 else "[SPACE] NEXT"
+
+func _end_axiom_tutorial() -> void:
+	_tutorial_active = false
+	_tutorial_space_consumed = false
+	if _tutorial_panel != null:
+		_tutorial_panel.visible = false
+	_world._set_intro_lock(false)
+	_escape_time_left = ESCAPE_DURATION
+	_escape_timer_running = true
+	_small_meteor_spawn_timer = SMALL_METEOR_INTERVAL
+	_update_escape_timer_label()
+	if _timer_label != null:
+		_timer_label.visible = true
+
+func _update_escape_timer_label() -> void:
+	if _timer_label == null:
+		return
+	var secs := maxi(int(ceil(_escape_time_left)), 0)
+	var minutes: int = int(secs / 60)
+	var seconds: int = secs % 60
+	_timer_label.text = "%02d:%02d" % [minutes, seconds]
+	if secs <= 10:
+		_timer_label.add_theme_color_override("font_color", Color(1.0, 0.38, 0.34, 1.0))
+	else:
+		_timer_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.64, 1.0))
 
 func _on_front_door_opened() -> void:
 	if not _world._is_level_one_scene() or _front_door_cinematic_played or _level_one_sequence_running:
@@ -428,7 +628,7 @@ func play_axiom_equip_sequence() -> void:
 	await _world._show_subtitle("It's recording everything now.", 1.9)
 	await _world._return_intro_camera_to_player(0.95)
 	await _world._set_cinematic_bars(false, 0.32)
-	_world._set_intro_lock(false)
+	_begin_post_split_escape_phase()
 	_level_one_sequence_running = false
 
 func _play_house_split_glitch() -> void:
@@ -456,6 +656,167 @@ func _play_house_split_glitch() -> void:
 	await glitch_out.finished
 	if _world._glitch_overlay != null:
 		_world._glitch_overlay.visible = false
+
+func play_escape_fail_sequence() -> void:
+	_escape_timer_running = false
+	_tutorial_active = false
+	_clear_small_meteors()
+	if _timer_label != null:
+		_timer_label.visible = false
+	if _tutorial_panel != null:
+		_tutorial_panel.visible = false
+	_set_objective_state("")
+	_world._hint_marker.visible = false
+	_world._hint_label.visible = false
+	_world._set_intro_lock(true)
+	await _world._set_cinematic_bars(true, 0.28)
+	var player_transform: Transform3D = _world.player_camera.global_transform
+	var fail_start: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(23.0, 16.0, 22.0))).looking_at(_world.house.to_global(Vector3(0.0, 0.6, 0.0)), Vector3.UP)
+	_world._intro_camera.global_transform = player_transform
+	_world._intro_camera.make_current()
+	await _world._play_camera_shot(player_transform, fail_start, 1.0)
+	var meteor_root := Node3D.new()
+	_world.add_child(meteor_root)
+	var meteor_mesh := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 2.6
+	sphere.height = 5.2
+	meteor_mesh.mesh = sphere
+	meteor_mesh.material_override = _make_glitch_meteor_material(Color(0.26, 0.98, 1.0, 1.0), 3.2, 3.3)
+	meteor_root.add_child(meteor_mesh)
+	var meteor_light := OmniLight3D.new()
+	meteor_light.light_color = Color(0.26, 0.92, 1.0, 1.0)
+	meteor_light.light_energy = 2.0
+	meteor_light.omni_range = 22.0
+	meteor_root.add_child(meteor_light)
+	var start_position: Vector3 = _world.house.to_global(Vector3(28.0, 34.0, 18.0))
+	var impact_position: Vector3 = _world.house.to_global(Vector3(0.4, 1.2, -0.4))
+	meteor_root.global_position = start_position
+	var fall: Tween = _world.create_tween()
+	fall.tween_property(meteor_root, "global_position", impact_position, 1.9).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	fall.parallel().tween_property(meteor_root, "scale", Vector3(2.2, 2.2, 2.2), 1.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await fall.finished
+	await _play_meteor_explosion(impact_position, 6.2, 0.5)
+	meteor_root.queue_free()
+	await _world.get_tree().create_timer(0.35).timeout
+	_world.restart_current_level()
+
+func _spawn_small_meteor() -> void:
+	if _world.house == null:
+		return
+	var meteor_root := Node3D.new()
+	_world.add_child(meteor_root)
+	var meteor_mesh := MeshInstance3D.new()
+	var mesh := SphereMesh.new()
+	mesh.radius = 0.36
+	mesh.height = 0.72
+	meteor_mesh.mesh = mesh
+	meteor_mesh.material_override = _make_glitch_meteor_material(Color(1.0, 0.26, 0.84, 1.0), 2.2, 2.4)
+	meteor_root.add_child(meteor_mesh)
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.42, 0.86, 1.0)
+	light.light_energy = 1.4
+	light.omni_range = 6.5
+	meteor_root.add_child(light)
+	var angle := randf() * TAU
+	var radius := 7.0 + randf() * 10.0
+	var target_position: Vector3 = _world.house.to_global(Vector3(cos(angle) * radius, 0.3 + randf() * 0.8, sin(angle) * radius))
+	var start_position: Vector3 = target_position + Vector3(randf_range(-1.6, 1.6), 17.0 + randf() * 4.0, randf_range(-1.6, 1.6))
+	meteor_root.global_position = start_position
+	var velocity: Vector3 = (target_position - start_position).normalized() * (12.0 + randf() * 4.0)
+	_active_small_meteors.append({
+		"node": meteor_root,
+		"velocity": velocity,
+		"life": 3.2
+	})
+
+func _update_small_meteors(delta: float) -> void:
+	if _active_small_meteors.is_empty():
+		return
+	var space_state: PhysicsDirectSpaceState3D = _world.get_world_3d().direct_space_state
+	var survivors: Array = []
+	for meteor_data in _active_small_meteors:
+		var meteor_root := meteor_data["node"] as Node3D
+		if not is_instance_valid(meteor_root):
+			continue
+		var velocity: Vector3 = meteor_data["velocity"]
+		var life: float = float(meteor_data["life"]) - delta
+		var from := meteor_root.global_position
+		var to := from + velocity * delta
+		var query := PhysicsRayQueryParameters3D.create(from, to)
+		query.collide_with_areas = true
+		var hit: Dictionary = space_state.intersect_ray(query)
+		if hit.is_empty():
+			meteor_root.global_position = to
+			meteor_root.rotate_y(delta * 7.0)
+			meteor_data["life"] = life
+			if life > 0.0:
+				survivors.append(meteor_data)
+			else:
+				_play_small_meteor_hit(meteor_root.global_position, false)
+				meteor_root.queue_free()
+			continue
+		var collider = hit.get("collider")
+		var hit_position: Vector3 = hit.get("position", to)
+		var hit_player := false
+		if collider == _world.player:
+			hit_player = true
+		elif collider is Node and _world.player != null:
+			var collider_node: Node = collider as Node
+			if collider_node != null and _world.player.is_ancestor_of(collider_node):
+				hit_player = true
+		if hit_player and _world.player != null and _world.player.has_method("take_damage"):
+			_world.player.call("take_damage", 30.0)
+		_play_small_meteor_hit(hit_position, hit_player)
+		meteor_root.queue_free()
+	_active_small_meteors = survivors
+
+func _play_small_meteor_hit(position: Vector3, hit_player: bool) -> void:
+	_world.call_deferred("_play_level_one_small_meteor_explosion", position, hit_player)
+
+func play_small_meteor_explosion(position: Vector3, hit_player: bool) -> void:
+	await _play_meteor_explosion(position, 1.7 if hit_player else 1.2, 0.26)
+
+func _play_meteor_explosion(position: Vector3, scale: float, duration: float) -> void:
+	var explosion := Node3D.new()
+	_world.add_child(explosion)
+	explosion.global_position = position
+	var sphere := MeshInstance3D.new()
+	var mesh := SphereMesh.new()
+	mesh.radius = 0.35
+	mesh.height = 0.7
+	sphere.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color = Color(1.0, 0.34, 0.88, 0.42)
+	material.emission_enabled = true
+	material.emission = Color(0.28, 0.96, 1.0, 1.0)
+	material.emission_energy_multiplier = 3.5
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sphere.material_override = material
+	explosion.add_child(sphere)
+	var light := OmniLight3D.new()
+	light.light_color = Color(0.35, 0.94, 1.0, 1.0)
+	light.light_energy = 3.0
+	light.omni_range = 9.0 * scale
+	explosion.add_child(light)
+	var burst: Tween = _world.create_tween()
+	burst.set_parallel(true)
+	burst.tween_property(explosion, "scale", Vector3.ONE * scale, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	burst.tween_property(light, "light_energy", 0.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	burst.tween_property(sphere, "transparency", 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await burst.finished
+	explosion.queue_free()
+
+func _make_glitch_meteor_material(color: Color, energy: float, rim: float) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = METEOR_SHADER
+	material.set_shader_parameter("base_color", Vector3(color.r, color.g, color.b))
+	material.set_shader_parameter("emission_energy", energy)
+	material.set_shader_parameter("glitch_intensity", 1.5)
+	material.set_shader_parameter("rim_strength", rim)
+	material.set_shader_parameter("pulse_strength", 1.5)
+	return material
 
 func _play_axiom_bind_effect() -> void:
 	if _world.player == null:
@@ -607,6 +968,7 @@ func _ensure_underground_hole() -> void:
 		return
 	if _underground_hole_instance.has_method("set_interactable_enabled"):
 		_underground_hole_instance.call("set_interactable_enabled", true)
+	_pulse_objective_highlight(_underground_hole_instance, 1.0, 1.0)
 
 func _attach_underground_hole_to_broken_house() -> void:
 	if not is_instance_valid(_underground_hole_instance) or _broken_house_instance == null:
@@ -620,6 +982,32 @@ func _attach_underground_hole_to_broken_house() -> void:
 		current_parent.remove_child(_underground_hole_instance)
 	back_half.add_child(_underground_hole_instance)
 	_underground_hole_instance.global_transform = hole_transform
+
+func _on_underground_hole_descended() -> void:
+	_escape_timer_running = false
+	_tutorial_active = false
+	_escape_failed_sequence_started = true
+	_clear_small_meteors()
+	if _timer_label != null:
+		_timer_label.visible = false
+	if _tutorial_panel != null:
+		_tutorial_panel.visible = false
+	_set_objective_state("")
+	_world._hint_marker.visible = false
+	_world._hint_label.visible = false
+
+func _clear_small_meteors() -> void:
+	for meteor_data in _active_small_meteors:
+		var meteor_root := meteor_data.get("node") as Node3D
+		if is_instance_valid(meteor_root):
+			meteor_root.queue_free()
+	_active_small_meteors.clear()
+
+func _pulse_objective_highlight(target: Node, minimum: float, maximum: float) -> void:
+	if target == null or not target.has_method("set_highlight_strength"):
+		return
+	var pulse := sin(_world._pulse_time * 1.6) * 0.5 + 0.5
+	target.call("set_highlight_strength", lerpf(minimum, maximum, pulse))
 
 func _set_level_one_terrain_enabled(enabled: bool) -> void:
 	if _terrain_root == null:

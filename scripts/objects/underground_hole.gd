@@ -1,5 +1,7 @@
 extends Interactable
 
+signal descended
+
 @export var target_level_index: int = 1
 
 @onready var _collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
@@ -61,6 +63,7 @@ func _setup_aura_materials() -> void:
 		_glow_light.visible = false
 
 func interact() -> void:
+	descended.emit()
 	GameState.unpause()
 	GameState.current_level_index = target_level_index
 	if target_level_index >= 0 and target_level_index < GameState.LEVELS.size():

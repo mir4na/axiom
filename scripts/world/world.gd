@@ -481,6 +481,14 @@ func _play_level_one_axiom_equip_sequence() -> void:
 	if _level_one_flow != null:
 		await _level_one_flow.play_axiom_equip_sequence()
 
+func _play_level_one_escape_fail_sequence() -> void:
+	if _level_one_flow != null:
+		await _level_one_flow.play_escape_fail_sequence()
+
+func _play_level_one_small_meteor_explosion(position: Vector3, hit_player: bool) -> void:
+	if _level_one_flow != null:
+		await _level_one_flow.play_small_meteor_explosion(position, hit_player)
+
 func _play_camera_shot(start_transform: Transform3D, end_transform: Transform3D, duration: float) -> void:
 	if _intro_camera == null:
 		return

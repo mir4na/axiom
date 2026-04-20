@@ -390,3 +390,11 @@ func set_cinematic_pose(target_position: Vector3, target_yaw: float, target_pitc
 	camera_x_rotation = target_pitch
 	velocity = Vector3.ZERO
 	_sync_hitboxes(1.0 / 60.0)
+
+func take_damage(amount: float) -> void:
+	health = maxf(0.0, health - amount)
+	_update_hud_status()
+	if health <= 0.0:
+		var world := get_parent()
+		if world != null and world.has_method("restart_current_level"):
+			world.call_deferred("restart_current_level")
