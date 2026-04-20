@@ -631,11 +631,11 @@ func _objective_text(key: String, fallback: String) -> String:
 
 func _update_objective_text() -> void:
 	if _objective_state == "scoop":
-		_show_objective(_objective_text("scoop", "OBJECTIVE: Pick up the scoop"))
+		_show_objective(_objective_text("scoop", "Pick up the scoop"))
 	elif _objective_state == "dig":
-		_show_objective("%s %d/%d" % [_objective_text("dig", "OBJECTIVE: Bury the old stuff"), _completed_dig_spots, _total_dig_spots])
+		_show_objective("%s %d/%d" % [_objective_text("dig", "Bury the old stuff"), _completed_dig_spots, _total_dig_spots])
 	elif _objective_state == "rest":
-		_show_objective(_objective_text("rest", "OBJECTIVE: Rest on the sofa"))
+		_show_objective(_objective_text("rest", "Rest on the sofa"))
 	elif _objective_panel != null:
 		_objective_panel.visible = false
 
@@ -719,7 +719,7 @@ func _on_dig_spot_completed(_spot: Node3D) -> void:
 func _finish_world_phase() -> void:
 	if _objective_state != "dig":
 		return
-	_show_objective("%s %d/%d" % [_objective_text("dig", "OBJECTIVE: Bury the old stuff"), _total_dig_spots, _total_dig_spots])
+	_show_objective("%s %d/%d" % [_objective_text("dig", "Bury the old stuff"), _total_dig_spots, _total_dig_spots])
 	await _show_subtitle("That should take care of it. I need to sit down for a minute.", 2.6)
 	_objective_state = "rest"
 	_transition_started = false

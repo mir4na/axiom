@@ -38,6 +38,7 @@ var cinematic_locked: bool = false
 var health: float = 100.0
 var stamina: float = 100.0
 var _stamina_recover_cooldown: float = 0.0
+var _health_regen_timer: float = 0.0
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -152,6 +153,14 @@ func _input(event: InputEvent) -> void:
 			GameState.select_slot(2)
 
 func _physics_process(delta: float) -> void:
+	if health > 0.0 and health < max_health:
+		_health_regen_timer += delta
+		while _health_regen_timer >= 1.0:
+			_health_regen_timer -= 1.0
+			health = minf(max_health, health + 1.0)
+			_update_hud_status()
+	else:
+		_health_regen_timer = 0.0
 	if cinematic_locked:
 		velocity = Vector3.ZERO
 		_sync_hitboxes(delta)

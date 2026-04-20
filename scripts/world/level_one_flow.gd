@@ -68,12 +68,15 @@ func initialize() -> void:
 	_create_escape_ui()
 	_configure_house()
 	_connect_hooks()
+	_set_objective_state("check_outside")
 
 func process_objectives() -> void:
 	_process_escape_phase(_world.get_process_delta_time())
 	if _objective_state == "guest_key" and is_instance_valid(_key_item_instance):
 		_pulse_objective_highlight(_key_item_instance, 0.55, 1.25)
 		_world._update_hint_marker(_key_item_instance.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _key_item_instance.global_position)
+	elif _objective_state == "check_outside" and is_instance_valid(_front_door):
+		_world._update_hint_marker(_front_door.global_position + Vector3(0.0, 0.8, 0.0), "DOOR", _front_door.global_position)
 	elif _objective_state == "guest_unlock" and is_instance_valid(_guest_button_out):
 		_world._update_hint_marker(_guest_button_out.global_position + Vector3(0.0, 0.35, 0.0), "DOOR", _guest_button_out.global_position)
 	elif _objective_state == "guest_axiom" and is_instance_valid(_axiom_item_instance):
@@ -249,10 +252,10 @@ func _create_escape_ui() -> void:
 	_tutorial_panel.anchor_top = 0.5
 	_tutorial_panel.anchor_right = 0.5
 	_tutorial_panel.anchor_bottom = 0.5
-	_tutorial_panel.offset_left = -280.0
-	_tutorial_panel.offset_top = -120.0
-	_tutorial_panel.offset_right = 280.0
-	_tutorial_panel.offset_bottom = 120.0
+	_tutorial_panel.offset_left = -320.0
+	_tutorial_panel.offset_top = -130.0
+	_tutorial_panel.offset_right = 320.0
+	_tutorial_panel.offset_bottom = 130.0
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.05, 0.07, 0.1, 0.94)
 	style.border_width_left = 2
@@ -276,6 +279,7 @@ func _create_escape_ui() -> void:
 	_tutorial_title.offset_top = 18.0
 	_tutorial_title.offset_right = -24.0
 	_tutorial_title.offset_bottom = 50.0
+	_tutorial_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tutorial_title.text = "AXIOM"
 	_tutorial_title.add_theme_font_size_override("font_size", 26)
 	_tutorial_title.add_theme_color_override("font_color", Color(0.92, 0.98, 1.0, 1.0))
@@ -290,6 +294,7 @@ func _create_escape_ui() -> void:
 	_tutorial_body.offset_right = -24.0
 	_tutorial_body.offset_bottom = -54.0
 	_tutorial_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tutorial_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tutorial_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_tutorial_body.add_theme_font_size_override("font_size", 22)
 	_tutorial_body.add_theme_color_override("font_color", Color(0.88, 0.96, 0.98, 1.0))
@@ -415,14 +420,16 @@ func _cache_split_nodes() -> void:
 func _set_objective_state(state: String) -> void:
 	_objective_state = state
 	match _objective_state:
+		"check_outside":
+			_world._show_objective(_world._objective_text("check_outside", "Check outside"))
 		"guest_key":
-			_world._show_objective(_world._objective_text("guest_key", "OBJECTIVE: Take the key from the kitchen"))
+			_world._show_objective(_world._objective_text("guest_key", "Take the key from the kitchen"))
 		"guest_unlock":
-			_world._show_objective(_world._objective_text("guest_unlock", "OBJECTIVE: Open the guest room door"))
+			_world._show_objective(_world._objective_text("guest_unlock", "Open the guest room door"))
 		"guest_axiom":
-			_world._show_objective(_world._objective_text("guest_axiom", "OBJECTIVE: Take the Axiom"))
+			_world._show_objective(_world._objective_text("guest_axiom", "Take the Axiom"))
 		"escape_hole":
-			_world._show_objective("OBJECTIVE: Reach the underground hole before time runs out")
+			_world._show_objective("Reach the underground hole before time runs out")
 		_:
 			if _world._objective_panel != null:
 				_world._objective_panel.visible = false
@@ -447,6 +454,9 @@ func _process_escape_phase(delta: float) -> void:
 	if _small_meteor_spawn_timer <= 0.0:
 		_small_meteor_spawn_timer = SMALL_METEOR_INTERVAL
 		_spawn_small_meteor()
+		_spawn_small_meteor()
+		_spawn_small_meteor()
+		_spawn_small_meteor()
 	_update_small_meteors(delta)
 	if _escape_time_left <= 0.0:
 		_escape_failed_sequence_started = true
@@ -460,6 +470,12 @@ func _start_axiom_tutorial() -> void:
 	_tutorial_active = true
 	_tutorial_page_index = 0
 	_tutorial_space_consumed = true
+	if _timer_label != null:
+		_timer_label.visible = false
+	if _world._objective_panel != null:
+		_world._objective_panel.visible = false
+	_world._hint_marker.visible = false
+	_world._hint_label.visible = false
 	_world._set_intro_lock(true)
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = true
@@ -476,6 +492,7 @@ func _end_axiom_tutorial() -> void:
 	_tutorial_space_consumed = false
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = false
+	_set_objective_state("escape_hole")
 	_world._set_intro_lock(false)
 	_escape_time_left = ESCAPE_DURATION
 	_escape_timer_running = true
@@ -669,12 +686,13 @@ func play_escape_fail_sequence() -> void:
 	_world._hint_marker.visible = false
 	_world._hint_label.visible = false
 	_world._set_intro_lock(true)
+	_world._intro_running = false
 	await _world._set_cinematic_bars(true, 0.28)
-	var player_transform: Transform3D = _world.player_camera.global_transform
-	var fail_start: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(23.0, 16.0, 22.0))).looking_at(_world.house.to_global(Vector3(0.0, 0.6, 0.0)), Vector3.UP)
-	_world._intro_camera.global_transform = player_transform
+	var house_origin: Vector3 = _world.house.global_position
+	var fail_start: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(25.6, 14.2, 5.8))).looking_at(_world.house.to_global(Vector3(0.0, -0.8, 0.0)), Vector3.UP)
+	_world._intro_camera.global_transform = fail_start
 	_world._intro_camera.make_current()
-	await _world._play_camera_shot(player_transform, fail_start, 1.0)
+	await _world.get_tree().create_timer(0.7).timeout
 	var meteor_root := Node3D.new()
 	_world.add_child(meteor_root)
 	var meteor_mesh := MeshInstance3D.new()
@@ -689,16 +707,31 @@ func play_escape_fail_sequence() -> void:
 	meteor_light.light_energy = 2.0
 	meteor_light.omni_range = 22.0
 	meteor_root.add_child(meteor_light)
-	var start_position: Vector3 = _world.house.to_global(Vector3(28.0, 34.0, 18.0))
-	var impact_position: Vector3 = _world.house.to_global(Vector3(0.4, 1.2, -0.4))
+	var start_position: Vector3 = house_origin + Vector3(42.0, 44.0, 28.0)
+	var impact_position: Vector3 = house_origin + Vector3(0.4, 1.2, -0.4)
 	meteor_root.global_position = start_position
+	_world._intro_camera.global_transform = fail_start
+	_world._intro_camera.make_current()
 	var fall: Tween = _world.create_tween()
-	fall.tween_property(meteor_root, "global_position", impact_position, 1.9).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	fall.parallel().tween_property(meteor_root, "scale", Vector3(2.2, 2.2, 2.2), 1.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	fall.tween_property(meteor_root, "global_position", impact_position, 3.4).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	fall.parallel().tween_property(meteor_root, "scale", Vector3(2.2, 2.2, 2.2), 3.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await fall.finished
-	await _play_meteor_explosion(impact_position, 6.2, 0.5)
+	if _world._glitch_overlay != null:
+		_world._glitch_overlay.visible = true
+		_world._glitch_overlay.modulate.a = 0.0
+	var impact_flash: Tween = _world.create_tween()
+	if _world._white_overlay != null:
+		impact_flash.tween_property(_world._white_overlay, "modulate:a", 0.9, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		impact_flash.parallel().tween_property(_world._white_overlay, "modulate:a", 0.0, 0.48).set_delay(0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if _world._glitch_overlay != null:
+		impact_flash.parallel().tween_property(_world._glitch_overlay, "modulate:a", 0.95, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		impact_flash.parallel().tween_property(_world._glitch_overlay, "modulate:a", 0.0, 0.7).set_delay(0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		impact_flash.parallel().tween_method(_world._set_arrival_glitch_strength, 0.0, 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		impact_flash.parallel().tween_method(_world._set_arrival_glitch_strength, 1.0, 0.0, 0.7).set_delay(0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await _play_meteor_explosion(impact_position, 12.0, 1.4)
+	await impact_flash.finished
 	meteor_root.queue_free()
-	await _world.get_tree().create_timer(0.35).timeout
+	await _world.get_tree().create_timer(0.9).timeout
 	_world.restart_current_level()
 
 func _spawn_small_meteor() -> void:
@@ -765,8 +798,6 @@ func _update_small_meteors(delta: float) -> void:
 			var collider_node: Node = collider as Node
 			if collider_node != null and _world.player.is_ancestor_of(collider_node):
 				hit_player = true
-		if hit_player and _world.player != null and _world.player.has_method("take_damage"):
-			_world.player.call("take_damage", 30.0)
 		_play_small_meteor_hit(hit_position, hit_player)
 		meteor_root.queue_free()
 	_active_small_meteors = survivors
@@ -775,9 +806,13 @@ func _play_small_meteor_hit(position: Vector3, hit_player: bool) -> void:
 	_world.call_deferred("_play_level_one_small_meteor_explosion", position, hit_player)
 
 func play_small_meteor_explosion(position: Vector3, hit_player: bool) -> void:
-	await _play_meteor_explosion(position, 1.7 if hit_player else 1.2, 0.26)
+	await _play_meteor_explosion(position, 7.8 if hit_player else 5.4, 0.42, 30.0, 4.6 if hit_player else 3.8)
 
-func _play_meteor_explosion(position: Vector3, scale: float, duration: float) -> void:
+func _play_meteor_explosion(position: Vector3, scale: float, duration: float, damage_amount: float = 0.0, damage_radius: float = 0.0) -> void:
+	if damage_amount > 0.0 and damage_radius > 0.0 and _world.player != null and _world.player.has_method("take_damage"):
+		var player_distance: float = _world.player.global_position.distance_to(position)
+		if player_distance <= damage_radius:
+			_world.player.call("take_damage", damage_amount)
 	var explosion := Node3D.new()
 	_world.add_child(explosion)
 	explosion.global_position = position
