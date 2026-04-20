@@ -408,6 +408,7 @@ func play_axiom_equip_sequence() -> void:
 	_world._hint_label.visible = false
 	_world._set_intro_lock(true)
 	_world._intro_running = false
+	await _play_axiom_bind_effect()
 	await _world._set_cinematic_bars(true, 0.35)
 	
 	var player_transform: Transform3D = _world.player_camera.global_transform
@@ -416,9 +417,9 @@ func play_axiom_equip_sequence() -> void:
 	
 	_world._intro_camera.global_transform = player_transform
 	_world._intro_camera.make_current()
-	await _world._play_camera_shot(player_transform, split_start, 0.9)
+	await _world._play_camera_shot(player_transform, split_start, 1.2)
 	await _world._show_subtitle("What did I just pick up?", 1.8)
-	await _world._play_camera_shot(split_start, split_end, 1.4)
+	await _world._play_camera_shot(split_start, split_end, 2.1)
 	await _play_house_split_glitch()
 	_ensure_underground_hole()
 	await _world._show_subtitle("No... it's splitting the house apart.", 2.0)
@@ -439,19 +440,110 @@ func _play_house_split_glitch() -> void:
 		_world._glitch_overlay.modulate.a = 0.0
 	var glitch_in: Tween = _world.create_tween()
 	if _world._glitch_overlay != null:
-		glitch_in.tween_property(_world._glitch_overlay, "modulate:a", 0.78, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		glitch_in.parallel().tween_method(_world._set_arrival_glitch_strength, 0.0, 1.0, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		glitch_in.tween_property(_world._glitch_overlay, "modulate:a", 0.78, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		glitch_in.parallel().tween_method(_world._set_arrival_glitch_strength, 0.0, 1.0, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	if _broken_house_instance != null:
-		glitch_in.parallel().tween_method(Callable(_broken_house_instance, "set_split_weight"), 0.0, 1.0, 1.15).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		glitch_in.parallel().tween_method(Callable(_broken_house_instance, "set_split_weight"), 0.0, 1.0, 1.7).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await glitch_in.finished
-	await _world.get_tree().create_timer(0.5).timeout
+	await _world.get_tree().create_timer(0.72).timeout
 	var glitch_out: Tween = _world.create_tween()
 	if _world._glitch_overlay != null:
-		glitch_out.tween_property(_world._glitch_overlay, "modulate:a", 0.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		glitch_out.parallel().tween_method(_world._set_arrival_glitch_strength, 1.0, 0.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		glitch_out.tween_property(_world._glitch_overlay, "modulate:a", 0.0, 0.58).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		glitch_out.parallel().tween_method(_world._set_arrival_glitch_strength, 1.0, 0.0, 0.58).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await glitch_out.finished
 	if _world._glitch_overlay != null:
 		_world._glitch_overlay.visible = false
+
+func _play_axiom_bind_effect() -> void:
+	if _world.player == null:
+		return
+	var root := Node3D.new()
+	root.position = _world.player.global_position + Vector3(0.0, 0.95, 0.0)
+	_world.add_child(root)
+	var aura_material := StandardMaterial3D.new()
+	aura_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	aura_material.albedo_color = Color(0.16, 0.82, 1.0, 0.28)
+	aura_material.emission_enabled = true
+	aura_material.emission = Color(0.16, 0.82, 1.0, 1.0)
+	aura_material.emission_energy_multiplier = 1.8
+	aura_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var spark_material := StandardMaterial3D.new()
+	spark_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	spark_material.albedo_color = Color(1.0, 0.3, 0.78, 0.24)
+	spark_material.emission_enabled = true
+	spark_material.emission = Color(1.0, 0.3, 0.78, 1.0)
+	spark_material.emission_energy_multiplier = 2.0
+	spark_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var sphere := MeshInstance3D.new()
+	var sphere_mesh := SphereMesh.new()
+	sphere_mesh.radius = 0.52
+	sphere_mesh.height = 1.04
+	sphere.mesh = sphere_mesh
+	sphere.material_override = aura_material
+	root.add_child(sphere)
+	var ring_a := MeshInstance3D.new()
+	var ring_mesh_a := CylinderMesh.new()
+	ring_mesh_a.top_radius = 0.72
+	ring_mesh_a.bottom_radius = 0.72
+	ring_mesh_a.height = 0.06
+	ring_a.mesh = ring_mesh_a
+	ring_a.material_override = aura_material
+	ring_a.position = Vector3(0.0, -0.32, 0.0)
+	root.add_child(ring_a)
+	var ring_b := MeshInstance3D.new()
+	var ring_mesh_b := CylinderMesh.new()
+	ring_mesh_b.top_radius = 0.38
+	ring_mesh_b.bottom_radius = 0.38
+	ring_mesh_b.height = 0.05
+	ring_b.mesh = ring_mesh_b
+	ring_b.material_override = spark_material
+	ring_b.position = Vector3(0.0, 0.24, 0.0)
+	root.add_child(ring_b)
+	var light := OmniLight3D.new()
+	light.light_color = Color(0.28, 0.88, 1.0, 1.0)
+	light.light_energy = 0.25
+	light.omni_range = 4.0
+	root.add_child(light)
+	var particles := GPUParticles3D.new()
+	particles.amount = 42
+	particles.lifetime = 0.95
+	particles.one_shot = false
+	particles.explosiveness = 0.15
+	particles.randomness = 0.65
+	var particle_material := ParticleProcessMaterial.new()
+	particle_material.direction = Vector3(0.0, 1.0, 0.0)
+	particle_material.spread = 70.0
+	particle_material.initial_velocity_min = 0.35
+	particle_material.initial_velocity_max = 1.15
+	particle_material.gravity = Vector3(0.0, 0.2, 0.0)
+	particle_material.scale_min = 0.08
+	particle_material.scale_max = 0.16
+	particle_material.color = Color(0.8, 0.96, 1.0, 1.0)
+	particles.process_material = particle_material
+	var particle_draw := SphereMesh.new()
+	particle_draw.radius = 0.045
+	particle_draw.height = 0.09
+	particles.draw_pass_1 = particle_draw
+	root.add_child(particles)
+	particles.emitting = true
+	sphere.scale = Vector3(0.2, 0.2, 0.2)
+	ring_a.scale = Vector3(0.4, 1.0, 0.4)
+	ring_b.scale = Vector3(0.3, 1.0, 0.3)
+	var pulse: Tween = _world.create_tween()
+	pulse.set_parallel(true)
+	pulse.tween_property(sphere, "scale", Vector3(1.7, 1.7, 1.7), 0.92).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	pulse.tween_property(sphere, "position:y", 0.18, 0.92).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	pulse.tween_property(ring_a, "scale", Vector3(2.8, 1.0, 2.8), 0.92).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	pulse.tween_property(ring_b, "scale", Vector3(3.5, 1.0, 3.5), 0.92).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	pulse.tween_property(ring_b, "position:y", 0.72, 0.92).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	pulse.tween_property(light, "light_energy", 2.2, 0.42).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	pulse.tween_property(light, "light_energy", 0.0, 0.5).set_delay(0.42).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	pulse.tween_property(root, "rotation:y", TAU, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse.tween_property(sphere, "transparency", 1.0, 0.34).set_delay(0.58)
+	pulse.tween_property(ring_a, "transparency", 1.0, 0.34).set_delay(0.58)
+	pulse.tween_property(ring_b, "transparency", 1.0, 0.34).set_delay(0.58)
+	await _world.get_tree().create_timer(0.98).timeout
+	root.queue_free()
 
 func _play_glitch_fragment_burst(from_weight: float, to_weight: float, duration: float) -> void:
 	_cache_split_nodes()

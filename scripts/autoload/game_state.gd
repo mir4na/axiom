@@ -226,11 +226,10 @@ func select_slot(index: int) -> void:
 	inventory_changed.emit()
 
 func add_item(item_id: String) -> bool:
-	for i in range(slots.size()):
-		if slots[i] == "":
-			slots[i] = item_id
-			inventory_changed.emit()
-			return true
+	if selected_slot >= 0 and selected_slot < slots.size() and slots[selected_slot] == "":
+		slots[selected_slot] = item_id
+		inventory_changed.emit()
+		return true
 	return false
 
 func consume_item(item_id: String) -> bool:
@@ -257,3 +256,17 @@ func consume_selected() -> String:
 
 func has_item(item_id: String) -> bool:
 	return slots.has(item_id)
+
+func has_selected_item(item_id: String) -> bool:
+	if selected_slot < 0 or selected_slot >= slots.size():
+		return false
+	return slots[selected_slot] == item_id
+
+func consume_selected_item(item_id: String) -> bool:
+	if selected_slot < 0 or selected_slot >= slots.size():
+		return false
+	if slots[selected_slot] != item_id:
+		return false
+	slots[selected_slot] = ""
+	inventory_changed.emit()
+	return true

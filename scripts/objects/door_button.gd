@@ -40,9 +40,9 @@ func interact() -> void:
 	if _door == null or _door.is_moving:
 		return
 	if locked:
-		if required_item_id != "" and GameState.has_item(required_item_id):
+		if required_item_id != "" and GameState.has_selected_item(required_item_id):
 			if consume_required_item:
-				GameState.consume_item(required_item_id)
+				GameState.consume_selected_item(required_item_id)
 			locked = false
 			_prompt_override_until = 0.0
 		else:
