@@ -91,8 +91,8 @@ func _prepare_half(root: Node3D, keep_names: Array, is_front: bool) -> void:
 	if (is_front and _front_prepared) or ((not is_front) and _back_prepared):
 		return
 	_prune_half(root, keep_names)
-	_create_half_shell(root, is_front)
 	_configure_half_lights(root, is_front)
+	_add_fracture_debris(root, is_front)
 	_disable_interactions(root)
 	if is_front:
 		_front_prepared = true
@@ -106,59 +106,6 @@ func _prune_half(root: Node3D, keep_names: Array) -> void:
 			remove_list.append(child)
 	for child in remove_list:
 		child.free()
-
-func _create_half_shell(root: Node3D, is_front: bool) -> void:
-	var shell := CSGCombiner3D.new()
-	shell.name = "HalfShell"
-	shell.use_collision = true
-	root.add_child(shell)
-
-	var wall_material := StandardMaterial3D.new()
-	wall_material.albedo_color = Color(0.92, 0.88, 0.82, 1.0)
-	var roof_material := StandardMaterial3D.new()
-	roof_material.albedo_color = Color(0.25, 0.22, 0.28, 1.0)
-
-	var walls := CSGBox3D.new()
-	walls.size = Vector3(24.0, 4.0, 8.8)
-	walls.position = Vector3(0.0, 0.0, 4.35 if is_front else -4.35)
-	walls.material = wall_material
-	shell.add_child(walls)
-
-	var hollow := CSGBox3D.new()
-	hollow.operation = CSGShape3D.OPERATION_SUBTRACTION
-	hollow.size = Vector3(23.6, 3.8, 8.4)
-	hollow.position = Vector3(0.0, 0.0, 4.35 if is_front else -4.35)
-	shell.add_child(hollow)
-
-	if is_front:
-		_add_gap(shell, Vector3(-1.995642, -0.8221192, 8.92), Vector3(1.6542237, 2.3557618, 0.6))
-		_add_gap(shell, Vector3(-8.0, 0.3, 8.92), Vector3(2.5, 1.4, 0.6))
-		_add_gap(shell, Vector3(2.0, 0.3, 8.92), Vector3(2.5, 1.4, 0.6))
-	else:
-		_add_gap(shell, Vector3(-8.0, 0.3, -8.92), Vector3(2.5, 1.4, 0.6))
-		_add_gap(shell, Vector3(11.92, 0.3, -5.0), Vector3(0.6, 1.4, 2.5))
-		_add_gap(shell, Vector3(11.92, 0.3, 4.0), Vector3(0.6, 1.4, 2.5))
-
-	var roof := CSGBox3D.new()
-	roof.size = Vector3(24.8, 0.9, 9.4)
-	roof.position = Vector3(0.0, 3.85, 4.2 if is_front else -4.2)
-	roof.material = roof_material
-	root.add_child(roof)
-
-	var fracture_cap := CSGBox3D.new()
-	fracture_cap.name = "FractureCap"
-	fracture_cap.size = Vector3(24.0, 3.8, 0.2)
-	fracture_cap.position = Vector3(0.0, 0.0, 0.08 if is_front else -0.08)
-	fracture_cap.material = wall_material
-	root.add_child(fracture_cap)
-	_add_fracture_debris(root, is_front)
-
-func _add_gap(shell: CSGCombiner3D, gap_position: Vector3, gap_size: Vector3) -> void:
-	var gap := CSGBox3D.new()
-	gap.operation = CSGShape3D.OPERATION_SUBTRACTION
-	gap.position = gap_position
-	gap.size = gap_size
-	shell.add_child(gap)
 
 func _configure_half_lights(root: Node3D, is_front: bool) -> void:
 	var lights := root.get_node_or_null("Lights")
@@ -183,33 +130,36 @@ func _add_fracture_debris(root: Node3D, is_front: bool) -> void:
 	material.metallic = 0.28
 	material.roughness = 0.22
 	var points := [
-		Vector3(-8.9, 1.35, 0.0),
-		Vector3(-7.1, 0.35, 0.0),
-		Vector3(-5.4, -0.6, 0.0),
-		Vector3(-3.2, 0.95, 0.0),
-		Vector3(-1.4, -1.2, 0.0),
-		Vector3(0.8, -0.15, 0.0),
-		Vector3(2.5, 1.2, 0.0),
-		Vector3(4.3, -0.95, 0.0),
-		Vector3(6.0, 0.45, 0.0),
-		Vector3(8.2, -0.2, 0.0),
+		Vector3(-8.9, 1.45, 0.0),
+		Vector3(-7.8, 0.9, 0.0),
+		Vector3(-6.6, -0.15, 0.0),
+		Vector3(-5.0, -0.85, 0.0),
+		Vector3(-3.7, 0.55, 0.0),
+		Vector3(-2.2, 1.25, 0.0),
+		Vector3(-0.8, -0.35, 0.0),
+		Vector3(0.9, -1.15, 0.0),
+		Vector3(2.4, 0.25, 0.0),
+		Vector3(4.1, 1.1, 0.0),
+		Vector3(5.9, -0.55, 0.0),
+		Vector3(7.7, 0.2, 0.0),
+		Vector3(9.0, 0.95, 0.0),
 	]
 	for i in range(points.size()):
 		var chunk := MeshInstance3D.new()
 		var mesh := BoxMesh.new()
-		mesh.size = Vector3(0.32 + float(i % 3) * 0.14, 0.28 + float(i % 2) * 0.16, 0.08 + float(i % 4) * 0.05)
+		mesh.size = Vector3(0.22 + float(i % 3) * 0.12, 0.22 + float(i % 2) * 0.18, 0.08 + float(i % 4) * 0.05)
 		chunk.mesh = mesh
 		chunk.material_override = material
-		var z_bias := 0.11 if is_front else -0.11
+		var z_bias := 0.06 if is_front else -0.06
 		chunk.position = points[i] + Vector3(
-			sin(float(i) * 1.37) * 0.26,
-			cos(float(i) * 1.11) * 0.12,
-			z_bias + sin(float(i) * 2.4) * 0.03
+			sin(float(i) * 1.37) * 0.18,
+			cos(float(i) * 1.11) * 0.09,
+			z_bias + sin(float(i) * 2.4) * 0.025
 		)
 		chunk.rotation = Vector3(
-			deg_to_rad(-18.0 + float(i) * 4.5),
-			deg_to_rad(7.0 - float(i) * 2.8),
-			deg_to_rad(-9.0 + float(i) * 3.2)
+			deg_to_rad(-22.0 + float(i) * 5.4),
+			deg_to_rad(9.0 - float(i) * 3.4),
+			deg_to_rad(-13.0 + float(i) * 4.1)
 		)
 		debris_root.add_child(chunk)
 
