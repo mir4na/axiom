@@ -914,4 +914,8 @@ func restart_current_level() -> void:
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
 	GameState.rewind_mode_active = false
 	GameState.time_direction = GameState.TIME_FORWARD
-	get_tree().change_scene_to_file(current_scene.scene_file_path)
+	var screen_fx := _screen_fx()
+	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
+		await screen_fx.reboot_to_scene(current_scene.scene_file_path, true)
+	else:
+		get_tree().change_scene_to_file(current_scene.scene_file_path)

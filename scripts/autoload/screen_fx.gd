@@ -2,6 +2,7 @@ extends CanvasLayer
 
 const BOOT_SCENE_SWAP_TIME := 0.26
 const BOOT_DURATION := 0.9
+const POWER_OFF_DURATION := 0.42
 
 var _boot_backdrop: ColorRect
 var _crt_rect: ColorRect
@@ -37,6 +38,32 @@ func boot_to_scene(path: String, enable_crt_after: bool = true) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await tween.finished
+	_hide_boot_overlay()
+	_crt_enabled = enable_crt_after
+	_apply_crt_state(enable_crt_after)
+	_boot_running = false
+
+func reboot_to_scene(path: String, enable_crt_after: bool = true) -> void:
+	if _boot_running:
+		return
+	_boot_running = true
+	get_tree().paused = false
+	_boot_backdrop.visible = true
+	_power_rect.visible = true
+	_crt_rect.visible = _crt_enabled
+	_set_power_amount(1.0)
+	var power_off: Tween = create_tween()
+	power_off.tween_method(_set_power_amount, 1.0, 0.0, POWER_OFF_DURATION).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	await power_off.finished
+	get_tree().change_scene_to_file(path)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_apply_crt_state(false)
+	_show_boot_overlay()
+	_set_power_amount(0.0)
+	var power_on: Tween = create_tween()
+	power_on.tween_method(_set_power_amount, 0.0, 1.0, BOOT_DURATION).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	await power_on.finished
 	_hide_boot_overlay()
 	_crt_enabled = enable_crt_after
 	_apply_crt_state(enable_crt_after)

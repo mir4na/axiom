@@ -22,6 +22,7 @@ const GUEST_REVEAL_FRAGMENT_CENTER := Vector3(4.0, -0.85, 3.5)
 
 var _world
 var _front_door: Node3D
+var _front_button_out: Node3D
 var _guest_door: Node3D
 var _guest_button_out: Node3D
 var _guest_button_in: Node3D
@@ -75,8 +76,8 @@ func process_objectives() -> void:
 	if _objective_state == "guest_key" and is_instance_valid(_key_item_instance):
 		_pulse_objective_highlight(_key_item_instance, 0.55, 1.25)
 		_world._update_hint_marker(_key_item_instance.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _key_item_instance.global_position)
-	elif _objective_state == "check_outside" and is_instance_valid(_front_door):
-		_world._update_hint_marker(_front_door.global_position + Vector3(0.0, 0.8, 0.0), "DOOR", _front_door.global_position)
+	elif _objective_state == "check_outside" and is_instance_valid(_front_button_out):
+		_world._update_hint_marker(_front_button_out.global_position + Vector3(0.0, 0.35, 0.0), "DOOR", _front_button_out.global_position)
 	elif _objective_state == "guest_unlock" and is_instance_valid(_guest_button_out):
 		_world._update_hint_marker(_guest_button_out.global_position + Vector3(0.0, 0.35, 0.0), "DOOR", _guest_button_out.global_position)
 	elif _objective_state == "guest_axiom" and is_instance_valid(_axiom_item_instance):
@@ -96,8 +97,7 @@ func handle_inventory_changed() -> void:
 			_world.call_deferred("_play_level_one_guest_key_pickup_subtitle")
 
 func play_arrival() -> void:
-	if _world.player_hud != null:
-		_world.player_hud.visible = false
+	_set_gameplay_ui_visible(false)
 	if _world.player != null:
 		_world.player.visible = true
 	if _world.player_camera != null:
@@ -122,8 +122,7 @@ func play_arrival() -> void:
 	if _world._glitch_overlay != null:
 		_world._glitch_overlay.visible = false
 	_world._set_intro_lock(false)
-	if _world.player_hud != null:
-		_world.player_hud.visible = true
+	_set_gameplay_ui_visible(true)
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
 
 func play_guest_key_pickup_subtitle() -> void:
@@ -133,6 +132,7 @@ func _cache_nodes() -> void:
 	if _world.house == null:
 		return
 	_front_door = _world.house.get_node_or_null("FrontDoor") as Node3D
+	_front_button_out = _world.house.get_node_or_null("FrontDoorBtnOut") as Node3D
 	_guest_door = _world.house.get_node_or_null("GuestDoor") as Node3D
 	_guest_button_out = _world.house.get_node_or_null("GuestDoorBtnOut") as Node3D
 	_guest_button_in = _world.house.get_node_or_null("GuestDoorBtnIn") as Node3D
@@ -470,12 +470,7 @@ func _start_axiom_tutorial() -> void:
 	_tutorial_active = true
 	_tutorial_page_index = 0
 	_tutorial_space_consumed = true
-	if _timer_label != null:
-		_timer_label.visible = false
-	if _world._objective_panel != null:
-		_world._objective_panel.visible = false
-	_world._hint_marker.visible = false
-	_world._hint_label.visible = false
+	_set_gameplay_ui_visible(false)
 	_world._set_intro_lock(true)
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = true
@@ -494,6 +489,7 @@ func _end_axiom_tutorial() -> void:
 		_tutorial_panel.visible = false
 	_set_objective_state("escape_hole")
 	_world._set_intro_lock(false)
+	_set_gameplay_ui_visible(true)
 	_escape_time_left = ESCAPE_DURATION
 	_escape_timer_running = true
 	_small_meteor_spawn_timer = SMALL_METEOR_INTERVAL
@@ -523,6 +519,7 @@ func play_guest_door_reveal_cinematic() -> void:
 	if not _world._is_level_one_scene() or _level_one_sequence_running:
 		return
 	_level_one_sequence_running = true
+	_set_gameplay_ui_visible(false)
 	_world._set_intro_lock(true)
 	_world._intro_running = false
 	await _world._set_cinematic_bars(true, 0.35)
@@ -551,6 +548,7 @@ func play_guest_door_reveal_cinematic() -> void:
 		_spawn_key()
 		_set_objective_state("guest_key")
 	_world._set_intro_lock(false)
+	_set_gameplay_ui_visible(true)
 	_level_one_sequence_running = false
 
 func _play_guest_door_materialize() -> void:
@@ -623,8 +621,7 @@ func play_axiom_equip_sequence() -> void:
 		return
 	_level_one_sequence_running = true
 	_set_objective_state("")
-	_world._hint_marker.visible = false
-	_world._hint_label.visible = false
+	_set_gameplay_ui_visible(false)
 	_world._set_intro_lock(true)
 	_world._intro_running = false
 	await _play_axiom_bind_effect()
@@ -678,13 +675,10 @@ func play_escape_fail_sequence() -> void:
 	_escape_timer_running = false
 	_tutorial_active = false
 	_clear_small_meteors()
-	if _timer_label != null:
-		_timer_label.visible = false
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = false
 	_set_objective_state("")
-	_world._hint_marker.visible = false
-	_world._hint_label.visible = false
+	_set_gameplay_ui_visible(false)
 	_world._set_intro_lock(true)
 	_world._intro_running = false
 	await _world._set_cinematic_bars(true, 0.28)
@@ -719,19 +713,16 @@ func play_escape_fail_sequence() -> void:
 	if _world._glitch_overlay != null:
 		_world._glitch_overlay.visible = true
 		_world._glitch_overlay.modulate.a = 0.0
-	var impact_flash: Tween = _world.create_tween()
+	var impact_flash_in: Tween = _world.create_tween()
 	if _world._white_overlay != null:
-		impact_flash.tween_property(_world._white_overlay, "modulate:a", 0.9, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		impact_flash.parallel().tween_property(_world._white_overlay, "modulate:a", 0.0, 0.48).set_delay(0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		impact_flash_in.tween_property(_world._white_overlay, "modulate:a", 0.9, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	if _world._glitch_overlay != null:
-		impact_flash.parallel().tween_property(_world._glitch_overlay, "modulate:a", 0.95, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		impact_flash.parallel().tween_property(_world._glitch_overlay, "modulate:a", 0.0, 0.7).set_delay(0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		impact_flash.parallel().tween_method(_world._set_arrival_glitch_strength, 0.0, 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		impact_flash.parallel().tween_method(_world._set_arrival_glitch_strength, 1.0, 0.0, 0.7).set_delay(0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		impact_flash_in.parallel().tween_property(_world._glitch_overlay, "modulate:a", 0.95, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		impact_flash_in.parallel().tween_method(_world._set_arrival_glitch_strength, 0.0, 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await impact_flash_in.finished
 	await _play_meteor_explosion(impact_position, 12.0, 1.4)
-	await impact_flash.finished
 	meteor_root.queue_free()
-	await _world.get_tree().create_timer(0.9).timeout
+	await _world.get_tree().create_timer(0.08).timeout
 	_world.restart_current_level()
 
 func _spawn_small_meteor() -> void:
@@ -1023,13 +1014,10 @@ func _on_underground_hole_descended() -> void:
 	_tutorial_active = false
 	_escape_failed_sequence_started = true
 	_clear_small_meteors()
-	if _timer_label != null:
-		_timer_label.visible = false
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = false
 	_set_objective_state("")
-	_world._hint_marker.visible = false
-	_world._hint_label.visible = false
+	_set_gameplay_ui_visible(false)
 
 func _clear_small_meteors() -> void:
 	for meteor_data in _active_small_meteors:
@@ -1043,6 +1031,16 @@ func _pulse_objective_highlight(target: Node, minimum: float, maximum: float) ->
 		return
 	var pulse := sin(_world._pulse_time * 1.6) * 0.5 + 0.5
 	target.call("set_highlight_strength", lerpf(minimum, maximum, pulse))
+
+func _set_gameplay_ui_visible(visible: bool) -> void:
+	if _world.player_hud != null:
+		_world.player_hud.visible = visible
+	if _world._objective_panel != null:
+		_world._objective_panel.visible = visible and _objective_state != ""
+	if _timer_label != null:
+		_timer_label.visible = visible and _escape_timer_running
+	_world._hint_marker.visible = false
+	_world._hint_label.visible = false
 
 func _set_level_one_terrain_enabled(enabled: bool) -> void:
 	if _terrain_root == null:
