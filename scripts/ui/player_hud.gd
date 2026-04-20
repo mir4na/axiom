@@ -2,12 +2,25 @@ extends CanvasLayer
 
 @onready var prompt_label: Label = $PromptLabel
 @onready var crosshair: Label = $Crosshair
-@onready var slot_1: PanelContainer = $InventoryBar/Slot1
-@onready var slot_2: PanelContainer = $InventoryBar/Slot2
-@onready var slot_3: PanelContainer = $InventoryBar/Slot3
+@onready var slot_1: Control = $InventoryBar/Slot1
+@onready var slot_2: Control = $InventoryBar/Slot2
+@onready var slot_3: Control = $InventoryBar/Slot3
+@onready var slot_1_back: ColorRect = $InventoryBar/Slot1/Back
+@onready var slot_2_back: ColorRect = $InventoryBar/Slot2/Back
+@onready var slot_3_back: ColorRect = $InventoryBar/Slot3/Back
+@onready var slot_1_accent: ColorRect = $InventoryBar/Slot1/Accent
+@onready var slot_2_accent: ColorRect = $InventoryBar/Slot2/Accent
+@onready var slot_3_accent: ColorRect = $InventoryBar/Slot3/Accent
 @onready var label_1: Label = $InventoryBar/Slot1/Label
 @onready var label_2: Label = $InventoryBar/Slot2/Label
 @onready var label_3: Label = $InventoryBar/Slot3/Label
+@onready var status_panel: Control = $StatusPanel
+@onready var health_value: Label = $StatusPanel/HealthValue
+@onready var stamina_value: Label = $StatusPanel/EnergyValue
+@onready var health_bar_track: Control = $StatusPanel/HealthBarTrack
+@onready var stamina_bar_track: Control = $StatusPanel/StaminaBarTrack
+@onready var health_bar_fill: ColorRect = $StatusPanel/HealthBarTrack/HealthBarFill
+@onready var stamina_bar_fill: ColorRect = $StatusPanel/StaminaBarTrack/StaminaBarFill
 @onready var glitch_overlay: ColorRect = $GlitchOverlay
 @onready var timeline_bar_container: Control = $TimelineBarContainer
 @onready var film_strip: Control = $TimelineBarContainer/FilmStrip
@@ -17,34 +30,39 @@ extends CanvasLayer
 @onready var inventory_bar: HBoxContainer = $InventoryBar
 @onready var dig_progress_bar: Control = $DigProgress
 
-var normal_style: StyleBoxFlat
-var selected_style: StyleBoxFlat
 var _mark_nodes: Dictionary = {}
 var _invert_tween: Tween
 var _glitch_tween: Tween
+var _health_ratio: float = 1.0
+var _stamina_ratio: float = 1.0
 
 func set_dig_progress(val: float, is_vis: bool) -> void:
 	dig_progress_bar.set_progress(val, is_vis)
 
+func set_health(current: float, maximum: float) -> void:
+	var safe_max := maxf(maximum, 1.0)
+	_health_ratio = clampf(current / safe_max, 0.0, 1.0)
+	health_value.text = "%d / %d" % [int(round(current)), int(round(safe_max))]
+	call_deferred("_update_status_bars")
+
+func set_stamina(current: float, maximum: float) -> void:
+	var safe_max := maxf(maximum, 1.0)
+	_stamina_ratio = clampf(current / safe_max, 0.0, 1.0)
+	stamina_value.text = "%d / %d" % [int(round(current)), int(round(safe_max))]
+	call_deferred("_update_status_bars")
+
 func _ready() -> void:
 	prompt_label.visible = false
-
-	normal_style = StyleBoxFlat.new()
-	normal_style.bg_color = Color(0, 0, 0, 0.6)
-	normal_style.border_width_left = 2
-	normal_style.border_width_right = 2
-	normal_style.border_width_top = 2
-	normal_style.border_width_bottom = 2
-	normal_style.border_color = Color(0.2, 0.2, 0.2, 1)
-
-	selected_style = normal_style.duplicate()
-	selected_style.border_color = Color(1, 0.9, 0.2, 1)
 
 	GameState.inventory_changed.connect(_update_inventory_ui)
 	GameState.time_direction_changed.connect(_on_time_direction_changed)
 	GameState.rewind_mode_changed.connect(_on_rewind_mode_changed)
+	get_viewport().size_changed.connect(_update_status_bars)
 
 	_update_inventory_ui()
+	set_health(100.0, 100.0)
+	set_stamina(100.0, 100.0)
+	call_deferred("_update_status_bars")
 
 func _set_shader_param(param: String, value: float) -> void:
 	if glitch_overlay.material is ShaderMaterial:
@@ -153,6 +171,7 @@ func _on_rewind_mode_changed(active: bool) -> void:
 		tween_ui.tween_property(inventory_bar, "modulate:a", 0.0, 0.25)
 		tween_ui.tween_property(crosshair, "modulate:a", 0.0, 0.25)
 		tween_ui.tween_property(prompt_label, "modulate:a", 0.0, 0.25)
+		tween_ui.tween_property(status_panel, "modulate:a", 0.22, 0.25)
 		tween_ui.tween_property(timeline_bar_container, "scale", Vector2(1.0, 1.0), 0.3).set_trans(Tween.TRANS_BACK)
 		tween_ui.tween_property(timeline_bar_container, "modulate:a", 1.0, 0.3)
 	else:
@@ -168,6 +187,7 @@ func _on_rewind_mode_changed(active: bool) -> void:
 		tween_ui.tween_property(inventory_bar, "modulate:a", 1.0, 0.3)
 		tween_ui.tween_property(crosshair, "modulate:a", 1.0, 0.3)
 		tween_ui.tween_property(prompt_label, "modulate:a", 1.0, 0.3)
+		tween_ui.tween_property(status_panel, "modulate:a", 1.0, 0.3)
 		tween_ui.tween_property(timeline_bar_container, "scale", Vector2(1.0, 0.3), 0.3).set_trans(Tween.TRANS_BACK)
 		tween_ui.tween_property(timeline_bar_container, "modulate:a", 0.0, 0.2)
 
@@ -209,10 +229,30 @@ func _update_inventory_ui() -> void:
 	var slots = GameState.slots
 	var sel = GameState.selected_slot
 
-	label_1.text = "1: " + (slots[0] if slots[0] != "" else "Empty")
-	label_2.text = "2: " + (slots[1] if slots[1] != "" else "Empty")
-	label_3.text = "3: " + (slots[2] if slots[2] != "" else "Empty")
+	label_1.text = _format_slot_name(slots[0])
+	label_2.text = _format_slot_name(slots[1])
+	label_3.text = _format_slot_name(slots[2])
+	_apply_slot_state(slot_1_back, slot_1_accent, sel == 0)
+	_apply_slot_state(slot_2_back, slot_2_accent, sel == 1)
+	_apply_slot_state(slot_3_back, slot_3_accent, sel == 2)
 
-	slot_1.add_theme_stylebox_override("panel", selected_style if sel == 0 else normal_style)
-	slot_2.add_theme_stylebox_override("panel", selected_style if sel == 1 else normal_style)
-	slot_3.add_theme_stylebox_override("panel", selected_style if sel == 2 else normal_style)
+func _format_slot_name(item_id: String) -> String:
+	if item_id == "":
+		return "EMPTY"
+	return item_id.replace("_", " ").to_upper()
+
+func _update_status_bars() -> void:
+	if not is_instance_valid(health_bar_track) or not is_instance_valid(stamina_bar_track):
+		return
+	var health_width := maxf(284.0 - 12.0, 0.0)
+	var stamina_width := maxf(224.0 - 8.0, 0.0)
+	health_bar_fill.size.x = health_width * _health_ratio
+	stamina_bar_fill.size.x = stamina_width * _stamina_ratio
+
+func _apply_slot_state(back: ColorRect, accent: ColorRect, selected: bool) -> void:
+	if selected:
+		back.color = Color(0.15, 0.03, 0.05, 0.98)
+		accent.color = Color(0.98, 0.82, 0.24, 1.0)
+	else:
+		back.color = Color(0.05, 0.05, 0.06, 0.96)
+		accent.color = Color(0.94, 0.18, 0.23, 1.0)

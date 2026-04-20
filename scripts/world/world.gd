@@ -9,19 +9,18 @@ const INTRO_LINES := [
 	{"text": "Right... I still need to clear out the yard.", "duration": 2.8},
 	{"text": "The scoop should still be outside.", "duration": 2.4}
 ]
-const SCOOP_OBJECTIVE := "OBJECTIVE: Pick up the scoop"
-const DIG_OBJECTIVE := "OBJECTIVE: Bury the old stuff"
-const REST_OBJECTIVE := "OBJECTIVE: Rest on the sofa"
 const WORLD_SCENE_PATH := "res://scenes/world/world.tscn"
 const LEVEL_ONE_SCENE_PATH := "res://scenes/levels/level_01.tscn"
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const LEVEL_ONE_FLOW := preload("res://scripts/world/level_one_flow.gd")
+const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
 
 @onready var player: CharacterBody3D = get_node_or_null("Player") as CharacterBody3D
 @onready var player_camera: Camera3D = get_node_or_null("Player/root/Skeleton3D/BoneAttachment3D/Head/Camera3D") as Camera3D
 @onready var player_hud: CanvasLayer = get_node_or_null("Player/PlayerHUD") as CanvasLayer
 @onready var shovel: Node3D = get_node_or_null("Shovel") as Node3D
 @onready var house: Node3D = get_node_or_null("House") as Node3D
+@onready var objective_config: Node = get_node_or_null("ObjectiveConfig")
 
 var _target_scale: float = 1.0
 var _yaw: float = 0.0
@@ -50,7 +49,8 @@ var _fade_overlay: ColorRect
 var _white_overlay: ColorRect
 var _glitch_overlay: ColorRect
 var _subtitle_label: Label
-var _objective_panel: PanelContainer
+var _objective_panel: Control
+var _objective_tag: Label
 var _objective_label: Label
 var _hint_marker: ColorRect
 var _hint_label: Label
@@ -215,34 +215,15 @@ func _create_intro_ui() -> void:
 	_bottom_bar.visible = false
 	_intro_ui.add_child(_bottom_bar)
 
-	_objective_panel = PanelContainer.new()
-	_objective_panel.anchor_left = 0.0
+	_objective_panel = OBJECTIVE_PANEL_SCENE.instantiate() as Control
+	_objective_panel.anchor_left = 1.0
 	_objective_panel.anchor_top = 0.0
-	_objective_panel.anchor_right = 0.0
+	_objective_panel.anchor_right = 1.0
 	_objective_panel.anchor_bottom = 0.0
-	_objective_panel.offset_left = 24.0
-	_objective_panel.offset_top = 24.0
-	_objective_panel.offset_right = 420.0
-	_objective_panel.offset_bottom = 84.0
 	_objective_panel.visible = false
-	var objective_style := StyleBoxFlat.new()
-	objective_style.bg_color = Color(0.04, 0.06, 0.05, 0.82)
-	objective_style.border_width_left = 4
-	objective_style.border_color = Color(0.72, 0.94, 0.62, 1.0)
-	objective_style.corner_radius_top_left = 8
-	objective_style.corner_radius_top_right = 8
-	objective_style.corner_radius_bottom_right = 8
-	objective_style.corner_radius_bottom_left = 8
-	_objective_panel.add_theme_stylebox_override("panel", objective_style)
 	_intro_ui.add_child(_objective_panel)
-
-	_objective_label = Label.new()
-	_objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_objective_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_objective_label.add_theme_font_size_override("font_size", 22)
-	_objective_label.add_theme_color_override("font_color", Color(0.94, 0.97, 0.92, 1.0))
-	_objective_panel.add_child(_objective_label)
+	_objective_tag = _objective_panel.get_node("Tag") as Label
+	_objective_label = _objective_panel.get_node("Text") as Label
 
 	_subtitle_label = Label.new()
 	_subtitle_label.anchor_left = 0.16
@@ -473,7 +454,7 @@ func _play_intro_sequence() -> void:
 	_subtitle_label.visible = false
 	_intro_running = false
 	await _restore_player_camera()
-	_show_objective(SCOOP_OBJECTIVE)
+	_show_objective(_objective_text("scoop", "OBJECTIVE: Pick up the scoop"))
 	_objective_state = "scoop"
 	await _show_subtitle("I should grab the scoop before I start digging.", 2.5)
 	_set_intro_lock(false)
@@ -631,17 +612,24 @@ func _show_subtitle(text: String, duration: float) -> void:
 func _show_objective(text: String) -> void:
 	_objective_label.text = text
 	_objective_panel.modulate = Color(1, 1, 1, 0)
+	_objective_panel.position.y = 12.0
 	_objective_panel.visible = true
-	var tween := create_tween()
+	var tween := create_tween().set_parallel(true)
 	tween.tween_property(_objective_panel, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_objective_panel, "position:y", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+func _objective_text(key: String, fallback: String) -> String:
+	if objective_config != null and objective_config.has_method("get_objective_text"):
+		return objective_config.get_objective_text(key, fallback)
+	return fallback
 
 func _update_objective_text() -> void:
 	if _objective_state == "scoop":
-		_show_objective(SCOOP_OBJECTIVE)
+		_show_objective(_objective_text("scoop", "OBJECTIVE: Pick up the scoop"))
 	elif _objective_state == "dig":
-		_show_objective("%s %d/%d" % [DIG_OBJECTIVE, _completed_dig_spots, _total_dig_spots])
+		_show_objective("%s %d/%d" % [_objective_text("dig", "OBJECTIVE: Bury the old stuff"), _completed_dig_spots, _total_dig_spots])
 	elif _objective_state == "rest":
-		_show_objective(REST_OBJECTIVE)
+		_show_objective(_objective_text("rest", "OBJECTIVE: Rest on the sofa"))
 	elif _objective_panel != null:
 		_objective_panel.visible = false
 
@@ -725,7 +713,7 @@ func _on_dig_spot_completed(_spot: Node3D) -> void:
 func _finish_world_phase() -> void:
 	if _objective_state != "dig":
 		return
-	_show_objective("%s %d/%d" % [DIG_OBJECTIVE, _total_dig_spots, _total_dig_spots])
+	_show_objective("%s %d/%d" % [_objective_text("dig", "OBJECTIVE: Bury the old stuff"), _total_dig_spots, _total_dig_spots])
 	await _show_subtitle("That should take care of it. I need to sit down for a minute.", 2.6)
 	_objective_state = "rest"
 	_transition_started = false

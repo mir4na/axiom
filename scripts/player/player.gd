@@ -9,6 +9,11 @@ extends CharacterBody3D
 @export var mouse_sensitivity: float = 0.3
 @export var normal_height: float = 1.68
 @export var crouch_height: float = 0.9
+@export var max_health: float = 100.0
+@export var max_stamina: float = 100.0
+@export var stamina_drain_rate: float = 26.0
+@export var stamina_recover_rate: float = 18.0
+@export var stamina_recover_delay: float = 0.7
 
 @onready var head: Node3D = $"root/Skeleton3D/BoneAttachment3D/Head"
 @onready var camera: Camera3D = $"root/Skeleton3D/BoneAttachment3D/Head/Camera3D"
@@ -30,10 +35,15 @@ var is_sprinting: bool = false
 var last_interactable: Node3D = null
 var _rewind_scroll_hold_time: float = 0.0
 var cinematic_locked: bool = false
+var health: float = 100.0
+var stamina: float = 100.0
+var _stamina_recover_cooldown: float = 0.0
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	add_to_group("time_actor")
+	health = max_health
+	stamina = max_stamina
 	_camera_origin_offset = to_local(camera.global_position)
 	_smoothed_head_y = camera.global_position.y
 	camera.set_as_top_level(true)
@@ -42,6 +52,7 @@ func _ready() -> void:
 	_camera_collision_query = PhysicsShapeQueryParameters3D.new()
 	_camera_collision_query.shape = _camera_collision_shape
 	_camera_collision_query.exclude = [self.get_rid()]
+	_update_hud_status()
 	
 	_hitbox_pairs.clear()
 	for child in skeleton.get_children():
@@ -144,6 +155,7 @@ func _physics_process(delta: float) -> void:
 	if cinematic_locked:
 		velocity = Vector3.ZERO
 		_sync_hitboxes(delta)
+		_update_hud_status()
 		return
 	if GameState.rewind_mode_active:
 		var r_held = Input.is_key_pressed(KEY_R)
@@ -161,6 +173,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			_rewind_scroll_hold_time = 0.0
 		_sync_hitboxes(delta)
+		_update_hud_status()
 		return
 
 	var dir = GameState.time_direction
@@ -212,6 +225,7 @@ func _handle_movement(delta: float) -> void:
 
 	# var wants_crouch = Input.is_key_pressed(KEY_CTRL)
 	var wants_sprint = Input.is_key_pressed(KEY_SHIFT) # and not wants_crouch
+	var is_moving := movement_vector.length_squared() > 0.001
 
 	# if wants_crouch and not is_crouching:
 	# 	is_crouching = true
@@ -223,10 +237,15 @@ func _handle_movement(delta: float) -> void:
 	# 	collision_shape.shape.height = normal_height
 	# 	collision_shape.position.y = normal_height * 0.5
 
-	if wants_sprint: # and not is_crouching:
-		is_sprinting = true
-	elif is_sprinting and not wants_sprint:
-		is_sprinting = false
+	var can_sprint := wants_sprint and is_moving and stamina > 0.0 and is_on_floor()
+	is_sprinting = can_sprint
+	if is_sprinting:
+		stamina = maxf(0.0, stamina - stamina_drain_rate * delta)
+		_stamina_recover_cooldown = stamina_recover_delay
+	else:
+		_stamina_recover_cooldown = maxf(0.0, _stamina_recover_cooldown - delta)
+		if _stamina_recover_cooldown <= 0.0:
+			stamina = minf(max_stamina, stamina + stamina_recover_rate * delta)
 
 	var current_speed: float
 	# if is_crouching:
@@ -251,6 +270,7 @@ func _handle_movement(delta: float) -> void:
 	
 	# Keep hitboxes in sync at all times
 	_sync_hitboxes(delta)
+	_update_hud_status()
 
 func _handle_interaction(delta: float) -> void:
 	if not interaction_ray:
@@ -302,6 +322,12 @@ func _handle_interaction(delta: float) -> void:
 		hud.hide_prompt()
 		hud.set_dig_progress(0, false)
 		hud.set_crosshair_active(false)
+
+func _update_hud_status() -> void:
+	if hud == null:
+		return
+	hud.set_health(health, max_health)
+	hud.set_stamina(stamina, max_stamina)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:

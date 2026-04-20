@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
 [ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
 [ext_resource type="PackedScene" uid="uid://df54f57tnrpkk" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
+[ext_resource type="Script" uid="uid://s8lr0lefbmx2" path="res://scripts/world/objective_config.gd" id="10_objective"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.71349037, 0.5589468, 0.25426564, 1)
@@ -96,6 +97,9 @@ size = Vector3(1, 10, 35)
 
 [node name="World" type="Node3D" unique_id=921239400]
 script = ExtResource("1_world")
+
+[node name="ObjectiveConfig" type="Node" parent="." unique_id=1423068012]
+script = ExtResource("10_objective")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=745126488]
 environment = SubResource("Env")

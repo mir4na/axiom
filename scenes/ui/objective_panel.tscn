@@ -1,0 +1,58 @@
+[gd_scene format=3 uid="uid://pvkn65meoxdw"]
+
+[node name="ObjectivePanel" type="Control" unique_id=1361688194]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -648.0
+offset_top = 35.999996
+offset_right = -208.0
+offset_bottom = 120.0
+scale = Vector2(1.4, 1.4)
+
+[node name="Back" type="ColorRect" parent="." unique_id=1274698830]
+layout_mode = 0
+offset_left = 96.0
+offset_top = 20.0
+offset_right = 434.0
+offset_bottom = 88.0
+rotation = 0.0349066
+color = Color(0.05, 0.05, 0.06, 0.96)
+
+[node name="RedSlash" type="ColorRect" parent="." unique_id=814008283]
+layout_mode = 0
+offset_top = 14.0
+offset_right = 154.0
+offset_bottom = 28.0
+rotation = -0.0872665
+color = Color(0.94, 0.18, 0.23, 1)
+
+[node name="YellowSlash" type="ColorRect" parent="." unique_id=1660162778]
+layout_mode = 0
+offset_left = 336.42853
+offset_top = 96.42858
+offset_right = 446.42853
+offset_bottom = 106.42858
+rotation = -0.0523599
+color = Color(0.98, 0.82, 0.24, 1)
+
+[node name="Tag" type="Label" parent="." unique_id=1023587779]
+layout_mode = 0
+offset_left = 9.999991
+offset_top = -4.999997
+offset_right = 169.99998
+offset_bottom = 17.000004
+scale = Vector2(2, 2)
+theme_override_colors/font_color = Color(1, 0.93, 0.44, 1)
+theme_override_font_sizes/font_size = 15
+text = "OBJECTIVE"
+
+[node name="Text" type="Label" parent="." unique_id=318050164]
+layout_mode = 0
+offset_left = 117.85715
+offset_top = 37.14286
+offset_right = 414.28568
+offset_bottom = 82.0
+theme_override_colors/font_color = Color(0.97, 0.97, 0.98, 1)
+theme_override_font_sizes/font_size = 24
+vertical_alignment = 1
+autowrap_mode = 3

@@ -1,9 +1,6 @@
 extends RefCounted
 
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
-const GUEST_KEY_OBJECTIVE := "OBJECTIVE: Take the key from the kitchen"
-const GUEST_UNLOCK_OBJECTIVE := "OBJECTIVE: Open the guest room door"
-const GUEST_AXIOM_OBJECTIVE := "OBJECTIVE: Take the Axiom"
 const GUEST_REVEAL_EXTERIOR_START_POS := Vector3(-24.6, 16.0, 30.7)
 const GUEST_REVEAL_EXTERIOR_START_LOOK := Vector3(0.7, -0.75, 7.2)
 const GUEST_REVEAL_EXTERIOR_END_POS := Vector3(18.7, 7.8, 40.4)
@@ -282,11 +279,11 @@ func _set_objective_state(state: String) -> void:
 	_objective_state = state
 	match _objective_state:
 		"guest_key":
-			_world._show_objective(GUEST_KEY_OBJECTIVE)
+			_world._show_objective(_world._objective_text("guest_key", "OBJECTIVE: Take the key from the kitchen"))
 		"guest_unlock":
-			_world._show_objective(GUEST_UNLOCK_OBJECTIVE)
+			_world._show_objective(_world._objective_text("guest_unlock", "OBJECTIVE: Open the guest room door"))
 		"guest_axiom":
-			_world._show_objective(GUEST_AXIOM_OBJECTIVE)
+			_world._show_objective(_world._objective_text("guest_axiom", "OBJECTIVE: Take the Axiom"))
 		_:
 			if _world._objective_panel != null:
 				_world._objective_panel.visible = false

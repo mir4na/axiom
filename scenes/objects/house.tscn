@@ -262,6 +262,7 @@ script = ExtResource("2_door_button")
 door_path = NodePath("../GuestDoor")
 
 [node name="Collision" type="CollisionShape3D" parent="GuestDoorBtnOut" unique_id=2007736402]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5368433, -1.7596455, -1.0433457)
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="GuestDoorBtnOut" unique_id=877408326]
@@ -274,6 +275,7 @@ script = ExtResource("2_door_button")
 door_path = NodePath("../GuestDoor")
 
 [node name="Collision" type="CollisionShape3D" parent="GuestDoorBtnIn" unique_id=463395487]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2151761, -1.7727318, -0.6255727)
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="GuestDoorBtnIn" unique_id=1712343817]

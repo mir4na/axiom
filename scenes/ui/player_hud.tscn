@@ -1,17 +1,17 @@
 [gd_scene format=3 uid="uid://d1btx5xvtov5u"]
 
 [ext_resource type="Script" uid="uid://hppn4sb4bmv2" path="res://scripts/ui/player_hud.gd" id="1_hud"]
-[ext_resource type="Script" uid="uid://uvs2ahcgel2m" path="res://scripts/ui/dig_circle.gd" id="dig_script"]
-[ext_resource type="Shader" uid="uid://c2eica5ena84e" path="res://shaders/glitch.gdshader" id="GlitchShader"]
+[ext_resource type="Script" uid="uid://uvs2ahcgel2m" path="res://scripts/ui/dig_circle.gd" id="2_dig"]
+[ext_resource type="Shader" uid="uid://c2eica5ena84e" path="res://shaders/glitch.gdshader" id="3_glitch"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_glitch"]
-shader = ExtResource("GlitchShader")
+[sub_resource type="ShaderMaterial" id="1"]
+shader = ExtResource("3_glitch")
 shader_parameter/glitch_intensity = 0.0
 shader_parameter/invert_amount = 0.0
 shader_parameter/vignette_strength = 0.0
 shader_parameter/screenshot_flash = 0.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_filmstrip"]
+[sub_resource type="StyleBoxFlat" id="2"]
 bg_color = Color(0.04, 0.04, 0.06, 0.95)
 border_width_left = 2
 border_width_top = 2
@@ -22,18 +22,126 @@ corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 10
 
 [node name="PlayerHUD" type="CanvasLayer" unique_id=1264597277]
 script = ExtResource("1_hud")
 
 [node name="GlitchOverlay" type="ColorRect" parent="." unique_id=1845665311]
-material = SubResource("ShaderMaterial_glitch")
+material = SubResource("1")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="StatusPanel" type="Control" parent="." unique_id=1672741001]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 8.0
+offset_top = -30.0
+offset_right = 408.0
+offset_bottom = 112.0
+scale = Vector2(1.5, 1.5)
+
+[node name="HealthLabel" type="Label" parent="StatusPanel" unique_id=844499459]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 36.0
+offset_right = 170.0
+offset_bottom = 58.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "HEALTH"
+
+[node name="HealthValue" type="Label" parent="StatusPanel" unique_id=456003306]
+layout_mode = 0
+offset_left = 190.66667
+offset_top = 32.0
+offset_right = 344.6667
+offset_bottom = 63.0
+theme_override_colors/font_color = Color(1, 0.93, 0.5, 1)
+theme_override_font_sizes/font_size = 22
+text = "100 / 100"
+horizontal_alignment = 2
+
+[node name="HealthShadow" type="ColorRect" parent="StatusPanel" unique_id=1545491481]
+layout_mode = 0
+offset_left = 12.693705
+offset_top = 73.74772
+offset_right = 296.6802
+offset_bottom = 90.02398
+rotation = -0.0174533
+color = Color(0.04, 0.04, 0.06, 0.86)
+
+[node name="HealthBarTrack" type="Control" parent="StatusPanel" unique_id=469551771]
+anchors_preset = 0
+offset_left = 14.0
+offset_top = 64.0
+offset_right = 301.0
+offset_bottom = 88.0
+
+[node name="HealthBarBase" type="ColorRect" parent="StatusPanel/HealthBarTrack" unique_id=273947665]
+layout_mode = 0
+offset_right = 284.0
+offset_bottom = 20.0
+rotation = -0.0174533
+color = Color(0.1, 0.1, 0.12, 0.95)
+
+[node name="HealthBarFill" type="ColorRect" parent="StatusPanel/HealthBarTrack" unique_id=948729521]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 4.0
+offset_right = 268.0
+offset_bottom = 16.0
+rotation = -0.0174533
+color = Color(0.86, 0.22, 0.2, 0.98)
+
+[node name="EnergyLabel" type="Label" parent="StatusPanel" unique_id=461816157]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 104.0
+offset_right = 130.0
+offset_bottom = 122.0
+theme_override_colors/font_color = Color(1, 0.95, 0.66, 1)
+theme_override_font_sizes/font_size = 13
+text = "ENERGY"
+
+[node name="EnergyValue" type="Label" parent="StatusPanel" unique_id=851917381]
+layout_mode = 0
+offset_left = 182.85715
+offset_top = 110.71429
+offset_right = 300.85715
+offset_bottom = 128.7143
+theme_override_colors/font_color = Color(0.93, 1, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+text = "100 / 100"
+horizontal_alignment = 2
+
+[node name="StaminaBarTrack" type="Control" parent="StatusPanel" unique_id=1172380426]
+anchors_preset = 0
+offset_left = 14.0
+offset_top = 124.0
+offset_right = 258.0
+offset_bottom = 140.0
+
+[node name="StaminaBarBase" type="ColorRect" parent="StatusPanel/StaminaBarTrack" unique_id=178944578]
+layout_mode = 0
+offset_right = 229.32985
+offset_bottom = 10.0
+rotation = -0.0174533
+color = Color(0.1, 0.1, 0.12, 0.95)
+
+[node name="StaminaBarFill" type="ColorRect" parent="StatusPanel/StaminaBarTrack" unique_id=810645275]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 184.0
+offset_bottom = 8.0
+rotation = -0.0174533
+color = Color(0.24, 0.82, 0.68, 0.98)
 
 [node name="TimelineBarContainer" type="Control" parent="." unique_id=1004871688]
 modulate = Color(1, 1, 1, 0)
@@ -44,9 +152,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -320.0
-offset_top = -120.0
+offset_top = -148.0
 offset_right = 320.0
-offset_bottom = -20.0
+offset_bottom = -48.0
 grow_horizontal = 2
 grow_vertical = 0
 scale = Vector2(1, 0.3)
@@ -84,7 +192,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_filmstrip")
+theme_override_styles/panel = SubResource("2")
 
 [node name="MarksContainer" type="Control" parent="TimelineBarContainer/FilmStrip" unique_id=1085100436]
 layout_mode = 1
@@ -117,12 +225,16 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = 120.0
-offset_right = 100.0
-offset_bottom = 146.0
+offset_left = -170.0
+offset_top = 136.0
+offset_right = 170.0
+offset_bottom = 166.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.56, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.01, 0.01, 0.9)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 18
 text = "Press E to interact"
 horizontal_alignment = 1
 
@@ -132,12 +244,16 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -13.0
-offset_right = 20.0
-offset_bottom = 13.0
+offset_left = -22.0
+offset_top = -14.0
+offset_right = 22.0
+offset_bottom = 14.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 0.96)
+theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.88)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 20
 text = "+"
 horizontal_alignment = 1
 
@@ -147,40 +263,134 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -150.0
-offset_top = -60.0
-offset_right = 150.0
-offset_bottom = -20.0
+offset_left = -294.0
+offset_top = -90.0
+offset_right = 294.0
+offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 0
+theme_override_constants/separation = 16
 alignment = 1
 
-[node name="Slot1" type="PanelContainer" parent="InventoryBar" unique_id=1832687523]
+[node name="Slot1" type="Control" parent="InventoryBar" unique_id=1832687523]
+custom_minimum_size = Vector2(180, 72)
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="Back" type="ColorRect" parent="InventoryBar/Slot1" unique_id=1236771457]
+layout_mode = 0
+offset_top = 10.0
+offset_right = 154.0
+offset_bottom = 70.0
+rotation = -0.0349066
+color = Color(0.05, 0.05, 0.06, 0.96)
+
+[node name="Accent" type="ColorRect" parent="InventoryBar/Slot1" unique_id=920319525]
+layout_mode = 0
+offset_right = 90.0
+offset_bottom = 10.0
+rotation = -0.0523599
+color = Color(0.94, 0.18, 0.23, 1)
+
+[node name="Key" type="Label" parent="InventoryBar/Slot1" unique_id=186735741]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 106.0
+offset_bottom = 30.0
+theme_override_colors/font_color = Color(1, 0.89, 0.34, 1)
+theme_override_font_sizes/font_size = 14
+text = "SLOT 01"
 
 [node name="Label" type="Label" parent="InventoryBar/Slot1" unique_id=535350285]
-layout_mode = 2
-text = "1: Empty"
-horizontal_alignment = 1
+layout_mode = 0
+offset_left = 14.0
+offset_top = 36.0
+offset_right = 154.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.94, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 19
+text = "EMPTY"
 
-[node name="Slot2" type="PanelContainer" parent="InventoryBar" unique_id=2036262513]
+[node name="Slot2" type="Control" parent="InventoryBar" unique_id=2036262513]
+custom_minimum_size = Vector2(180, 72)
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="Back" type="ColorRect" parent="InventoryBar/Slot2" unique_id=1881943693]
+layout_mode = 0
+offset_top = 10.0
+offset_right = 154.0
+offset_bottom = 70.0
+rotation = -0.0349066
+color = Color(0.05, 0.05, 0.06, 0.96)
+
+[node name="Accent" type="ColorRect" parent="InventoryBar/Slot2" unique_id=1140186172]
+layout_mode = 0
+offset_right = 90.0
+offset_bottom = 10.0
+rotation = -0.0523599
+color = Color(0.94, 0.18, 0.23, 1)
+
+[node name="Key" type="Label" parent="InventoryBar/Slot2" unique_id=1014606880]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 106.0
+offset_bottom = 30.0
+theme_override_colors/font_color = Color(1, 0.89, 0.34, 1)
+theme_override_font_sizes/font_size = 14
+text = "SLOT 02"
 
 [node name="Label" type="Label" parent="InventoryBar/Slot2" unique_id=1766480401]
-layout_mode = 2
-text = "2: Empty"
-horizontal_alignment = 1
+layout_mode = 0
+offset_left = 14.0
+offset_top = 36.0
+offset_right = 154.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.94, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 19
+text = "EMPTY"
 
-[node name="Slot3" type="PanelContainer" parent="InventoryBar" unique_id=864482991]
+[node name="Slot3" type="Control" parent="InventoryBar" unique_id=864482991]
+custom_minimum_size = Vector2(180, 72)
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="Back" type="ColorRect" parent="InventoryBar/Slot3" unique_id=1849009285]
+layout_mode = 0
+offset_top = 10.0
+offset_right = 154.0
+offset_bottom = 70.0
+rotation = -0.0349066
+color = Color(0.05, 0.05, 0.06, 0.96)
+
+[node name="Accent" type="ColorRect" parent="InventoryBar/Slot3" unique_id=1043843281]
+layout_mode = 0
+offset_right = 90.0
+offset_bottom = 10.0
+rotation = -0.0523599
+color = Color(0.94, 0.18, 0.23, 1)
+
+[node name="Key" type="Label" parent="InventoryBar/Slot3" unique_id=897087576]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 106.0
+offset_bottom = 30.0
+theme_override_colors/font_color = Color(1, 0.89, 0.34, 1)
+theme_override_font_sizes/font_size = 14
+text = "SLOT 03"
+
 [node name="Label" type="Label" parent="InventoryBar/Slot3" unique_id=821137336]
-layout_mode = 2
-text = "3: Empty"
-horizontal_alignment = 1
+layout_mode = 0
+offset_left = 14.0
+offset_top = 36.0
+offset_right = 154.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(0.94, 0.97, 0.99, 1)
+theme_override_font_sizes/font_size = 19
+text = "EMPTY"
 
 [node name="DigProgress" type="Control" parent="." unique_id=1359921087]
 layout_mode = 3
@@ -195,4 +405,4 @@ offset_right = 32.0
 offset_bottom = 32.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("dig_script")
+script = ExtResource("2_dig")
