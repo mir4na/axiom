@@ -34,6 +34,7 @@ var _split_back_nodes: Array[Node3D] = []
 var _split_original_positions: Dictionary = {}
 var _glitch_fragment_original_positions: Dictionary = {}
 var _broken_house_instance: Node3D
+var _underground_hole_instance: Node3D
 
 func _init(world_ref) -> void:
 	_world = world_ref
@@ -105,6 +106,8 @@ func _cache_nodes() -> void:
 	_guest_button_in = _world.house.get_node_or_null("GuestDoorBtnIn") as Node3D
 	_guest_door_gap = _world.house.get_node_or_null("Partitions/GuestDoorGap") as CSGBox3D
 	_glitch_fragments_root = _world.get_node_or_null("GlitchFragments") as Node3D
+	_key_item_instance = _world.get_node_or_null("KeyItem") as Node3D
+	_underground_hole_instance = _world.get_node_or_null("UndergroundHole") as Node3D
 
 func _prepare_phase() -> void:
 	GameState.full_reset_inventory()
@@ -123,7 +126,6 @@ func _prepare_phase() -> void:
 	_axiom_sequence_played = false
 	_level_one_sequence_running = false
 	_objective_state = ""
-	_key_item_instance = null
 	_axiom_item_instance = null
 	_broken_house_instance = null
 	_split_front_nodes.clear()
@@ -168,6 +170,10 @@ func _configure_house() -> void:
 			glass.material = copy
 	_set_guest_entry_visible(false)
 	_set_guest_buttons_locked(true)
+	if is_instance_valid(_key_item_instance) and _key_item_instance.has_method("set_interactable_enabled"):
+		_key_item_instance.call("set_interactable_enabled", false)
+	if is_instance_valid(_underground_hole_instance) and _underground_hole_instance.has_method("set_interactable_enabled"):
+		_underground_hole_instance.call("set_interactable_enabled", false)
 	_spawn_axiom()
 	if is_instance_valid(_axiom_item_instance) and _axiom_item_instance.has_method("set_pickup_enabled"):
 		_axiom_item_instance.call("set_pickup_enabled", false)
@@ -219,16 +225,10 @@ func _set_guest_buttons_locked(locked: bool) -> void:
 		button.set("fail_message", "You need a key to open this door.")
 
 func _spawn_key() -> void:
-	if _guest_key_spawned or _world.house == null:
+	if _guest_key_spawned or not is_instance_valid(_key_item_instance):
 		return
-	var scene := load("res://scenes/objects/key_item.tscn") as PackedScene
-	if scene == null:
-		return
-	_key_item_instance = scene.instantiate() as Node3D
-	if _key_item_instance == null:
-		return
-	_world.add_child(_key_item_instance)
-	_key_item_instance.global_position = _world.house.to_global(Vector3(-3.4, -1.0, -5.5))
+	if _key_item_instance.has_method("set_interactable_enabled"):
+		_key_item_instance.call("set_interactable_enabled", true)
 	_guest_key_spawned = true
 
 func _spawn_axiom() -> void:
@@ -420,6 +420,7 @@ func play_axiom_equip_sequence() -> void:
 	await _world._show_subtitle("What did I just pick up?", 1.8)
 	await _world._play_camera_shot(split_start, split_end, 1.4)
 	await _play_house_split_glitch()
+	_ensure_underground_hole()
 	await _world._show_subtitle("No... it's splitting the house apart.", 2.0)
 	await _world._show_subtitle("It's recording everything now.", 1.9)
 	await _world._return_intro_camera_to_player(0.95)
@@ -504,6 +505,12 @@ func _ensure_broken_house() -> void:
 	if broken_scene.has_method("build_from_house"):
 		broken_scene.call("build_from_house", _world.house)
 	_broken_house_instance = broken_scene
+
+func _ensure_underground_hole() -> void:
+	if not is_instance_valid(_underground_hole_instance):
+		return
+	if _underground_hole_instance.has_method("set_interactable_enabled"):
+		_underground_hole_instance.call("set_interactable_enabled", true)
 
 func _set_house_split_weight(weight: float) -> void:
 	for node in _split_front_nodes:

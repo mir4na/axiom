@@ -46,6 +46,13 @@ func go_to_next_level() -> void:
 	else:
 		go_to_main_menu()
 
+func load_level_index(index: int) -> void:
+	GameState.unpause()
+	_pause_menu.hide()
+	_win_screen.hide()
+	GameState.current_level_index = clampi(index, 0, GameState.LEVELS.size() - 1)
+	_load_current_level()
+
 func restart_level() -> void:
 	GameState.unpause()
 	_pause_menu.hide()

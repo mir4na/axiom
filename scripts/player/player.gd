@@ -280,10 +280,17 @@ func _handle_interaction(delta: float) -> void:
 		var p_text = collider.get("prompt_text")
 		if typeof(p_text) == TYPE_STRING:
 			var is_dig = collider.has_method("get_equip_hint") and collider.get_equip_hint() == GameState.slots[GameState.selected_slot]
-			if last_interactable != null and last_interactable != collider and last_interactable.has_method("reset_minigame"):
-				last_interactable.reset_minigame()
-				hud.set_dig_progress(0, false)
+			if last_interactable != null and last_interactable != collider:
+				if last_interactable.has_method("reset_minigame"):
+					last_interactable.reset_minigame()
+					hud.set_dig_progress(0, false)
+				if last_interactable.has_method("set_highlight_enabled"):
+					last_interactable.set_highlight_enabled(false)
 			last_interactable = collider
+			if collider.has_method("set_highlight_enabled"):
+				collider.set_highlight_enabled(true)
+			if collider.has_method("set_highlight_strength"):
+				collider.set_highlight_strength(1.0)
 			
 			# Handle Continuous Hold Mechanic (like digging)
 			if collider.has_method("progress_minigame"):
@@ -309,6 +316,8 @@ func _handle_interaction(delta: float) -> void:
 				if is_instance_valid(last_interactable):
 					if last_interactable.has_method("reset_minigame"):
 						last_interactable.reset_minigame()
+					if last_interactable.has_method("set_highlight_enabled"):
+						last_interactable.set_highlight_enabled(false)
 				last_interactable = null
 			hud.hide_prompt()
 			hud.set_dig_progress(0, false)
@@ -318,6 +327,8 @@ func _handle_interaction(delta: float) -> void:
 			if is_instance_valid(last_interactable):
 				if last_interactable.has_method("reset_minigame"):
 					last_interactable.reset_minigame()
+				if last_interactable.has_method("set_highlight_enabled"):
+					last_interactable.set_highlight_enabled(false)
 			last_interactable = null
 		hud.hide_prompt()
 		hud.set_dig_progress(0, false)

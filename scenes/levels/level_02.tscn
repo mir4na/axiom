@@ -82,6 +82,9 @@ roughness = 0.72
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=731031134]
 environment = SubResource("Env")
 
+[node name="PlayerSpawn" type="Marker3D" parent="." unique_id=1122031886]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -24)
+
 [node name="World" type="Node3D" parent="." unique_id=235410429]
 script = ExtResource("1_world")
 

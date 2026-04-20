@@ -372,8 +372,6 @@ func _apply_player_spawn() -> void:
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
 		return
-	if current_scene.scene_file_path != LEVEL_ONE_SCENE_PATH:
-		return
 	var spawner := current_scene.get_node_or_null("PlayerSpawner") as Marker3D
 	if spawner == null:
 		spawner = current_scene.get_node_or_null("SpawnPlayer") as Marker3D

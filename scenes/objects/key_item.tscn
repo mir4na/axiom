@@ -42,12 +42,28 @@ shape = SubResource("BoxShape3D_key")
 mesh = SubResource("BoxMesh_card")
 surface_material_override/0 = SubResource("StandardMaterial3D_card")
 
+[node name="CardAura" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.08, 0, 0, 0, 1.2, 0, 0, 0, 1.08, 0, 0, 0)
+visible = false
+mesh = SubResource("BoxMesh_card")
+
 [node name="Stripe" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.018, 0.065)
 mesh = SubResource("BoxMesh_strip")
 surface_material_override/0 = SubResource("StandardMaterial3D_strip")
 
+[node name="StripeAura" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.04, 0, 0, 0, 1.6, 0, 0, 0, 1.18, 0, 0.018, 0.065)
+visible = false
+mesh = SubResource("BoxMesh_strip")
+
 [node name="Chip" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.13, 0.018, -0.045)
 mesh = SubResource("BoxMesh_chip")
 surface_material_override/0 = SubResource("StandardMaterial3D_chip")
+
+[node name="GlowLight" type="OmniLight3D" parent="."]
+visible = false
+light_color = Color(0.22, 0.88, 1, 1)
+light_energy = 0.8
+omni_range = 2.2

@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://p82t7gldc3q5"]
+
+[ext_resource type="Script" uid="uid://dguh73iv4wd2r" path="res://scripts/objects/underground_hole.gd" id="1_hole"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_hole"]
+height = 0.8
+radius = 1.25
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_rim"]
+top_radius = 1.55
+bottom_radius = 1.35
+height = 0.16
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rim"]
+albedo_color = Color(0.2, 0.16, 0.12, 1)
+roughness = 0.96
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_void"]
+top_radius = 1.22
+bottom_radius = 0.86
+height = 1.3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_void"]
+albedo_color = Color(0.01, 0.01, 0.01, 1)
+emission_enabled = true
+emission = Color(0.08, 0.14, 0.14, 1)
+emission_energy_multiplier = 0.55
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glow"]
+transparency = 1
+albedo_color = Color(0.1, 0.26, 0.22, 0.45)
+roughness = 0.1
+emission_enabled = true
+emission = Color(0.18, 0.62, 0.54, 1)
+emission_energy_multiplier = 0.8
+
+[node name="UndergroundHole" type="Area3D" unique_id=131822714 groups=["time_actor"]]
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
+script = ExtResource("1_hole")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1785846052]
+shape = SubResource("CylinderShape3D_hole")
+
+[node name="Rim" type="MeshInstance3D" parent="." unique_id=127715884]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("CylinderMesh_rim")
+surface_material_override/0 = SubResource("StandardMaterial3D_rim")
+
+[node name="RimAura" type="MeshInstance3D" parent="." unique_id=864713442]
+transform = Transform3D(1.12, 0, 0, 0, 1.24, 0, 0, 0, 1.12, 0, 0.02, 0)
+visible = false
+mesh = SubResource("CylinderMesh_rim")
+
+[node name="Void" type="MeshInstance3D" parent="." unique_id=668473071]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.56, 0)
+mesh = SubResource("CylinderMesh_void")
+surface_material_override/0 = SubResource("StandardMaterial3D_void")
+
+[node name="Glow" type="MeshInstance3D" parent="." unique_id=1572063566]
+transform = Transform3D(1.12, 0, 0, 0, 1, 0, 0, 0, 1.12, 0, 0.05, 0)
+mesh = SubResource("CylinderMesh_rim")
+surface_material_override/0 = SubResource("StandardMaterial3D_glow")
+
+[node name="GlowLight" type="OmniLight3D" parent="." unique_id=1320511958]
+visible = false
+light_color = Color(0.26, 1, 0.86, 1)
+light_energy = 0.9
+omni_range = 3.1
