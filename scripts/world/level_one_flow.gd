@@ -463,7 +463,6 @@ func _process_escape_phase(delta: float) -> void:
 		_world.call_deferred("_play_level_one_escape_fail_sequence")
 
 func _begin_post_split_escape_phase() -> void:
-	_set_objective_state("escape_hole")
 	_start_axiom_tutorial()
 
 func _start_axiom_tutorial() -> void:
@@ -513,6 +512,9 @@ func _on_front_door_opened() -> void:
 	if not _world._is_level_one_scene() or _front_door_cinematic_played or _level_one_sequence_running:
 		return
 	_front_door_cinematic_played = true
+	_set_objective_state("")
+	_world._hint_marker.visible = false
+	_world._hint_label.visible = false
 	_world.call_deferred("_play_level_one_guest_door_reveal_cinematic")
 
 func play_guest_door_reveal_cinematic() -> void:
