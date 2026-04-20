@@ -63,7 +63,7 @@ text = "QUIT"
 [node name="Controls" type="Label" parent="Center/VBox" unique_id=326222130]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "DRAG  rotate  ·  SCROLL  scale  ·  Q/E  time  ·  ESC  pause"
+text = "MOUSE  look  ·  E  interact  ·  R  rewind  ·  ESC  pause"
 horizontal_alignment = 1
 
 [connection signal="pressed" from="Center/VBox/PlayButton" to="." method="_on_play_pressed"]

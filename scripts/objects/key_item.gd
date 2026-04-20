@@ -3,7 +3,7 @@ extends Interactable
 @export var key_id: String = "key_1"
 
 func _ready() -> void:
-	prompt_text = "Press E to pick up Key"
+	prompt_text = "Press E to pick up Keycard"
 
 func interact() -> void:
 	var collected = GameState.add_item(key_id)

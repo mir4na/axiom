@@ -900,3 +900,12 @@ func _is_world_intro_scene() -> bool:
 func _is_level_one_scene() -> bool:
 	var current_scene := get_tree().current_scene
 	return current_scene != null and current_scene.scene_file_path == LEVEL_ONE_SCENE_PATH
+
+func restart_current_level() -> void:
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		return
+	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
+	GameState.rewind_mode_active = false
+	GameState.time_direction = GameState.TIME_FORWARD
+	get_tree().change_scene_to_file(current_scene.scene_file_path)

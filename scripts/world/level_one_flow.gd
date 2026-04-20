@@ -168,6 +168,9 @@ func _configure_house() -> void:
 			glass.material = copy
 	_set_guest_entry_visible(false)
 	_set_guest_buttons_locked(true)
+	_spawn_axiom()
+	if is_instance_valid(_axiom_item_instance) and _axiom_item_instance.has_method("set_pickup_enabled"):
+		_axiom_item_instance.call("set_pickup_enabled", false)
 	_cache_split_nodes()
 	if _glitch_fragments_root != null:
 		_glitch_fragments_root.visible = true
@@ -189,14 +192,14 @@ func _connect_hooks() -> void:
 
 func _set_guest_entry_visible(visible: bool) -> void:
 	if _guest_door_gap != null:
-		_guest_door_gap.operation = CSGShape3D.OPERATION_SUBTRACTION if visible else CSGShape3D.OPERATION_UNION
-		_guest_door_gap.material = null if visible else _world._make_house_wall_material()
+		_guest_door_gap.operation = CSGShape3D.OPERATION_SUBTRACTION
+		_guest_door_gap.material = null
 	if _guest_door != null:
-		_guest_door.visible = visible
-		_guest_door.process_mode = Node.PROCESS_MODE_INHERIT if visible else Node.PROCESS_MODE_DISABLED
+		_guest_door.visible = true
+		_guest_door.process_mode = Node.PROCESS_MODE_INHERIT
 		var guest_door_collision := _guest_door.get_node_or_null("Collision") as CollisionShape3D
 		if guest_door_collision != null:
-			guest_door_collision.disabled = not visible
+			guest_door_collision.disabled = false
 	for button in [_guest_button_out, _guest_button_in]:
 		if button == null:
 			continue
@@ -314,8 +317,8 @@ func play_guest_door_reveal_cinematic() -> void:
 	_world._intro_camera.global_transform = player_transform
 	_world._intro_camera.make_current()
 	
-	await _world._play_camera_shot(player_transform, exterior_start, 0.85)
-	await _world._play_camera_shot(exterior_start, exterior_end, 2.8)
+	await _world._play_camera_shot(player_transform, exterior_start, 1.15)
+	await _world._play_camera_shot(exterior_start, exterior_end, 4.1)
 	await _world._show_subtitle("Wait... why does the house feel different?", 1.9)
 	await _play_guest_door_materialize()
 	_world._intro_camera.global_transform = guest_start
@@ -381,6 +384,8 @@ func _on_guest_door_opened() -> void:
 	_guest_room_opened = true
 	_set_guest_buttons_locked(false)
 	_spawn_axiom()
+	if is_instance_valid(_axiom_item_instance) and _axiom_item_instance.has_method("set_pickup_enabled"):
+		_axiom_item_instance.call("set_pickup_enabled", true)
 	_set_objective_state("guest_axiom")
 	_world.call_deferred("_play_level_one_guest_room_opened_subtitle")
 
@@ -404,9 +409,11 @@ func play_axiom_equip_sequence() -> void:
 	_world._set_intro_lock(true)
 	_world._intro_running = false
 	await _world._set_cinematic_bars(true, 0.35)
+	
 	var player_transform: Transform3D = _world.player_camera.global_transform
 	var split_start: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(16.0, 4.0, 8.0))).looking_at(_world.house.to_global(Vector3(0.0, -0.8, 0.0)), Vector3.UP)
-	var split_end: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(14.4, 4.7, 0.8))).looking_at(_world.house.to_global(Vector3(0.0, -1.1, 0.0)), Vector3.UP)
+	var split_end: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(20.4, 12.0, 0.4))).looking_at(_world.house.to_global(Vector3(0.0, -1.1, 0.0)), Vector3.UP)
+	
 	_world._intro_camera.global_transform = player_transform
 	_world._intro_camera.make_current()
 	await _world._play_camera_shot(player_transform, split_start, 0.9)

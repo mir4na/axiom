@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
 [ext_resource type="Shader" uid="uid://d270balpvvv3t" path="res://shaders/spatial_glitch.gdshader" id="8_glitch"]
 [ext_resource type="Script" uid="uid://s8lr0lefbmx2" path="res://scripts/world/objective_config.gd" id="9_objective"]
+[ext_resource type="Script" uid="uid://njng5yim6rnu" path="res://scripts/objects/reset_zone.gd" id="10_reset_zone"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.04, 0.02, 0.12, 1)
@@ -67,6 +68,9 @@ shader_parameter/rim_strength = 3.8
 shader_parameter/pulse_strength = 1.7
 shader_parameter/stripe_density = 80.0
 shader_parameter/alpha_flicker = 0.2
+
+[sub_resource type="BoxShape3D" id="ResetZoneShape"]
+size = Vector3(260, 30, 260)
 
 [node name="Level01" type="Node3D" unique_id=1058590508]
 
@@ -368,3 +372,11 @@ material = SubResource("MatGlitch")
 transform = Transform3D(0.866, -0.5, 0, 0.5, 0.866, 0, 0, 0, 1, 14, 14, 29)
 size = Vector3(3.2, 8, 3.2)
 material = SubResource("MatGlitchMag")
+
+[node name="ResetZone" type="Area3D" parent="World" unique_id=1812204417]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -64.14238, -4)
+collision_layer = 0
+script = ExtResource("10_reset_zone")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/ResetZone" unique_id=1612454880]
+shape = SubResource("ResetZoneShape")

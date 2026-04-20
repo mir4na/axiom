@@ -1,20 +1,53 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/objects/key_item.gd" id="1_key"]
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_key"]
-radius = 0.3
+[sub_resource type="BoxShape3D" id="BoxShape3D_key"]
+size = Vector3(0.5, 0.08, 0.3)
 
-[sub_resource type="SphereMesh" id="SphereMesh_key"]
-radius = 0.3
-height = 0.6
+[sub_resource type="BoxMesh" id="BoxMesh_card"]
+size = Vector3(0.48, 0.06, 0.28)
+
+[sub_resource type="BoxMesh" id="BoxMesh_strip"]
+size = Vector3(0.46, 0.012, 0.08)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_card"]
+albedo_color = Color(0.1, 0.13, 0.18, 1)
+metallic = 0.2
+roughness = 0.32
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_strip"]
+albedo_color = Color(0.82, 0.88, 0.93, 1)
+emission_enabled = true
+emission = Color(0.46, 0.82, 1, 1)
+emission_energy_multiplier = 0.6
+roughness = 0.18
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_chip"]
+albedo_color = Color(0.78, 0.67, 0.3, 1)
+metallic = 0.75
+roughness = 0.22
+
+[sub_resource type="BoxMesh" id="BoxMesh_chip"]
+size = Vector3(0.1, 0.012, 0.12)
 
 [node name="KeyItem" type="Area3D" groups=["time_actor"]]
 script = ExtResource("1_key")
 key_id = "key_1"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("SphereShape3D_key")
+shape = SubResource("BoxShape3D_key")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-mesh = SubResource("SphereMesh_key")
+[node name="Card" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_card")
+surface_material_override/0 = SubResource("StandardMaterial3D_card")
+
+[node name="Stripe" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.018, 0.065)
+mesh = SubResource("BoxMesh_strip")
+surface_material_override/0 = SubResource("StandardMaterial3D_strip")
+
+[node name="Chip" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.13, 0.018, -0.045)
+mesh = SubResource("BoxMesh_chip")
+surface_material_override/0 = SubResource("StandardMaterial3D_chip")

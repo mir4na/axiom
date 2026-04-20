@@ -1,11 +1,11 @@
 extends CharacterBody3D
 
 @export var speed: float = 4.0
-@export var sprint_speed: float = 6.5
+@export var sprint_speed: float = 8.0
 @export var crouch_speed: float = 2.0
 @export var acceleration: float = 4.0
 @export var gravity: float = 9.8
-@export var jump_power: float = 4.0
+@export var jump_power: float = 4.8
 @export var mouse_sensitivity: float = 0.3
 @export var normal_height: float = 1.68
 @export var crouch_height: float = 0.9

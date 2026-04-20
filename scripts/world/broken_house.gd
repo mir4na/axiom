@@ -92,6 +92,7 @@ func _prepare_half(root: Node3D, keep_names: Array, is_front: bool) -> void:
 		return
 	_prune_half(root, keep_names)
 	_configure_half_lights(root, is_front)
+	_add_floating_island(root, is_front)
 	_add_fracture_debris(root, is_front)
 	_disable_interactions(root)
 	if is_front:
@@ -117,6 +118,71 @@ func _configure_half_lights(root: Node3D, is_front: bool) -> void:
 				child.free()
 			elif not is_front and child.name in ["LivingLight", "GuestLight"]:
 				child.free()
+
+func _add_floating_island(root: Node3D, is_front: bool) -> void:
+	var island := CSGCombiner3D.new()
+	island.name = "FloatingIsland"
+	island.use_collision = true
+	root.add_child(island)
+	var soil_material := StandardMaterial3D.new()
+	soil_material.albedo_color = Color(0.25, 0.22, 0.18, 1.0)
+	soil_material.roughness = 0.92
+	var grass_material := StandardMaterial3D.new()
+	grass_material.albedo_color = Color(0.21, 0.34, 0.14, 1.0)
+	grass_material.roughness = 0.95
+	var center_x := -0.8 if is_front else 0.6
+	var center_z := 4.7 if is_front else -4.8
+
+	var plate := CSGBox3D.new()
+	plate.size = Vector3(18.8 if is_front else 16.2, 1.9, 10.8 if is_front else 9.6)
+	plate.position = Vector3(center_x, -3.1, center_z)
+	plate.material = soil_material
+	island.add_child(plate)
+
+	var ledge_a := CSGBox3D.new()
+	ledge_a.size = Vector3(9.2, 1.3, 4.4)
+	ledge_a.position = Vector3(center_x - 3.2, -2.2, center_z + (1.9 if is_front else -1.7))
+	ledge_a.rotation_degrees = Vector3(0.0, -8.0 if is_front else 11.0, 0.0)
+	ledge_a.material = grass_material
+	island.add_child(ledge_a)
+
+	var ledge_b := CSGBox3D.new()
+	ledge_b.size = Vector3(6.6, 1.0, 3.2)
+	ledge_b.position = Vector3(center_x + 4.1, -2.35, center_z + (0.6 if is_front else -0.5))
+	ledge_b.rotation_degrees = Vector3(0.0, 16.0 if is_front else -14.0, 0.0)
+	ledge_b.material = grass_material
+	island.add_child(ledge_b)
+
+	var undercut := CSGBox3D.new()
+	undercut.operation = CSGShape3D.OPERATION_SUBTRACTION
+	undercut.size = Vector3(13.4, 1.4, 6.1)
+	undercut.position = Vector3(center_x + (0.9 if is_front else -1.1), -2.55, center_z + (0.8 if is_front else -0.9))
+	undercut.rotation_degrees = Vector3(0.0, 11.0 if is_front else -9.0, 0.0)
+	island.add_child(undercut)
+
+	for i in range(5):
+		var chunk := CSGBox3D.new()
+		chunk.size = Vector3(2.4 + float(i % 2) * 1.1, 2.0 + float(i % 3) * 0.6, 2.3 + float(i % 2) * 0.9)
+		chunk.position = Vector3(
+			center_x - 6.8 + float(i) * 3.2 + sin(float(i) * 1.7) * 0.55,
+			-4.4 - float(i % 2) * 0.55,
+			center_z + cos(float(i) * 1.4) * 1.2
+		)
+		chunk.rotation_degrees = Vector3(0.0, -18.0 + float(i) * 9.0, 0.0)
+		chunk.material = soil_material
+		island.add_child(chunk)
+
+	for i in range(4):
+		var spike := CSGBox3D.new()
+		spike.size = Vector3(1.1 + float(i % 2) * 0.5, 3.2 + float(i) * 0.7, 1.0 + float(i % 3) * 0.35)
+		spike.position = Vector3(
+			center_x - 5.4 + float(i) * 3.6,
+			-5.7 - float(i) * 0.35,
+			center_z + (1.4 if is_front else -1.3) + sin(float(i) * 1.8) * 0.7
+		)
+		spike.rotation_degrees = Vector3(8.0 + float(i) * 4.0, -22.0 + float(i) * 13.0, 5.0)
+		spike.material = soil_material
+		island.add_child(spike)
 
 func _add_fracture_debris(root: Node3D, is_front: bool) -> void:
 	var debris_root := Node3D.new()

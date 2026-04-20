@@ -258,10 +258,12 @@ mesh = SubResource("MDoorMesh")
 
 [node name="GuestDoorBtnOut" type="StaticBody3D" parent="." unique_id=1413763975]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2071166, -0.60900885, 2.7710803)
+visible = false
 script = ExtResource("2_door_button")
 door_path = NodePath("../GuestDoor")
 
 [node name="Collision" type="CollisionShape3D" parent="GuestDoorBtnOut" unique_id=2007736402]
+disabled = true
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="GuestDoorBtnOut" unique_id=877408326]
@@ -269,10 +271,12 @@ mesh = SubResource("ButtonMesh")
 
 [node name="GuestDoorBtnIn" type="StaticBody3D" parent="." unique_id=1904349629]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7928705, -0.59873104, 2.7171235)
+visible = false
 script = ExtResource("2_door_button")
 door_path = NodePath("../GuestDoor")
 
 [node name="Collision" type="CollisionShape3D" parent="GuestDoorBtnIn" unique_id=463395487]
+disabled = true
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="GuestDoorBtnIn" unique_id=1712343817]
