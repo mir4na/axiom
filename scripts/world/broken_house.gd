@@ -130,35 +130,49 @@ func _add_floating_island(root: Node3D, is_front: bool) -> void:
 	var grass_material := StandardMaterial3D.new()
 	grass_material.albedo_color = Color(0.21, 0.34, 0.14, 1.0)
 	grass_material.roughness = 0.95
-	var center_x := -0.8 if is_front else 0.6
-	var center_z := 4.7 if is_front else -4.8
+	var center_x := -1.0 if is_front else 0.8
+	var center_z := 6.2 if is_front else -6.4
 
 	var plate := CSGBox3D.new()
-	plate.size = Vector3(18.8 if is_front else 16.2, 1.9, 10.8 if is_front else 9.6)
+	plate.size = Vector3(17.6 if is_front else 15.2, 1.9, 7.8 if is_front else 7.4)
 	plate.position = Vector3(center_x, -3.1, center_z)
 	plate.material = soil_material
 	island.add_child(plate)
 
 	var ledge_a := CSGBox3D.new()
-	ledge_a.size = Vector3(9.2, 1.3, 4.4)
-	ledge_a.position = Vector3(center_x - 3.2, -2.2, center_z + (1.9 if is_front else -1.7))
+	ledge_a.size = Vector3(8.4, 1.3, 3.8)
+	ledge_a.position = Vector3(center_x - 3.4, -2.2, center_z + (1.15 if is_front else -1.1))
 	ledge_a.rotation_degrees = Vector3(0.0, -8.0 if is_front else 11.0, 0.0)
 	ledge_a.material = grass_material
 	island.add_child(ledge_a)
 
 	var ledge_b := CSGBox3D.new()
-	ledge_b.size = Vector3(6.6, 1.0, 3.2)
-	ledge_b.position = Vector3(center_x + 4.1, -2.35, center_z + (0.6 if is_front else -0.5))
+	ledge_b.size = Vector3(5.7, 1.0, 2.8)
+	ledge_b.position = Vector3(center_x + 3.9, -2.35, center_z + (0.25 if is_front else -0.2))
 	ledge_b.rotation_degrees = Vector3(0.0, 16.0 if is_front else -14.0, 0.0)
 	ledge_b.material = grass_material
 	island.add_child(ledge_b)
 
 	var undercut := CSGBox3D.new()
 	undercut.operation = CSGShape3D.OPERATION_SUBTRACTION
-	undercut.size = Vector3(13.4, 1.4, 6.1)
-	undercut.position = Vector3(center_x + (0.9 if is_front else -1.1), -2.55, center_z + (0.8 if is_front else -0.9))
+	undercut.size = Vector3(11.6, 1.4, 4.5)
+	undercut.position = Vector3(center_x + (0.8 if is_front else -0.9), -2.55, center_z + (0.15 if is_front else -0.15))
 	undercut.rotation_degrees = Vector3(0.0, 11.0 if is_front else -9.0, 0.0)
 	island.add_child(undercut)
+
+	var fracture_cut_a := CSGBox3D.new()
+	fracture_cut_a.operation = CSGShape3D.OPERATION_SUBTRACTION
+	fracture_cut_a.size = Vector3(8.4, 4.8, 3.3)
+	fracture_cut_a.position = Vector3(center_x + (0.3 if is_front else -0.2), -2.35, center_z + (-3.55 if is_front else 3.35))
+	fracture_cut_a.rotation_degrees = Vector3(0.0, 18.0 if is_front else -16.0, 7.0 if is_front else -6.0)
+	island.add_child(fracture_cut_a)
+
+	var fracture_cut_b := CSGBox3D.new()
+	fracture_cut_b.operation = CSGShape3D.OPERATION_SUBTRACTION
+	fracture_cut_b.size = Vector3(6.1, 4.3, 2.6)
+	fracture_cut_b.position = Vector3(center_x + (-2.1 if is_front else 2.0), -2.8, center_z + (-2.8 if is_front else 2.9))
+	fracture_cut_b.rotation_degrees = Vector3(0.0, -24.0 if is_front else 21.0, -11.0 if is_front else 9.0)
+	island.add_child(fracture_cut_b)
 
 	for i in range(5):
 		var chunk := CSGBox3D.new()
@@ -166,7 +180,7 @@ func _add_floating_island(root: Node3D, is_front: bool) -> void:
 		chunk.position = Vector3(
 			center_x - 6.8 + float(i) * 3.2 + sin(float(i) * 1.7) * 0.55,
 			-4.4 - float(i % 2) * 0.55,
-			center_z + cos(float(i) * 1.4) * 1.2
+			center_z + cos(float(i) * 1.4) * 0.95
 		)
 		chunk.rotation_degrees = Vector3(0.0, -18.0 + float(i) * 9.0, 0.0)
 		chunk.material = soil_material
@@ -178,7 +192,7 @@ func _add_floating_island(root: Node3D, is_front: bool) -> void:
 		spike.position = Vector3(
 			center_x - 5.4 + float(i) * 3.6,
 			-5.7 - float(i) * 0.35,
-			center_z + (1.4 if is_front else -1.3) + sin(float(i) * 1.8) * 0.7
+			center_z + (0.6 if is_front else -0.55) + sin(float(i) * 1.8) * 0.55
 		)
 		spike.rotation_degrees = Vector3(8.0 + float(i) * 4.0, -22.0 + float(i) * 13.0, 5.0)
 		spike.material = soil_material

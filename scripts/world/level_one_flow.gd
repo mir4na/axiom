@@ -19,6 +19,7 @@ var _guest_button_out: Node3D
 var _guest_button_in: Node3D
 var _guest_door_gap: CSGBox3D
 var _glitch_fragments_root: Node3D
+var _terrain_root: Node
 var _guest_door_revealed: bool = false
 var _front_door_cinematic_played: bool = false
 var _guest_key_spawned: bool = false
@@ -106,6 +107,7 @@ func _cache_nodes() -> void:
 	_guest_button_in = _world.house.get_node_or_null("GuestDoorBtnIn") as Node3D
 	_guest_door_gap = _world.house.get_node_or_null("Partitions/GuestDoorGap") as CSGBox3D
 	_glitch_fragments_root = _world.get_node_or_null("GlitchFragments") as Node3D
+	_terrain_root = _world.get_node_or_null("Terrain")
 	_key_item_instance = _world.get_node_or_null("KeyItem") as Node3D
 	_underground_hole_instance = _world.get_node_or_null("UndergroundHole") as Node3D
 
@@ -430,6 +432,7 @@ func play_axiom_equip_sequence() -> void:
 	_level_one_sequence_running = false
 
 func _play_house_split_glitch() -> void:
+	_set_level_one_terrain_enabled(false)
 	_ensure_broken_house()
 	_attach_underground_hole_to_broken_house()
 	_refresh_split_origins()
@@ -617,6 +620,33 @@ func _attach_underground_hole_to_broken_house() -> void:
 		current_parent.remove_child(_underground_hole_instance)
 	back_half.add_child(_underground_hole_instance)
 	_underground_hole_instance.global_transform = hole_transform
+
+func _set_level_one_terrain_enabled(enabled: bool) -> void:
+	if _terrain_root == null:
+		return
+	if _terrain_root is CanvasItem:
+		(_terrain_root as CanvasItem).visible = enabled
+	elif _terrain_root is Node3D:
+		(_terrain_root as Node3D).visible = enabled
+	_set_level_one_terrain_enabled_recursive(_terrain_root, enabled)
+
+func _set_level_one_terrain_enabled_recursive(node: Node, enabled: bool) -> void:
+	if node is CollisionShape3D:
+		(node as CollisionShape3D).disabled = not enabled
+	elif node is StaticBody3D:
+		(node as StaticBody3D).collision_layer = 1 if enabled else 0
+		(node as StaticBody3D).collision_mask = 1 if enabled else 0
+	elif node is Area3D:
+		(node as Area3D).collision_layer = 1 if enabled else 0
+		(node as Area3D).collision_mask = 1 if enabled else 0
+	elif node is CSGShape3D:
+		(node as CSGShape3D).use_collision = enabled
+		if node is GeometryInstance3D:
+			(node as GeometryInstance3D).visible = enabled
+	elif node is Node3D:
+		(node as Node3D).visible = enabled
+	for child in node.get_children():
+		_set_level_one_terrain_enabled_recursive(child, enabled)
 
 func _set_house_split_weight(weight: float) -> void:
 	for node in _split_front_nodes:
