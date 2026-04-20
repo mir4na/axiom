@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://dwhl2timrre38"]
 
 [ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
-[ext_resource type="Script" path="res://scripts/world/objective_config.gd" id="9_objective"]
 [ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
 [ext_resource type="Shader" uid="uid://d270balpvvv3t" path="res://shaders/spatial_glitch.gdshader" id="8_glitch"]
+[ext_resource type="Script" uid="uid://s8lr0lefbmx2" path="res://scripts/world/objective_config.gd" id="9_objective"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.04, 0.02, 0.12, 1)

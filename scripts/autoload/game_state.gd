@@ -246,11 +246,6 @@ func equip_axiom() -> void:
 		return
 	axiom_equipped = true
 	recording_enabled = true
-	world_history.clear()
-	history_index = -1
-	rewind_pointer_index = -1
-	mark_indices.clear()
-	timeline_position = 0.0
 	axiom_equipped_changed.emit()
 	ui_updated.emit()
 

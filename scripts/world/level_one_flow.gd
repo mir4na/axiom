@@ -106,7 +106,7 @@ func _cache_nodes() -> void:
 
 func _prepare_phase() -> void:
 	GameState.full_reset_inventory()
-	GameState.recording_enabled = false
+	GameState.recording_enabled = true
 	GameState.rewind_mode_active = false
 	GameState.world_history.clear()
 	GameState.history_index = -1
@@ -322,6 +322,9 @@ func play_guest_door_reveal_cinematic() -> void:
 	await _world._show_subtitle("No. That room should not exist.", 2.2)
 	await _world._return_intro_camera_to_player(0.9)
 	await _world._set_cinematic_bars(false, 0.32)
+	if not _guest_key_collected:
+		_spawn_key()
+		_set_objective_state("guest_key")
 	_world._set_intro_lock(false)
 	_level_one_sequence_running = false
 
@@ -341,7 +344,6 @@ func _play_guest_door_materialize() -> void:
 	await flash.finished
 	_set_guest_entry_visible(true)
 	_set_guest_buttons_locked(true)
-	_spawn_axiom()
 	_guest_door_revealed = true
 	var settle: Tween = _world.create_tween()
 	if _world._white_overlay != null:
@@ -354,11 +356,14 @@ func _play_guest_door_materialize() -> void:
 		_world._glitch_overlay.visible = false
 
 func _on_guest_door_locked_interaction(_button: Node) -> void:
-	if not _world._is_level_one_scene() or _guest_key_spawned:
+	if not _world._is_level_one_scene() or _guest_room_opened:
 		return
-	_spawn_key()
-	_set_objective_state("guest_key")
-	_world.call_deferred("_play_level_one_guest_door_locked_sequence")
+	if not _guest_key_collected:
+		if not _guest_key_spawned:
+			_spawn_key()
+		if _objective_state != "guest_key":
+			_set_objective_state("guest_key")
+		_world.call_deferred("_play_level_one_guest_door_locked_sequence")
 
 func play_guest_door_locked_sequence() -> void:
 	await _world._show_subtitle("Locked? Then why do I feel like I need to go in there?", 2.2)
@@ -367,7 +372,12 @@ func play_guest_door_locked_sequence() -> void:
 func _on_guest_door_opened() -> void:
 	if not _world._is_level_one_scene() or _guest_room_opened:
 		return
+	if GameState.has_item("key_1"):
+		GameState.consume_item("key_1")
+	_guest_key_collected = true
 	_guest_room_opened = true
+	_set_guest_buttons_locked(false)
+	_spawn_axiom()
 	_set_objective_state("guest_axiom")
 	_world.call_deferred("_play_level_one_guest_room_opened_subtitle")
 
@@ -409,6 +419,7 @@ func play_axiom_equip_sequence() -> void:
 
 func _play_house_split_glitch() -> void:
 	_cache_split_nodes()
+	_refresh_split_origins()
 	if _glitch_fragments_root != null:
 		_glitch_fragments_root.visible = true
 	if _world._glitch_overlay != null:
@@ -461,6 +472,17 @@ func _set_fragment_burst_weight(weight: float) -> void:
 
 func _make_house_camera_transform(position_offset: Vector3, look_offset: Vector3) -> Transform3D:
 	return Transform3D(Basis(), _world.house.to_global(position_offset)).looking_at(_world.house.to_global(look_offset), Vector3.UP)
+
+func _refresh_split_origins() -> void:
+	for node in _split_front_nodes:
+		if is_instance_valid(node):
+			_split_original_positions[node] = node.position
+	for node in _split_back_nodes:
+		if is_instance_valid(node):
+			_split_original_positions[node] = node.position
+	for child in _glitch_fragment_original_positions.keys():
+		if is_instance_valid(child):
+			_glitch_fragment_original_positions[child] = child.position
 
 func _set_house_split_weight(weight: float) -> void:
 	for node in _split_front_nodes:

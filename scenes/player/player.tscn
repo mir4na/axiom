@@ -7525,6 +7525,7 @@ transform = Transform3D(-0.9999999, -7.450581e-09, -8.940697e-08, -1.4901161e-08
 [node name="InteractionRay" type="RayCast3D" parent="root/Skeleton3D/BoneAttachment3D/Head/Camera3D" unique_id=901234004]
 transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, 0, 0, 0)
 target_position = Vector3(0, 0, -1.35)
+collide_with_areas = true
 
 [node name="SolidHeadCol" type="CollisionShape3D" parent="root/Skeleton3D/BoneAttachment3D" unique_id=599213977]
 transform = Transform3D(0.9999999, -7.450581e-09, 0, 1.4901161e-08, 1, 0, 0, 2.9802322e-08, 1, -0.007389486, 0.0693205, 0.04162264)
