@@ -1,6 +1,7 @@
 extends RefCounted
 
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
+const BROKEN_HOUSE_SCENE := preload("res://scenes/objects/broken_house.tscn")
 const GUEST_REVEAL_EXTERIOR_START_POS := Vector3(-24.6, 16.0, 30.7)
 const GUEST_REVEAL_EXTERIOR_START_LOOK := Vector3(0.7, -0.75, 7.2)
 const GUEST_REVEAL_EXTERIOR_END_POS := Vector3(18.7, 7.8, 40.4)
@@ -32,6 +33,7 @@ var _split_front_nodes: Array[Node3D] = []
 var _split_back_nodes: Array[Node3D] = []
 var _split_original_positions: Dictionary = {}
 var _glitch_fragment_original_positions: Dictionary = {}
+var _broken_house_instance: Node3D
 
 func _init(world_ref) -> void:
 	_world = world_ref
@@ -123,6 +125,7 @@ func _prepare_phase() -> void:
 	_objective_state = ""
 	_key_item_instance = null
 	_axiom_item_instance = null
+	_broken_house_instance = null
 	_split_front_nodes.clear()
 	_split_back_nodes.clear()
 	_split_original_positions.clear()
@@ -418,7 +421,7 @@ func play_axiom_equip_sequence() -> void:
 	_level_one_sequence_running = false
 
 func _play_house_split_glitch() -> void:
-	_cache_split_nodes()
+	_ensure_broken_house()
 	_refresh_split_origins()
 	if _glitch_fragments_root != null:
 		_glitch_fragments_root.visible = true
@@ -429,19 +432,17 @@ func _play_house_split_glitch() -> void:
 	if _world._glitch_overlay != null:
 		glitch_in.tween_property(_world._glitch_overlay, "modulate:a", 0.78, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		glitch_in.parallel().tween_method(_world._set_arrival_glitch_strength, 0.0, 1.0, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	glitch_in.parallel().tween_method(_set_house_split_weight, 0.0, 1.0, 1.15).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	if _broken_house_instance != null:
+		glitch_in.parallel().tween_method(Callable(_broken_house_instance, "set_split_weight"), 0.0, 1.0, 1.15).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await glitch_in.finished
 	await _world.get_tree().create_timer(0.5).timeout
 	var glitch_out: Tween = _world.create_tween()
 	if _world._glitch_overlay != null:
 		glitch_out.tween_property(_world._glitch_overlay, "modulate:a", 0.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		glitch_out.parallel().tween_method(_world._set_arrival_glitch_strength, 1.0, 0.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	glitch_out.parallel().tween_method(_set_house_split_weight, 1.0, 0.0, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await glitch_out.finished
 	if _world._glitch_overlay != null:
 		_world._glitch_overlay.visible = false
-	if _glitch_fragments_root != null:
-		_glitch_fragments_root.visible = false
 
 func _play_glitch_fragment_burst(from_weight: float, to_weight: float, duration: float) -> void:
 	_cache_split_nodes()
@@ -474,6 +475,8 @@ func _make_house_camera_transform(position_offset: Vector3, look_offset: Vector3
 	return Transform3D(Basis(), _world.house.to_global(position_offset)).looking_at(_world.house.to_global(look_offset), Vector3.UP)
 
 func _refresh_split_origins() -> void:
+	if _broken_house_instance != null:
+		return
 	for node in _split_front_nodes:
 		if is_instance_valid(node):
 			_split_original_positions[node] = node.position
@@ -483,6 +486,17 @@ func _refresh_split_origins() -> void:
 	for child in _glitch_fragment_original_positions.keys():
 		if is_instance_valid(child):
 			_glitch_fragment_original_positions[child] = child.position
+
+func _ensure_broken_house() -> void:
+	if _broken_house_instance != null or _world.house == null:
+		return
+	var broken_scene := BROKEN_HOUSE_SCENE.instantiate() as Node3D
+	if broken_scene == null:
+		return
+	_world.add_child(broken_scene)
+	if broken_scene.has_method("build_from_house"):
+		broken_scene.call("build_from_house", _world.house)
+	_broken_house_instance = broken_scene
 
 func _set_house_split_weight(weight: float) -> void:
 	for node in _split_front_nodes:

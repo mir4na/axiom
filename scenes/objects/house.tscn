@@ -159,9 +159,9 @@ operation = 2
 size = Vector3(1.8, 2.4, 1)
 
 [node name="GuestDoorGap" type="CSGBox3D" parent="Partitions" unique_id=237832774]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, -0.7, 3.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.0042844, -0.7, 3.5)
 operation = 2
-size = Vector3(1.8, 2.4, 1)
+size = Vector3(0.38259277, 2.4, 1)
 
 [node name="KitchenWall" type="CSGBox3D" parent="Partitions" unique_id=681782755]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.862976, 0, -2)
@@ -257,29 +257,25 @@ shape = SubResource("MDoorCol")
 mesh = SubResource("MDoorMesh")
 
 [node name="GuestDoorBtnOut" type="StaticBody3D" parent="." unique_id=1413763975]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 1.2, 3.7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2071166, -0.60900885, 2.7710803)
 script = ExtResource("2_door_button")
 door_path = NodePath("../GuestDoor")
 
 [node name="Collision" type="CollisionShape3D" parent="GuestDoorBtnOut" unique_id=2007736402]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5368433, -1.7596455, -1.0433457)
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="GuestDoorBtnOut" unique_id=877408326]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55505705, -1.7507482, -1.0656121)
 mesh = SubResource("ButtonMesh")
 
 [node name="GuestDoorBtnIn" type="StaticBody3D" parent="." unique_id=1904349629]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.6, 1.2, 3.3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7928705, -0.59873104, 2.7171235)
 script = ExtResource("2_door_button")
 door_path = NodePath("../GuestDoor")
 
 [node name="Collision" type="CollisionShape3D" parent="GuestDoorBtnIn" unique_id=463395487]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2151761, -1.7727318, -0.6255727)
 shape = SubResource("ButtonCol")
 
 [node name="Mesh" type="MeshInstance3D" parent="GuestDoorBtnIn" unique_id=1712343817]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22363234, -1.7802808, -0.6181426)
 mesh = SubResource("ButtonMesh")
 
 [node name="FloorLiving" type="CSGBox3D" parent="." unique_id=2118314862]

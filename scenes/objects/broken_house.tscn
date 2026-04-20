@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://ddwlt18o2bb3f"]
+
+[ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="1_house"]
+[ext_resource type="Script" uid="uid://bxggge7nqimen" path="res://scripts/world/broken_house.gd" id="2_script"]
+
+[node name="BrokenHouse" type="Node3D" unique_id=1186790273]
+script = ExtResource("2_script")
+
+[node name="FrontHalf" parent="." unique_id=1005309500 instance=ExtResource("1_house")]
+
+[node name="BackHalf" parent="." unique_id=414804599 instance=ExtResource("1_house")]
