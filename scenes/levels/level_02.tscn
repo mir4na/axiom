@@ -5,8 +5,11 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/locked_door.tscn" id="3_door"]
 [ext_resource type="PackedScene" path="res://scenes/objects/exit_door.tscn" id="4_exit"]
 [ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="5_key"]
+[ext_resource type="PackedScene" path="res://scenes/objects/sliding_door.tscn" id="6_slide_door"]
 [ext_resource type="PackedScene" uid="uid://df7x8h205lam1" path="res://scenes/characters/rose.tscn" id="7_rose"]
 [ext_resource type="PackedScene" path="res://scenes/objects/flashlight_item.tscn" id="8_flashlight"]
+[ext_resource type="PackedScene" path="res://scenes/objects/door_button.tscn" id="9_door_button"]
+[ext_resource type="PackedScene" path="res://scenes/objects/punch_skill_item.tscn" id="10_punch_skill"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -114,43 +117,43 @@ use_collision = true
 
 [node name="WalkwayLeft" type="CSGBox3D" parent="World/TunnelShell" unique_id=1900409774]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.05, -0.1, 0)
-size = Vector3(1.9, 0.4, 56)
+size = Vector3(1.9, 0.4, 332)
 material = SubResource("MatWalkway")
 
 [node name="WalkwayRight" type="CSGBox3D" parent="World/TunnelShell" unique_id=862681828]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.05, -0.1, 0)
-size = Vector3(1.9, 0.4, 56)
+size = Vector3(1.9, 0.4, 332)
 material = SubResource("MatWalkway")
 
 [node name="ChannelFloor" type="CSGBox3D" parent="World/TunnelShell" unique_id=777782650]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.65, 0)
-size = Vector3(2.6, 0.7, 56)
+size = Vector3(2.6, 0.7, 332)
 material = SubResource("MatChannel")
 
 [node name="WallLeft" type="CSGBox3D" parent="World/TunnelShell" unique_id=989614362]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 2.1, 0)
-size = Vector3(0.4, 4.2, 56)
+size = Vector3(0.4, 4.2, 332)
 material = SubResource("MatWallWet")
 
 [node name="WallRight" type="CSGBox3D" parent="World/TunnelShell" unique_id=1534654733]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 2.1, 0)
-size = Vector3(0.4, 4.2, 56)
+size = Vector3(0.4, 4.2, 332)
 material = SubResource("MatWall")
 
 [node name="Ceiling" type="CSGBox3D" parent="World/TunnelShell" unique_id=451476878]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.15, 0)
 flip_faces = true
-size = Vector3(6.8, 0.3, 56)
+size = Vector3(6.8, 0.3, 332)
 material = SubResource("MatCeiling")
 
 [node name="ArchStripLeft" type="CSGBox3D" parent="World/TunnelShell" unique_id=1513572456]
 transform = Transform3D(0.707, 0.707, 0, -0.707, 0.707, 0, 0, 0, 1, -2.85, 3.85, 0)
-size = Vector3(0.32, 0.32, 56)
+size = Vector3(0.32, 0.32, 332)
 material = SubResource("MatCeiling")
 
 [node name="ArchStripRight" type="CSGBox3D" parent="World/TunnelShell" unique_id=1320333569]
 transform = Transform3D(0.707, -0.707, 0, 0.707, 0.707, 0, 0, 0, 1, 2.85, 3.85, 0)
-size = Vector3(0.32, 0.32, 56)
+size = Vector3(0.32, 0.32, 332)
 material = SubResource("MatCeiling")
 
 [node name="EndCapFar" type="CSGBox3D" parent="World/TunnelShell" unique_id=2139400316]
@@ -159,7 +162,8 @@ size = Vector3(6.8, 4.6, 0.5)
 material = SubResource("MatWallWet")
 
 [node name="EndCapNear" type="CSGBox3D" parent="World/TunnelShell" unique_id=1231162106]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 28.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 166.2)
+visible = false
 size = Vector3(6.8, 4.6, 0.5)
 material = SubResource("MatWall")
 
@@ -169,19 +173,19 @@ operation = 2
 size = Vector3(0.6, 2.50289, 2.049878)
 
 [node name="DoorCut2" type="CSGBox3D" parent="World/TunnelShell" unique_id=1563182707]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 1.45, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 1.2396485, 2.006833)
 operation = 2
-size = Vector3(0.6, 2.9, 2.4)
+size = Vector3(0.6, 2.479297, 1.9882019)
 
 [node name="DoorCut3" type="CSGBox3D" parent="World/TunnelShell" unique_id=8917528]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.45, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.45, 160)
 operation = 2
 size = Vector3(0.6, 2.9, 2.4)
 
 [node name="LeftCorridorCut" type="CSGBox3D" parent="World/TunnelShell" unique_id=833201112]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.45, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.1663452, -12.058786)
 operation = 2
-size = Vector3(0.6, 2.9, 2.8)
+size = Vector3(0.6, 2.3326905, 1.9997222)
 
 [node name="Stall1" type="CSGCombiner3D" parent="World" unique_id=1332012744]
 use_collision = true
@@ -274,27 +278,27 @@ material = SubResource("MatCeiling")
 use_collision = true
 
 [node name="Floor" type="CSGBox3D" parent="World/Stall3" unique_id=2113797074]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, -0.15, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, -0.15, 160)
 size = Vector3(5.2, 0.3, 4.8)
 material = SubResource("MatFloor")
 
 [node name="BackWall" type="CSGBox3D" parent="World/Stall3" unique_id=1287209076]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.65, 2.1, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.65, 2.1, 160)
 size = Vector3(0.4, 4.4, 5.2)
 material = SubResource("MatStallBack")
 
 [node name="SideWallN" type="CSGBox3D" parent="World/Stall3" unique_id=1934355723]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.05, 2.1, 19.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.05, 2.1, 157.45)
 size = Vector3(5.5, 4.4, 0.4)
 material = SubResource("MatWall")
 
 [node name="SideWallP" type="CSGBox3D" parent="World/Stall3" unique_id=265142827]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.05, 2.1, 24.55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.05, 2.1, 162.55)
 size = Vector3(5.5, 4.4, 0.4)
 material = SubResource("MatWall")
 
 [node name="Ceiling" type="CSGBox3D" parent="World/Stall3" unique_id=1862343295]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, 4.15, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, 4.15, 160)
 flip_faces = true
 size = Vector3(5.6, 0.3, 5.2)
 material = SubResource("MatCeiling")
@@ -313,7 +317,7 @@ size = Vector3(0.35, 4.2, 0.35)
 material = SubResource("MatPillar")
 
 [node name="PillarL3" type="CSGBox3D" parent="World/Pillars" unique_id=1145114773]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75, 2.1, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75, 2.1, 160)
 size = Vector3(0.35, 4.2, 0.35)
 material = SubResource("MatPillar")
 
@@ -332,22 +336,22 @@ use_collision = true
 
 [node name="ChannelLipLeft" type="CSGBox3D" parent="World/Details" unique_id=1975461952]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.95, 0.06, 0)
-size = Vector3(0.18, 0.16, 56)
+size = Vector3(0.18, 0.16, 162)
 material = SubResource("MatPillar")
 
 [node name="ChannelLipRight" type="CSGBox3D" parent="World/Details" unique_id=1275041750]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.95, 0.06, 0)
-size = Vector3(0.18, 0.16, 56)
+size = Vector3(0.18, 0.16, 162)
 material = SubResource("MatPillar")
 
 [node name="WalkwayEdgeLeft" type="CSGBox3D" parent="World/Details" unique_id=1540011883]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.92, 0.14, 0)
-size = Vector3(0.12, 0.28, 56)
+size = Vector3(0.12, 0.28, 162)
 material = SubResource("MatPillar")
 
 [node name="WalkwayEdgeRight" type="CSGBox3D" parent="World/Details" unique_id=1907607726]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.92, 0.14, 0)
-size = Vector3(0.12, 0.28, 56)
+size = Vector3(0.12, 0.28, 162)
 material = SubResource("MatPillar")
 
 [node name="RubblePile1" type="CSGBox3D" parent="World/Details" unique_id=1378801642]
@@ -361,7 +365,7 @@ size = Vector3(0.5, 0.2, 0.6)
 material = SubResource("MatRubble")
 
 [node name="RubblePile3" type="CSGBox3D" parent="World/Details" unique_id=1608319219]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0.09, 21)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0.09, 159)
 size = Vector3(0.75, 0.18, 0.5)
 material = SubResource("MatRubble")
 
@@ -411,18 +415,18 @@ size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
 [node name="DoorFrame3L" type="CSGBox3D" parent="World/Details" unique_id=1384050386]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 2.1, 20.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 2.1, 158.8)
 size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
 [node name="DoorFrame3R" type="CSGBox3D" parent="World/Details" unique_id=203691333]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 2.1, 23.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 2.1, 161.2)
 size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
 [node name="Water" type="CSGBox3D" parent="World" unique_id=1883230669]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28, 0)
-size = Vector3(2.15, 0.08, 53)
+size = Vector3(2.15, 0.08, 328)
 material = SubResource("MatWater")
 
 [node name="BridgeNorth" type="CSGBox3D" parent="World" unique_id=418566744]
@@ -436,7 +440,7 @@ size = Vector3(2.3, 0.24, 1.3)
 material = SubResource("MatWalkway")
 
 [node name="BridgeSouth" type="CSGBox3D" parent="World" unique_id=242708763]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.02, 20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.02, 158)
 size = Vector3(2.3, 0.24, 1.3)
 material = SubResource("MatWalkway")
 
@@ -469,14 +473,14 @@ omni_range = 12.5
 [node name="TunnelLight3" type="OmniLight3D" parent="World/Lighting" unique_id=1815108510]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 8)
 light_color = Color(0.24, 0.44, 0.32, 1)
-light_energy = 2.15
+light_energy = 0.0
 shadow_enabled = true
 omni_range = 12.5
 
 [node name="TunnelLight4" type="OmniLight3D" parent="World/Lighting" unique_id=673944116]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 23)
 light_color = Color(0.22, 0.38, 0.29, 1)
-light_energy = 1.95
+light_energy = 0.0
 shadow_enabled = true
 omni_range = 11.5
 
@@ -499,19 +503,19 @@ light_energy = 2.0
 omni_range = 8.0
 
 [node name="StallLight3" type="OmniLight3D" parent="World/Lighting" unique_id=660271069]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 3.6, 22)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 3.6, 160)
 light_color = Color(0.38, 0.58, 0.26, 1)
-light_energy = 1.85
+light_energy = 0.0
 omni_range = 8.0
 
 [node name="Door2" parent="World" unique_id=385081107 instance=ExtResource("3_door")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.2278469, 1.25, -6)
 
 [node name="KeyItem" parent="World" unique_id=1619018589 instance=ExtResource("5_key")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.1, 0.5, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.1, 0.037981212, -12)
 
 [node name="TrapGateSouth" type="StaticBody3D" parent="World" unique_id=1731018589]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.45, 1.25, -12)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.197806, 1.25, -12.053984)
 visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/TrapGateSouth" unique_id=297733500]
@@ -524,7 +528,6 @@ mesh = SubResource("BoxMesh_trap_gate")
 
 [node name="TrapGateNorth" type="StaticBody3D" parent="World" unique_id=1731018590]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -10.25, 1.25, -12)
-visible = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/TrapGateNorth" unique_id=359896139]
 shape = SubResource("BoxShape3D_trap_gate")
@@ -549,11 +552,25 @@ omni_range = 9.0
 [node name="Flashlight" parent="World" unique_id=796653510 instance=ExtResource("8_flashlight")]
 transform = Transform3D(0.939693, 0, -0.34202, 0, 1, 0, 0.34202, 0, 0.939693, -7.2, 0.45, -6.1)
 
+[node name="Room2Door" parent="World" unique_id=410271069 instance=ExtResource("6_slide_door")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.2278469, 1.25, 2)
+
+[node name="Room2Button" parent="World" unique_id=410271070 instance=ExtResource("9_door_button")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.0016875, 1.8021901, 0.30879575)
+door_path = NodePath("../Room2Door")
+
+[node name="PunchSkill" parent="World" unique_id=410271071 instance=ExtResource("10_punch_skill")]
+transform = Transform3D(0.970296, 0, -0.241922, 0, 1, 0, 0.241922, 0, 0.970296, 6.7, 0.030008912, 1.95)
+
+[node name="Room3Door" parent="World" unique_id=410271072 instance=ExtResource("6_slide_door")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.2278469, 1.25, 160)
+
 [node name="Rose" parent="World" unique_id=1861027441 instance=ExtResource("7_rose")]
-transform = Transform3D(0.996195, 0, -0.0871557, 0, 1, 0, 0.0871557, 0, 0.996195, -6.2, 0, 22.1)
+transform = Transform3D(0.996195, 0, -0.0871557, 0, 1, 0, 0.0871557, 0, 0.996195, -6.2, 0, 160.1)
 
 [node name="ExitDoor" parent="World" unique_id=1230293221 instance=ExtResource("4_exit")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 27.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 165.5)
+visible = false
 
 [node name="Player" parent="World" unique_id=1812883366 instance=ExtResource("2_player")]
 transform = Transform3D(-0.9932741, 0, -0.11578677, 0, 1, 0, 0.11578677, 0, -0.9932741, 0, 1.8458242, -25.466845)

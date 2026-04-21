@@ -241,6 +241,8 @@ func _update_inventory_ui() -> void:
 func _format_slot_name(item_id: String) -> String:
 	if item_id == "":
 		return "EMPTY"
+	if item_id == "PunchSkill":
+		return "PUNCH SKILL"
 	return item_id.replace("_", " ").to_upper()
 
 func _update_status_bars() -> void:

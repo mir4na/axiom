@@ -514,7 +514,7 @@ func _play_level_two_intro() -> void:
 		player_hud.visible = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	await _set_cinematic_bars(true, 0.35)
-	await get_tree().create_timer(3.0).timeout
+	await get_tree().create_timer(2.0).timeout
 	await _set_cinematic_bars(false, 0.35)
 	if player != null:
 		player.set_cinematic_lock(false)
@@ -1138,6 +1138,7 @@ func restart_current_level() -> void:
 	if current_scene == null:
 		return
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
+	GameState.full_reset_inventory()
 	GameState.rewind_mode_active = false
 	GameState.time_direction = GameState.TIME_FORWARD
 	var screen_fx := _screen_fx()

@@ -40,6 +40,9 @@ var health: float = 100.0
 var stamina: float = 100.0
 var _stamina_recover_cooldown: float = 0.0
 var _health_regen_timer: float = 0.0
+var _attack_locked: bool = false
+var _attack_timer: float = 0.0
+var _attack_name: String = ""
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -154,6 +157,10 @@ func _input(event: InputEvent) -> void:
 			GameState.select_slot(1)
 		elif event.keycode == KEY_3:
 			GameState.select_slot(2)
+	if event is InputEventMouseButton and event.pressed:
+		if _can_use_punch_skill():
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				_trigger_melee_attack("fight_punch", 35.0, 2.3)
 
 func _physics_process(delta: float) -> void:
 	if health > 0.0 and health < max_health:
@@ -165,6 +172,11 @@ func _physics_process(delta: float) -> void:
 	else:
 		_health_regen_timer = 0.0
 	_update_flashlight_state()
+	if _attack_timer > 0.0:
+		_attack_timer = maxf(0.0, _attack_timer - delta)
+		if _attack_timer <= 0.0:
+			_attack_locked = false
+			_attack_name = ""
 	if cinematic_locked:
 		velocity.x = lerpf(velocity.x, 0.0, acceleration * delta)
 		velocity.z = lerpf(velocity.z, 0.0, acceleration * delta)
@@ -200,7 +212,10 @@ func _physics_process(delta: float) -> void:
 		var has_input = Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_SPACE)
 		if has_input and GameState.is_scrubbing_past:
 			GameState.prune_timeline()
-		_handle_movement(delta)
+		if _attack_locked:
+			_handle_attack_movement(delta)
+		else:
+			_handle_movement(delta)
 	_handle_interaction(delta)
 
 
@@ -288,6 +303,17 @@ func _handle_movement(delta: float) -> void:
 	move_and_slide()
 	
 	# Keep hitboxes in sync at all times
+	_sync_hitboxes(delta)
+	_update_hud_status()
+
+func _handle_attack_movement(delta: float) -> void:
+	velocity.x = lerpf(velocity.x, 0.0, acceleration * delta)
+	velocity.z = lerpf(velocity.z, 0.0, acceleration * delta)
+	if is_on_floor():
+		velocity.y = 0.0
+	else:
+		velocity.y = max(velocity.y - gravity * delta, -30.0)
+	move_and_slide()
 	_sync_hitboxes(delta)
 	_update_hud_status()
 
@@ -402,6 +428,38 @@ func _drop_item() -> void:
 
 func _can_use_axiom() -> bool:
 	return GameState.has_rewind_access()
+
+func _can_use_punch_skill() -> bool:
+	return GameState.has_selected_item("PunchSkill") and not GameState.rewind_mode_active and not cinematic_locked and not _attack_locked
+
+func _trigger_melee_attack(animation_name: String, damage: float, attack_range: float) -> void:
+	if not _can_use_punch_skill():
+		return
+	_attack_locked = true
+	_attack_timer = 0.48
+	_attack_name = animation_name
+	if anim_player != null and anim_player.has_animation(animation_name):
+		anim_player.play(animation_name, 0.05)
+	_apply_melee_hit(damage, attack_range)
+
+func _apply_melee_hit(damage: float, attack_range: float) -> void:
+	if camera == null:
+		return
+	var from := camera.global_position
+	var to := from + -camera.global_transform.basis.z * attack_range
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(from, to)
+	query.exclude = [get_rid()]
+	query.collide_with_areas = true
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return
+	var collider = hit.get("collider")
+	var target: Node = collider as Node
+	while target != null:
+		if target.has_method("take_damage"):
+			target.call("take_damage", damage)
+			return
+		target = target.get_parent()
 
 func set_cinematic_lock(active: bool) -> void:
 	cinematic_locked = active

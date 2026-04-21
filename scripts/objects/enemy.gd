@@ -7,6 +7,7 @@ extends CharacterBody3D
 @export var laser_duration: float = 0.12
 @export var laser_damage: float = 18.0
 @export var hover_height: float = 1.2
+@export var max_health: float = 70.0
 
 @onready var _visual_root: Node3D = $VisualRoot
 @onready var _laser_beam: MeshInstance3D = $LaserBeam
@@ -18,10 +19,12 @@ var _traveled: float = 0.0
 var _fire_timer: float = 0.0
 var _laser_timer: float = 0.0
 var _player: CharacterBody3D
+var _health: float = 70.0
 
 func _ready() -> void:
 	add_to_group("time_actor")
 	_player = get_tree().get_first_node_in_group("player") as CharacterBody3D
+	_health = max_health
 	if _laser_beam != null:
 		_laser_beam.visible = false
 	if _laser_light != null:
@@ -100,3 +103,9 @@ func _update_visuals(delta: float) -> void:
 		return
 	_visual_root.position.y = hover_height + sin(Time.get_ticks_msec() * 0.004 + global_position.z) * 0.18
 	_visual_root.rotate_y(delta * 0.9)
+
+func take_damage(amount: float) -> void:
+	_health = maxf(0.0, _health - amount)
+	if _health > 0.0:
+		return
+	queue_free()
