@@ -621,6 +621,8 @@ func _play_level_two_corridor_trap() -> void:
 	await _set_level_two_trap_gate_state(true)
 	while _is_player_inside_level_two_trap():
 		await get_tree().create_timer(2.0).timeout
+		while GameState.rewind_mode_active:
+			await get_tree().process_frame
 		if not _is_player_inside_level_two_trap():
 			break
 		await _fire_level_two_trap_laser()
@@ -658,6 +660,8 @@ func _configure_level_two_trap_gate(gate: StaticBody3D, enabled: bool) -> void:
 		gate.scale = Vector3.ONE
 
 func _fire_level_two_trap_laser() -> void:
+	if GameState.rewind_mode_active:
+		return
 	if _level_two_trap_laser == null or _level_two_trap_beam == null:
 		return
 	_level_two_trap_laser.visible = true
@@ -679,6 +683,8 @@ func _fire_level_two_trap_laser() -> void:
 	_level_two_trap_laser.visible = false
 
 func _apply_level_two_trap_damage() -> void:
+	if GameState.rewind_mode_active:
+		return
 	if not _is_player_inside_level_two_trap():
 		return
 	if player != null and player.has_method("take_damage"):
