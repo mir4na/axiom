@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/objects/enemy.gd" id="1_enemy"]
 
@@ -6,9 +6,40 @@
 radius = 0.25
 height = 1.5
 
-[sub_resource type="CapsuleMesh" id="2"]
+[sub_resource type="CapsuleMesh" id="1_mesh"]
 radius = 0.25
 height = 1.5
+
+[sub_resource type="StandardMaterial3D" id="2_glitch"]
+transparency = 1
+albedo_color = Color(0.12, 0.14, 0.16, 0.78)
+emission_enabled = true
+emission = Color(0.24, 0.92, 1, 1)
+emission_energy_multiplier = 1.8
+roughness = 0.08
+metallic = 0.25
+
+[sub_resource type="StandardMaterial3D" id="3_glitch_mag"]
+transparency = 1
+albedo_color = Color(0.2, 0.1, 0.18, 0.72)
+emission_enabled = true
+emission = Color(1, 0.18, 0.78, 1)
+emission_energy_multiplier = 1.65
+roughness = 0.12
+metallic = 0.18
+
+[sub_resource type="CylinderMesh" id="4_laser"]
+top_radius = 0.05
+bottom_radius = 0.05
+height = 1.0
+
+[sub_resource type="StandardMaterial3D" id="5_laser_mat"]
+transparency = 1
+albedo_color = Color(0.3, 0.92, 1, 0.88)
+emission_enabled = true
+emission = Color(1, 0.18, 0.84, 1)
+emission_energy_multiplier = 3.2
+shading_mode = 0
 
 [node name="Enemy" type="CharacterBody3D"]
 script = ExtResource("1_enemy")
@@ -16,5 +47,45 @@ script = ExtResource("1_enemy")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("1")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-mesh = SubResource("2")
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="Core" type="MeshInstance3D" parent="VisualRoot"]
+mesh = SubResource("1_mesh")
+material_override = SubResource("2_glitch")
+
+[node name="ShardA" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(0.861629, 0, 0.507538, 0, 1, 0, -0.507538, 0, 0.861629, -0.32, 0.22, 0.18)
+mesh = SubResource("1_mesh")
+scale = Vector3(0.45, 0.55, 0.22)
+material_override = SubResource("3_glitch_mag")
+
+[node name="ShardB" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(0.766044, 0.321394, 0.55667, -0.271654, 0.94693, -0.173648, -0.582563, -0.0180283, 0.812832, 0.34, -0.18, -0.12)
+mesh = SubResource("1_mesh")
+scale = Vector3(0.32, 0.42, 0.18)
+material_override = SubResource("2_glitch")
+
+[node name="ShardC" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(0.707107, -0.353553, -0.612372, 0, 0.866025, -0.5, 0.707107, 0.353553, 0.612372, 0.08, 0.44, 0.28)
+mesh = SubResource("1_mesh")
+scale = Vector3(0.24, 0.36, 0.14)
+material_override = SubResource("3_glitch_mag")
+
+[node name="Glow" type="OmniLight3D" parent="VisualRoot"]
+light_color = Color(0.28, 0.88, 1, 1)
+light_energy = 1.1
+omni_range = 5.5
+
+[node name="Muzzle" type="Node3D" parent="VisualRoot"]
+position = Vector3(0, 1.18, 0)
+
+[node name="LaserBeam" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("4_laser")
+material_override = SubResource("5_laser_mat")
+
+[node name="LaserLight" type="OmniLight3D" parent="."]
+visible = false
+light_color = Color(1, 0.26, 0.84, 1)
+light_energy = 1.6
+omni_range = 4.2

@@ -446,6 +446,8 @@ func _process_escape_phase(delta: float) -> void:
 					_update_axiom_tutorial_page()
 		else:
 			_tutorial_space_consumed = false
+	if GameState.rewind_mode_active:
+		return
 	if not _escape_timer_running or _escape_failed_sequence_started:
 		return
 	_escape_time_left = maxf(0.0, _escape_time_left - delta)

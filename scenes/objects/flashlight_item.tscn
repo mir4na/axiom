@@ -1,0 +1,53 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/flashlight_item.gd" id="1_flashlight"]
+
+[sub_resource type="BoxShape3D" id="1_col"]
+size = Vector3(0.28, 0.24, 0.78)
+
+[sub_resource type="StandardMaterial3D" id="2_body"]
+albedo_color = Color(0.16, 0.18, 0.2, 1)
+roughness = 0.42
+metallic = 0.35
+
+[sub_resource type="StandardMaterial3D" id="3_head"]
+albedo_color = Color(0.82, 0.86, 0.9, 1)
+roughness = 0.18
+metallic = 0.8
+
+[node name="Flashlight" type="RigidBody3D"]
+script = ExtResource("1_flashlight")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+shape = SubResource("1_col")
+
+[node name="Body" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+radius = 0.11
+height = 0.55
+material = SubResource("2_body")
+
+[node name="BodyAura" type="CSGCylinder3D" parent="."]
+visible = false
+transform = Transform3D(1.3, 0, 0, 0, -5.68248e-08, -1.22, 0, 1.28, -5.59506e-08, 0, 0, 0)
+radius = 0.11
+height = 0.55
+
+[node name="Head" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -0.42, 0, 0.42, -1.83588e-08, 0, 0, -0.34)
+radius = 0.16
+height = 0.18
+material = SubResource("3_head")
+
+[node name="HeadAura" type="CSGCylinder3D" parent="."]
+visible = false
+transform = Transform3D(1.22, 0, 0, 0, -5.55112e-17, -0.46, 0, 0.46, -2.01072e-08, 0, 0, -0.34)
+radius = 0.16
+height = 0.18
+
+[node name="GlowLight" type="OmniLight3D" parent="."]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.4)
+light_color = Color(1, 0.96, 0.54, 1)
+light_energy = 1.3
+omni_range = 2.6

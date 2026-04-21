@@ -11,6 +11,7 @@ const INTRO_LINES := [
 ]
 const WORLD_SCENE_PATH := "res://scenes/world/world.tscn"
 const LEVEL_ONE_SCENE_PATH := "res://scenes/levels/level_01.tscn"
+const LEVEL_TWO_SCENE_PATH := "res://scenes/levels/level_02.tscn"
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const LEVEL_ONE_FLOW := preload("res://scripts/world/level_one_flow.gd")
 const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
@@ -62,6 +63,15 @@ var _sofa_light: OmniLight3D
 var _meteor: MeshInstance3D
 var _meteor_light: OmniLight3D
 var _level_one_flow
+var _level_two_key: Node3D
+var _level_two_door: Node3D
+var _level_two_trap_gate_south: StaticBody3D
+var _level_two_trap_gate_north: StaticBody3D
+var _level_two_trap_laser: Node3D
+var _level_two_trap_beam: MeshInstance3D
+var _level_two_trap_light: OmniLight3D
+var _level_two_trap_triggered: bool = false
+var _level_two_trap_running: bool = false
 
 func _screen_fx() -> CanvasLayer:
 	return get_node_or_null("/root/ScreenFX") as CanvasLayer
@@ -84,6 +94,15 @@ func _ready() -> void:
 		if GameState.has_meta(LEVEL_ONE_WHITE_META) and bool(GameState.get_meta(LEVEL_ONE_WHITE_META)):
 			_set_intro_lock(true)
 			call_deferred("_play_level_one_arrival")
+		return
+	if _is_level_two_scene():
+		_create_intro_ui()
+		_create_intro_camera()
+		_cache_level_two_targets()
+		_reset_level_two_view_state()
+		_intro_running = false
+		_objective_state = "level2_key"
+		call_deferred("_play_level_two_intro")
 		return
 	if not _is_world_intro_scene():
 		return
@@ -118,6 +137,21 @@ func _process(delta: float) -> void:
 		if _level_one_flow != null:
 			_level_one_flow.process_objectives()
 		return
+	if _is_level_two_scene():
+		if _objective_state == "level2_key" and is_instance_valid(_level_two_key):
+			_set_level_two_target_glow(_level_two_key, true)
+			_set_level_two_target_glow(_level_two_door, false)
+			_update_hint_marker(_level_two_key.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _level_two_key.global_position)
+		elif _objective_state == "level2_door" and is_instance_valid(_level_two_door):
+			_set_level_two_target_glow(_level_two_key, false)
+			_set_level_two_target_glow(_level_two_door, true)
+			_update_hint_marker(_level_two_door.global_position + Vector3(0.0, 1.0, 0.0), "DOOR", _level_two_door.global_position)
+		else:
+			_set_level_two_target_glow(_level_two_key, false)
+			_set_level_two_target_glow(_level_two_door, false)
+			_hint_marker.visible = false
+			_hint_label.visible = false
+		return
 	if not _is_world_intro_scene():
 		return
 
@@ -144,6 +178,14 @@ func _on_inventory_changed() -> void:
 	if _is_level_one_scene():
 		if _level_one_flow != null:
 			_level_one_flow.handle_inventory_changed()
+		return
+	if _is_level_two_scene():
+		if _objective_state == "level2_key" and GameState.has_item("key_1"):
+			if not _level_two_trap_triggered:
+				call_deferred("_run_level_two_keycard_sequence")
+			elif not _level_two_trap_running:
+				_objective_state = "level2_door"
+				_show_objective("Open door 1")
 		return
 	if not _is_world_intro_scene():
 		return
@@ -380,9 +422,12 @@ func _apply_player_spawn() -> void:
 	if spawner == null:
 		return
 	_player_spawn_position = spawner.global_position
-	_player_spawn_rotation_y = spawner.global_rotation.y
 	player.global_position = _player_spawn_position
-	player.rotation.y = _player_spawn_rotation_y
+	if _is_level_two_scene():
+		_player_spawn_rotation_y = player.rotation.y
+	else:
+		_player_spawn_rotation_y = spawner.global_rotation.y
+		player.rotation.y = _player_spawn_rotation_y
 
 func _configure_world_house() -> void:
 	if house == null:
@@ -461,6 +506,23 @@ func _play_level_one_arrival() -> void:
 	if _level_one_flow != null:
 		await _level_one_flow.play_arrival()
 
+func _play_level_two_intro() -> void:
+	await get_tree().process_frame
+	if player != null:
+		player.set_cinematic_lock(true)
+	if player_hud != null:
+		player_hud.visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	await _set_cinematic_bars(true, 0.35)
+	await get_tree().create_timer(3.0).timeout
+	await _set_cinematic_bars(false, 0.35)
+	if player != null:
+		player.set_cinematic_lock(false)
+	if player_hud != null:
+		player_hud.visible = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	_show_objective("Take the keycard to open door 1")
+
 func _play_level_one_guest_door_reveal_cinematic() -> void:
 	if _level_one_flow != null:
 		await _level_one_flow.play_guest_door_reveal_cinematic()
@@ -488,6 +550,160 @@ func _play_level_one_escape_fail_sequence() -> void:
 func _play_level_one_small_meteor_explosion(position: Vector3, hit_player: bool) -> void:
 	if _level_one_flow != null:
 		await _level_one_flow.play_small_meteor_explosion(position, hit_player)
+
+func _cache_level_two_targets() -> void:
+	_level_two_key = get_node_or_null("KeyItem") as Node3D
+	_level_two_door = get_node_or_null("Door2") as Node3D
+	_level_two_trap_gate_south = get_node_or_null("TrapGateSouth") as StaticBody3D
+	_level_two_trap_gate_north = get_node_or_null("TrapGateNorth") as StaticBody3D
+	_level_two_trap_laser = get_node_or_null("TrapLaser") as Node3D
+	if _level_two_trap_laser != null:
+		_level_two_trap_beam = _level_two_trap_laser.get_node_or_null("Beam") as MeshInstance3D
+		_level_two_trap_light = _level_two_trap_laser.get_node_or_null("Light") as OmniLight3D
+		if _level_two_trap_beam != null:
+			var beam_material := StandardMaterial3D.new()
+			beam_material.albedo_color = Color(1.0, 0.08, 0.06, 0.8)
+			beam_material.emission_enabled = true
+			beam_material.emission = Color(1.0, 0.08, 0.06, 1.0)
+			beam_material.emission_energy_multiplier = 8.5
+			beam_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			beam_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			_level_two_trap_beam.material_override = beam_material
+			_level_two_trap_beam.scale = Vector3(0.18, 1.0, 0.18)
+		if _level_two_trap_light != null:
+			_level_two_trap_light.light_energy = 0.0
+		_level_two_trap_laser.visible = false
+	_level_two_trap_triggered = false
+	_level_two_trap_running = false
+	_configure_level_two_trap_gate(_level_two_trap_gate_south, false)
+	_configure_level_two_trap_gate(_level_two_trap_gate_north, false)
+
+func _reset_level_two_view_state() -> void:
+	if _wake_overlay != null:
+		if _wake_overlay.material is ShaderMaterial:
+			_wake_overlay.material.set_shader_parameter("blur_strength", 0.0)
+			_wake_overlay.material.set_shader_parameter("haze_strength", 0.0)
+			_wake_overlay.material.set_shader_parameter("desaturate_strength", 0.0)
+		_wake_overlay.visible = false
+	if _blink_overlay != null:
+		_blink_overlay.modulate.a = 0.0
+		_blink_overlay.visible = false
+	if _fade_overlay != null:
+		_fade_overlay.modulate.a = 0.0
+		_fade_overlay.visible = false
+	if _white_overlay != null:
+		_white_overlay.modulate.a = 0.0
+		_white_overlay.visible = false
+	if _glitch_overlay != null:
+		_glitch_overlay.modulate.a = 0.0
+		_glitch_overlay.visible = false
+	if player_camera != null:
+		player_camera.make_current()
+	if player_hud != null:
+		player_hud.visible = true
+
+func _run_level_two_keycard_sequence() -> void:
+	if _level_two_trap_triggered or _level_two_trap_running:
+		return
+	_level_two_trap_triggered = true
+	_level_two_trap_running = true
+	_objective_state = ""
+	_hint_marker.visible = false
+	_hint_label.visible = false
+	_set_level_two_target_glow(_level_two_key, false)
+	_set_level_two_target_glow(_level_two_door, false)
+	await _play_level_two_corridor_trap()
+	_level_two_trap_running = false
+	_objective_state = "level2_door"
+	_show_objective("Open door 1")
+
+func _play_level_two_corridor_trap() -> void:
+	await _set_level_two_trap_gate_state(true)
+	while _is_player_inside_level_two_trap():
+		await get_tree().create_timer(2.0).timeout
+		if not _is_player_inside_level_two_trap():
+			break
+		await _fire_level_two_trap_laser()
+	await _set_level_two_trap_gate_state(false)
+
+func _set_level_two_trap_gate_state(closed: bool) -> void:
+	var tween := create_tween().set_parallel(true)
+	_tween_level_two_trap_gate(tween, _level_two_trap_gate_south, closed)
+	_tween_level_two_trap_gate(tween, _level_two_trap_gate_north, closed)
+	await tween.finished
+
+func _tween_level_two_trap_gate(tween: Tween, gate: StaticBody3D, closed: bool) -> void:
+	if gate == null:
+		return
+	var collision := gate.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if closed:
+		_configure_level_two_trap_gate(gate, true)
+		gate.scale = Vector3(1.0, 0.04, 1.0)
+		tween.tween_property(gate, "scale", Vector3.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		if collision != null:
+			collision.disabled = false
+	else:
+		_configure_level_two_trap_gate(gate, true)
+		tween.tween_property(gate, "scale", Vector3(1.0, 0.04, 1.0), 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tween.finished.connect(_configure_level_two_trap_gate.bind(gate, false), CONNECT_ONE_SHOT)
+
+func _configure_level_two_trap_gate(gate: StaticBody3D, enabled: bool) -> void:
+	if gate == null:
+		return
+	gate.visible = enabled
+	var collision := gate.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision != null:
+		collision.disabled = not enabled
+	if not enabled:
+		gate.scale = Vector3.ONE
+
+func _fire_level_two_trap_laser() -> void:
+	if _level_two_trap_laser == null or _level_two_trap_beam == null:
+		return
+	_level_two_trap_laser.visible = true
+	_level_two_trap_beam.scale = Vector3(0.1, 1.05, 0.1)
+	if _level_two_trap_light != null:
+		_level_two_trap_light.light_energy = 0.0
+	var flash_in := create_tween().set_parallel(true)
+	flash_in.tween_property(_level_two_trap_beam, "scale", Vector3(9.2, 1.15, 9.8), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if _level_two_trap_light != null:
+		flash_in.tween_property(_level_two_trap_light, "light_energy", 12.0, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await flash_in.finished
+	_apply_level_two_trap_damage()
+	await get_tree().create_timer(0.32).timeout
+	var flash_out := create_tween().set_parallel(true)
+	flash_out.tween_property(_level_two_trap_beam, "scale", Vector3(0.06, 1.02, 0.06), 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	if _level_two_trap_light != null:
+		flash_out.tween_property(_level_two_trap_light, "light_energy", 0.0, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await flash_out.finished
+	_level_two_trap_laser.visible = false
+
+func _apply_level_two_trap_damage() -> void:
+	if not _is_player_inside_level_two_trap():
+		return
+	if player != null and player.has_method("take_damage"):
+		player.call("take_damage", 50.0)
+
+func _is_player_inside_level_two_trap() -> bool:
+	if player == null or not is_instance_valid(player):
+		return false
+	var player_position := player.global_position
+	var within_x := player_position.x >= -10.55 and player_position.x <= -3.35
+	var within_z := player_position.z >= -14.15 and player_position.z <= -9.85
+	var within_y := player_position.y >= -0.5 and player_position.y <= 3.6
+	return within_x and within_z and within_y
+
+func _set_level_two_target_glow(target, enabled: bool) -> void:
+	if target == null:
+		return
+	if not is_instance_valid(target):
+		return
+	if target.has_method("set_persistent_highlight"):
+		target.call("set_persistent_highlight", enabled)
+	if target.has_method("set_highlight_enabled"):
+		target.call("set_highlight_enabled", enabled)
+	if enabled and target.has_method("set_highlight_strength"):
+		target.call("set_highlight_strength", 0.65 + (sin(_pulse_time * 1.45) * 0.5 + 0.5) * 0.75)
 
 func _play_camera_shot(start_transform: Transform3D, end_transform: Transform3D, duration: float) -> void:
 	if _intro_camera == null:
@@ -906,6 +1122,10 @@ func _is_world_intro_scene() -> bool:
 func _is_level_one_scene() -> bool:
 	var current_scene := get_tree().current_scene
 	return current_scene != null and current_scene.scene_file_path == LEVEL_ONE_SCENE_PATH
+
+func _is_level_two_scene() -> bool:
+	var current_scene := get_tree().current_scene
+	return current_scene != null and current_scene.scene_file_path == LEVEL_TWO_SCENE_PATH
 
 func restart_current_level() -> void:
 	var current_scene := get_tree().current_scene

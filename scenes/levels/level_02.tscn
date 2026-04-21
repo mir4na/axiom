@@ -5,20 +5,22 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/locked_door.tscn" id="3_door"]
 [ext_resource type="PackedScene" path="res://scenes/objects/exit_door.tscn" id="4_exit"]
 [ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="5_key"]
+[ext_resource type="PackedScene" uid="uid://df7x8h205lam1" path="res://scenes/characters/rose.tscn" id="7_rose"]
+[ext_resource type="PackedScene" path="res://scenes/objects/flashlight_item.tscn" id="8_flashlight"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
-background_color = Color(0.01, 0.015, 0.013, 1)
+background_color = Color(0.035, 0.045, 0.042, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.04, 0.08, 0.06, 1)
-ambient_light_energy = 0.16
+ambient_light_color = Color(0.18, 0.28, 0.24, 1)
+ambient_light_energy = 0.55
 tonemap_mode = 2
 glow_enabled = true
 glow_intensity = 1.2
 glow_bloom = 0.18
 fog_enabled = true
-fog_light_color = Color(0.03, 0.08, 0.06, 1)
-fog_density = 0.055
+fog_light_color = Color(0.12, 0.22, 0.2, 1)
+fog_density = 0.018
 
 [sub_resource type="StandardMaterial3D" id="MatWalkway"]
 albedo_color = Color(0.34, 0.33, 0.29, 1)
@@ -77,13 +79,32 @@ albedo_color = Color(0.22, 0.24, 0.23, 1)
 metallic = 0.55
 roughness = 0.72
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_trap_gate"]
+size = Vector3(2, 2.5, 0.4)
+
+[sub_resource type="StandardMaterial3D" id="MatTrapGate"]
+albedo_color = Color(0.28, 0.04, 0.06, 1)
+metallic = 0.42
+roughness = 0.36
+emission_enabled = true
+emission = Color(1, 0.12, 0.1, 1)
+emission_energy_multiplier = 2.8
+
+[sub_resource type="BoxMesh" id="BoxMesh_trap_gate"]
+size = Vector3(2, 2.5, 0.4)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_trap_laser"]
+top_radius = 0.16
+bottom_radius = 0.16
+height = 6.0
+
 [node name="Level02" type="Node3D" unique_id=902830711]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=731031134]
 environment = SubResource("Env")
 
 [node name="PlayerSpawn" type="Marker3D" parent="." unique_id=1122031886]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -24)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2719526, -25.740091)
 
 [node name="World" type="Node3D" parent="." unique_id=235410429]
 script = ExtResource("1_world")
@@ -143,9 +164,9 @@ size = Vector3(6.8, 4.6, 0.5)
 material = SubResource("MatWall")
 
 [node name="DoorCut1" type="CSGBox3D" parent="World/TunnelShell" unique_id=1999019211]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 1.45, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.251445, -6.0082645)
 operation = 2
-size = Vector3(0.6, 2.9, 2.4)
+size = Vector3(0.6, 2.50289, 2.049878)
 
 [node name="DoorCut2" type="CSGBox3D" parent="World/TunnelShell" unique_id=1563182707]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 1.45, 2)
@@ -153,37 +174,71 @@ operation = 2
 size = Vector3(0.6, 2.9, 2.4)
 
 [node name="DoorCut3" type="CSGBox3D" parent="World/TunnelShell" unique_id=8917528]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 1.45, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.45, 22)
 operation = 2
 size = Vector3(0.6, 2.9, 2.4)
+
+[node name="LeftCorridorCut" type="CSGBox3D" parent="World/TunnelShell" unique_id=833201112]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.45, -12)
+operation = 2
+size = Vector3(0.6, 2.9, 2.8)
 
 [node name="Stall1" type="CSGCombiner3D" parent="World" unique_id=1332012744]
 use_collision = true
 
 [node name="Floor" type="CSGBox3D" parent="World/Stall1" unique_id=2079436776]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, -0.15, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, -0.15, -6)
 size = Vector3(5.2, 0.3, 4.8)
 material = SubResource("MatFloor")
 
 [node name="BackWall" type="CSGBox3D" parent="World/Stall1" unique_id=988795474]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.65, 2.1, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.65, 2.1, -6)
 size = Vector3(0.4, 4.4, 5.2)
 material = SubResource("MatStallBack")
 
 [node name="SideWallN" type="CSGBox3D" parent="World/Stall1" unique_id=276188349]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, -16.55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.05, 2.1, -8.55)
 size = Vector3(5.5, 4.4, 0.4)
 material = SubResource("MatWall")
 
 [node name="SideWallP" type="CSGBox3D" parent="World/Stall1" unique_id=1472007700]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, -11.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.05, 2.1, -3.45)
 size = Vector3(5.5, 4.4, 0.4)
 material = SubResource("MatWall")
 
 [node name="Ceiling" type="CSGBox3D" parent="World/Stall1" unique_id=355867287]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, 4.15, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, 4.15, -6)
 flip_faces = true
 size = Vector3(5.6, 0.3, 5.2)
+material = SubResource("MatCeiling")
+
+[node name="LeftKeyCorridor" type="CSGCombiner3D" parent="World" unique_id=621711984]
+use_collision = true
+
+[node name="Floor" type="CSGBox3D" parent="World/LeftKeyCorridor" unique_id=1820173383]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.1, -0.15, -12)
+size = Vector3(7.2, 0.3, 3.8)
+material = SubResource("MatFloor")
+
+[node name="WallNorth" type="CSGBox3D" parent="World/LeftKeyCorridor" unique_id=45297337]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.1, 2.1, -13.9)
+size = Vector3(7.2, 4.4, 0.35)
+material = SubResource("MatWallWet")
+
+[node name="WallSouth" type="CSGBox3D" parent="World/LeftKeyCorridor" unique_id=28111066]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.1, 2.1, -10.1)
+size = Vector3(7.2, 4.4, 0.35)
+material = SubResource("MatWallWet")
+
+[node name="WallFar" type="CSGBox3D" parent="World/LeftKeyCorridor" unique_id=1538562509]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.5, 2.1, -12)
+size = Vector3(0.35, 4.4, 4.1)
+material = SubResource("MatStallBack")
+
+[node name="Ceiling" type="CSGBox3D" parent="World/LeftKeyCorridor" unique_id=850778137]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.1, 4.15, -12)
+flip_faces = true
+size = Vector3(7.2, 0.3, 4.1)
 material = SubResource("MatCeiling")
 
 [node name="Stall2" type="CSGCombiner3D" parent="World" unique_id=1174606595]
@@ -219,27 +274,27 @@ material = SubResource("MatCeiling")
 use_collision = true
 
 [node name="Floor" type="CSGBox3D" parent="World/Stall3" unique_id=2113797074]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, -0.15, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, -0.15, 22)
 size = Vector3(5.2, 0.3, 4.8)
 material = SubResource("MatFloor")
 
 [node name="BackWall" type="CSGBox3D" parent="World/Stall3" unique_id=1287209076]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.65, 2.1, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.65, 2.1, 22)
 size = Vector3(0.4, 4.4, 5.2)
 material = SubResource("MatStallBack")
 
 [node name="SideWallN" type="CSGBox3D" parent="World/Stall3" unique_id=1934355723]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, 15.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.05, 2.1, 19.45)
 size = Vector3(5.5, 4.4, 0.4)
 material = SubResource("MatWall")
 
 [node name="SideWallP" type="CSGBox3D" parent="World/Stall3" unique_id=265142827]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.05, 2.1, 20.55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.05, 2.1, 24.55)
 size = Vector3(5.5, 4.4, 0.4)
 material = SubResource("MatWall")
 
 [node name="Ceiling" type="CSGBox3D" parent="World/Stall3" unique_id=1862343295]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9, 4.15, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.9, 4.15, 22)
 flip_faces = true
 size = Vector3(5.6, 0.3, 5.2)
 material = SubResource("MatCeiling")
@@ -310,11 +365,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2, 0.09, 21)
 size = Vector3(0.75, 0.18, 0.5)
 material = SubResource("MatRubble")
 
-[node name="MossBlob1" type="CSGBox3D" parent="World/Details" unique_id=630149090]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.18, 2.6, -6)
-size = Vector3(0.08, 1.1, 0.25)
-material = SubResource("MatMoss")
-
 [node name="MossBlob2" type="CSGBox3D" parent="World/Details" unique_id=2007784847]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.18, 1.3, 14)
 size = Vector3(0.08, 0.8, 0.3)
@@ -341,12 +391,12 @@ size = Vector3(0.2, 0.15, 18)
 material = SubResource("MatRust")
 
 [node name="DoorFrame1L" type="CSGBox3D" parent="World/Details" unique_id=117393969]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, -15.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 2.1, -7.2)
 size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
 [node name="DoorFrame1R" type="CSGBox3D" parent="World/Details" unique_id=1250985853]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, -12.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 2.1, -4.8)
 size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
@@ -361,12 +411,12 @@ size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
 [node name="DoorFrame3L" type="CSGBox3D" parent="World/Details" unique_id=1384050386]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, 16.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 2.1, 20.8)
 size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
 [node name="DoorFrame3R" type="CSGBox3D" parent="World/Details" unique_id=203691333]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.1, 19.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 2.1, 23.2)
 size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
@@ -405,60 +455,105 @@ material = SubResource("MatGrate")
 [node name="TunnelLight1" type="OmniLight3D" parent="World/Lighting" unique_id=716748345]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, -22)
 light_color = Color(0.3, 0.54, 0.38, 1)
-light_energy = 1.35
+light_energy = 2.8
 shadow_enabled = true
-omni_range = 10.0
+omni_range = 13.5
 
 [node name="TunnelLight2" type="OmniLight3D" parent="World/Lighting" unique_id=240411023]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, -7)
 light_color = Color(0.28, 0.48, 0.36, 1)
+light_energy = 2.45
 shadow_enabled = true
-omni_range = 9.0
+omni_range = 12.5
 
 [node name="TunnelLight3" type="OmniLight3D" parent="World/Lighting" unique_id=1815108510]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 8)
 light_color = Color(0.24, 0.44, 0.32, 1)
-light_energy = 0.88
+light_energy = 2.15
 shadow_enabled = true
-omni_range = 9.5
+omni_range = 12.5
 
 [node name="TunnelLight4" type="OmniLight3D" parent="World/Lighting" unique_id=673944116]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 23)
 light_color = Color(0.22, 0.38, 0.29, 1)
-light_energy = 0.72
+light_energy = 1.95
 shadow_enabled = true
-omni_range = 8.0
+omni_range = 11.5
 
 [node name="WaterGlow" type="OmniLight3D" parent="World/Lighting" unique_id=591029277]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 1.5)
 light_color = Color(0.06, 0.44, 0.32, 1)
-light_energy = 0.55
-omni_range = 7.0
+light_energy = 1.25
+omni_range = 9.5
 
 [node name="StallLight1" type="OmniLight3D" parent="World/Lighting" unique_id=1506485156]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 3.6, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 3.6, -6)
 light_color = Color(0.5, 0.7, 0.36, 1)
-omni_range = 6.0
+light_energy = 2.25
+omni_range = 8.5
 
 [node name="StallLight2" type="OmniLight3D" parent="World/Lighting" unique_id=1699372342]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 3.6, 2)
 light_color = Color(0.44, 0.64, 0.3, 1)
-light_energy = 0.85
-omni_range = 5.5
+light_energy = 2.0
+omni_range = 8.0
 
 [node name="StallLight3" type="OmniLight3D" parent="World/Lighting" unique_id=660271069]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 3.6, 18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 3.6, 22)
 light_color = Color(0.38, 0.58, 0.26, 1)
-light_energy = 0.7
+light_energy = 1.85
+omni_range = 8.0
 
 [node name="Door2" parent="World" unique_id=385081107 instance=ExtResource("3_door")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.8, 1.25, 2)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.2278469, 1.25, -6)
 
 [node name="KeyItem" parent="World" unique_id=1619018589 instance=ExtResource("5_key")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.5, -15.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.1, 0.5, -12)
+
+[node name="TrapGateSouth" type="StaticBody3D" parent="World" unique_id=1731018589]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.45, 1.25, -12)
+visible = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/TrapGateSouth" unique_id=297733500]
+shape = SubResource("BoxShape3D_trap_gate")
+disabled = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/TrapGateSouth" unique_id=1916903274]
+material_override = SubResource("MatTrapGate")
+mesh = SubResource("BoxMesh_trap_gate")
+
+[node name="TrapGateNorth" type="StaticBody3D" parent="World" unique_id=1731018590]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -10.25, 1.25, -12)
+visible = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/TrapGateNorth" unique_id=359896139]
+shape = SubResource("BoxShape3D_trap_gate")
+disabled = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/TrapGateNorth" unique_id=1344784036]
+material_override = SubResource("MatTrapGate")
+mesh = SubResource("BoxMesh_trap_gate")
+
+[node name="TrapLaser" type="Node3D" parent="World" unique_id=1731018591]
+transform = Transform3D(0, 0, 1, 1, 0, 0, 0, 1, 0, -7.05, 1.45, -12)
+visible = false
+
+[node name="Beam" type="MeshInstance3D" parent="World/TrapLaser" unique_id=170925296]
+mesh = SubResource("CylinderMesh_trap_laser")
+
+[node name="Light" type="OmniLight3D" parent="World/TrapLaser" unique_id=364707625]
+light_color = Color(1, 0.08, 0.06, 1)
+light_energy = 0.0
+omni_range = 9.0
+
+[node name="Flashlight" parent="World" unique_id=796653510 instance=ExtResource("8_flashlight")]
+transform = Transform3D(0.939693, 0, -0.34202, 0, 1, 0, 0.34202, 0, 0.939693, -7.2, 0.45, -6.1)
+
+[node name="Rose" parent="World" unique_id=1861027441 instance=ExtResource("7_rose")]
+transform = Transform3D(0.996195, 0, -0.0871557, 0, 1, 0, 0.0871557, 0, 0.996195, -6.2, 0, 22.1)
 
 [node name="ExitDoor" parent="World" unique_id=1230293221 instance=ExtResource("4_exit")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 27.5)
 
 [node name="Player" parent="World" unique_id=1812883366 instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -24)
+transform = Transform3D(-0.9932741, 0, -0.11578677, 0, 1, 0, 0.11578677, 0, -0.9932741, 0, 1.8458242, -25.466845)

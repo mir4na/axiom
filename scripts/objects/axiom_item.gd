@@ -33,5 +33,14 @@ func set_pickup_enabled(enabled: bool) -> void:
 func interact() -> void:
 	if not _pickup_enabled:
 		return
+	_play_pickup_feedback()
 	GameState.equip_axiom()
 	queue_free()
+
+func _play_pickup_feedback() -> void:
+	var players := get_tree().get_nodes_in_group("player")
+	if players.is_empty():
+		return
+	var hud := players[0].get_node_or_null("PlayerHUD")
+	if hud != null and hud.has_method("play_slot_pickup_effect"):
+		hud.call("play_slot_pickup_effect", GameState.selected_slot)

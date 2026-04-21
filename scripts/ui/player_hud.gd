@@ -35,6 +35,7 @@ var _invert_tween: Tween
 var _glitch_tween: Tween
 var _health_ratio: float = 1.0
 var _stamina_ratio: float = 1.0
+var _slot_effect_tweens: Array[Tween] = []
 
 func set_dig_progress(val: float, is_vis: bool) -> void:
 	dig_progress_bar.set_progress(val, is_vis)
@@ -63,6 +64,7 @@ func _ready() -> void:
 	set_health(100.0, 100.0)
 	set_stamina(100.0, 100.0)
 	call_deferred("_update_status_bars")
+	_slot_effect_tweens.resize(3)
 
 func _set_shader_param(param: String, value: float) -> void:
 	if glitch_overlay.material is ShaderMaterial:
@@ -256,3 +258,41 @@ func _apply_slot_state(back: ColorRect, accent: ColorRect, selected: bool) -> vo
 	else:
 		back.color = Color(0.05, 0.05, 0.06, 0.96)
 		accent.color = Color(0.94, 0.18, 0.23, 1.0)
+
+func play_slot_pickup_effect(slot_index: int) -> void:
+	if slot_index < 0 or slot_index > 2:
+		return
+	var slot := _get_slot_control(slot_index)
+	var accent := _get_slot_accent(slot_index)
+	if slot == null or accent == null:
+		return
+	if slot_index < _slot_effect_tweens.size() and _slot_effect_tweens[slot_index] != null:
+		_slot_effect_tweens[slot_index].kill()
+	slot.pivot_offset = slot.size * 0.5
+	accent.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	var tween := create_tween().set_parallel(true)
+	_slot_effect_tweens[slot_index] = tween
+	tween.tween_property(slot, "scale", Vector2(1.18, 1.18), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(accent, "modulate", Color(1.45, 1.2, 1.0, 1.0), 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_property(slot, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(accent, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+func _get_slot_control(slot_index: int) -> Control:
+	match slot_index:
+		0:
+			return slot_1
+		1:
+			return slot_2
+		2:
+			return slot_3
+	return null
+
+func _get_slot_accent(slot_index: int) -> ColorRect:
+	match slot_index:
+		0:
+			return slot_1_accent
+		1:
+			return slot_2_accent
+		2:
+			return slot_3_accent
+	return null

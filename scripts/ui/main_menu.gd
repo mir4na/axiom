@@ -6,6 +6,7 @@ func _screen_fx() -> CanvasLayer:
 func _ready() -> void:
 	GameState.reset_level_index()
 	GameState.reset_world_state()
+	GameState.reset_progression()
 	var screen_fx := _screen_fx()
 	if screen_fx != null:
 		screen_fx.set_gameplay_filter_enabled(false)

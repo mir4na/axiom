@@ -26,6 +26,7 @@ extends CharacterBody3D
 var _hitbox_pairs: Array = []
 var _camera_collision_shape: SphereShape3D
 var _camera_collision_query: PhysicsShapeQueryParameters3D
+var _flashlight_spot: SpotLight3D
 
 var camera_x_rotation: float = 0.0
 var _smoothed_head_y: float = 0.0
@@ -43,6 +44,7 @@ var _health_regen_timer: float = 0.0
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	add_to_group("time_actor")
+	add_to_group("player")
 	health = max_health
 	stamina = max_stamina
 	_camera_origin_offset = to_local(camera.global_position)
@@ -53,6 +55,7 @@ func _ready() -> void:
 	_camera_collision_query = PhysicsShapeQueryParameters3D.new()
 	_camera_collision_query.shape = _camera_collision_shape
 	_camera_collision_query.exclude = [self.get_rid()]
+	_setup_flashlight()
 	_update_hud_status()
 	
 	_hitbox_pairs.clear()
@@ -161,8 +164,15 @@ func _physics_process(delta: float) -> void:
 			_update_hud_status()
 	else:
 		_health_regen_timer = 0.0
+	_update_flashlight_state()
 	if cinematic_locked:
-		velocity = Vector3.ZERO
+		velocity.x = lerpf(velocity.x, 0.0, acceleration * delta)
+		velocity.z = lerpf(velocity.z, 0.0, acceleration * delta)
+		if is_on_floor():
+			velocity.y = 0.0
+		else:
+			velocity.y = max(velocity.y - gravity * delta, -30.0)
+		move_and_slide()
 		_sync_hitboxes(delta)
 		_update_hud_status()
 		return
@@ -384,14 +394,20 @@ func _drop_item() -> void:
 		var a = axiom_scene.instantiate()
 		get_tree().root.add_child(a)
 		a.global_position = head.global_position - head.global_transform.basis.z * 1.5
+	elif item_name == "Flashlight":
+		var flashlight_scene = load("res://scenes/objects/flashlight_item.tscn")
+		var f = flashlight_scene.instantiate()
+		get_tree().root.add_child(f)
+		f.global_position = head.global_position - head.global_transform.basis.z * 1.5
 
 func _can_use_axiom() -> bool:
-	return GameState.axiom_equipped
+	return GameState.has_rewind_access()
 
 func set_cinematic_lock(active: bool) -> void:
 	cinematic_locked = active
 	if active:
-		velocity = Vector3.ZERO
+		velocity.x = 0.0
+		velocity.z = 0.0
 
 func set_cinematic_pose(target_position: Vector3, target_yaw: float, target_pitch: float) -> void:
 	global_position = target_position
@@ -407,3 +423,20 @@ func take_damage(amount: float) -> void:
 		var world := get_parent()
 		if world != null and world.has_method("restart_current_level"):
 			world.call_deferred("restart_current_level")
+
+func _setup_flashlight() -> void:
+	_flashlight_spot = SpotLight3D.new()
+	_flashlight_spot.light_color = Color(1.0, 0.96, 0.82, 1.0)
+	_flashlight_spot.light_energy = 2.8
+	_flashlight_spot.spot_range = 22.0
+	_flashlight_spot.spot_angle = 34.0
+	_flashlight_spot.spot_attenuation = 0.55
+	_flashlight_spot.shadow_enabled = true
+	_flashlight_spot.visible = false
+	camera.add_child(_flashlight_spot)
+	_flashlight_spot.position = Vector3(0.18, -0.08, -0.22)
+
+func _update_flashlight_state() -> void:
+	if _flashlight_spot == null:
+		return
+	_flashlight_spot.visible = GameState.has_selected_item("Flashlight")

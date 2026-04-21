@@ -84,6 +84,7 @@ func interact() -> void:
 			_collision_shape.disabled = true
 		_persistent_highlight = false
 		set_highlight_enabled(false)
+		_play_pickup_feedback()
 		var tween := create_tween()
 		tween.set_parallel(true)
 		tween.tween_property(self, "position", position + Vector3(0.0, 1.25, 0.0), 0.35)
@@ -91,3 +92,11 @@ func interact() -> void:
 		tween.tween_property(self, "scale", Vector3.ZERO, 0.35)
 		await tween.finished
 		queue_free()
+
+func _play_pickup_feedback() -> void:
+	var players := get_tree().get_nodes_in_group("player")
+	if players.is_empty():
+		return
+	var hud := players[0].get_node_or_null("PlayerHUD")
+	if hud != null and hud.has_method("play_slot_pickup_effect"):
+		hud.call("play_slot_pickup_effect", GameState.selected_slot)

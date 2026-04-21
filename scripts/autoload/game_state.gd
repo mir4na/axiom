@@ -40,6 +40,7 @@ const TIMELINE_MAX: float = 100.0
 var slots: Array[String] = ["", "", ""]
 var selected_slot: int = 0
 var axiom_equipped: bool = false
+var axiom_unlocked: bool = false
 var recording_enabled: bool = true
 
 var rewind_mode_active: bool = false
@@ -217,7 +218,22 @@ func reset_world_state() -> void:
 func full_reset_inventory() -> void:
 	slots = ["", "", ""]
 	selected_slot = 0
+	axiom_equipped = axiom_unlocked
+	inventory_changed.emit()
+	ui_updated.emit()
+
+func reset_progression() -> void:
+	slots = ["", "", ""]
+	selected_slot = 0
 	axiom_equipped = false
+	axiom_unlocked = false
+	recording_enabled = true
+	rewind_mode_active = false
+	rewind_pointer_index = -1
+	world_history.clear()
+	history_index = -1
+	mark_indices.clear()
+	timeline_position = 100.0
 	inventory_changed.emit()
 	ui_updated.emit()
 
@@ -243,6 +259,7 @@ func consume_item(item_id: String) -> bool:
 func equip_axiom() -> void:
 	if axiom_equipped:
 		return
+	axiom_unlocked = true
 	axiom_equipped = true
 	recording_enabled = true
 	axiom_equipped_changed.emit()
@@ -261,6 +278,14 @@ func has_selected_item(item_id: String) -> bool:
 	if selected_slot < 0 or selected_slot >= slots.size():
 		return false
 	return slots[selected_slot] == item_id
+
+func has_rewind_access() -> bool:
+	if axiom_equipped or current_level_index >= 1:
+		return true
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		return false
+	return current_scene.scene_file_path == LEVELS[1]
 
 func consume_selected_item(item_id: String) -> bool:
 	if selected_slot < 0 or selected_slot >= slots.size():
