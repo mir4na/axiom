@@ -9,7 +9,8 @@
 [ext_resource type="PackedScene" uid="uid://df7x8h205lam1" path="res://scenes/characters/rose.tscn" id="7_rose"]
 [ext_resource type="PackedScene" path="res://scenes/objects/flashlight_item.tscn" id="8_flashlight"]
 [ext_resource type="PackedScene" path="res://scenes/objects/door_button.tscn" id="9_door_button"]
-[ext_resource type="PackedScene" path="res://scenes/objects/punch_skill_item.tscn" id="10_punch_skill"]
+[ext_resource type="PackedScene" path="res://scenes/objects/gun_item.tscn" id="10_gun"]
+[ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="11_enemy"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -101,6 +102,9 @@ top_radius = 0.16
 bottom_radius = 0.16
 height = 6.0
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_combat_trigger"]
+size = Vector3(8.5, 3.8, 30)
+
 [node name="Level02" type="Node3D" unique_id=902830711]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=731031134]
@@ -163,7 +167,6 @@ material = SubResource("MatWallWet")
 
 [node name="EndCapNear" type="CSGBox3D" parent="World/TunnelShell" unique_id=1231162106]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 166.2)
-visible = false
 size = Vector3(6.8, 4.6, 0.5)
 material = SubResource("MatWall")
 
@@ -178,9 +181,9 @@ operation = 2
 size = Vector3(0.6, 2.479297, 1.9882019)
 
 [node name="DoorCut3" type="CSGBox3D" parent="World/TunnelShell" unique_id=8917528]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.45, 160)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.252832, 160.01698)
 operation = 2
-size = Vector3(0.6, 2.9, 2.4)
+size = Vector3(0.6, 2.505664, 1.9260315)
 
 [node name="LeftCorridorCut" type="CSGBox3D" parent="World/TunnelShell" unique_id=833201112]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.1663452, -12.058786)
@@ -316,11 +319,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75, 2.1, 6)
 size = Vector3(0.35, 4.2, 0.35)
 material = SubResource("MatPillar")
 
-[node name="PillarL3" type="CSGBox3D" parent="World/Pillars" unique_id=1145114773]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.75, 2.1, 160)
-size = Vector3(0.35, 4.2, 0.35)
-material = SubResource("MatPillar")
-
 [node name="PillarR1" type="CSGBox3D" parent="World/Pillars" unique_id=1434045172]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.75, 2.1, -21)
 size = Vector3(0.35, 4.2, 0.35)
@@ -425,7 +423,7 @@ size = Vector3(0.3, 4.2, 0.18)
 material = SubResource("MatRust")
 
 [node name="Water" type="CSGBox3D" parent="World" unique_id=1883230669]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.27218774, 0)
 size = Vector3(2.15, 0.08, 328)
 material = SubResource("MatWater")
 
@@ -559,11 +557,49 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.2278469, 1.25, 2)
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.0016875, 1.8021901, 0.30879575)
 door_path = NodePath("../Room2Door")
 
-[node name="PunchSkill" parent="World" unique_id=410271071 instance=ExtResource("10_punch_skill")]
+[node name="Gun" parent="World" unique_id=410271071 instance=ExtResource("10_gun")]
 transform = Transform3D(0.970296, 0, -0.241922, 0, 1, 0, 0.241922, 0, 0.970296, 6.7, 0.030008912, 1.95)
+
+[node name="CombatTrigger" type="Area3D" parent="World" unique_id=410271073]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 1.811847, 23.114544)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/CombatTrigger" unique_id=410271074]
+shape = SubResource("BoxShape3D_combat_trigger")
+
+[node name="EnemySpawn1" type="Marker3D" parent="World" unique_id=410271075]
+transform = Transform3D(0.9848077, 0, -0.17364818, 0, 1, 0, 0.17364818, 0, 0.9848077, -0.5, 0.15, 25.713045)
+
+[node name="EnemySpawn2" type="Marker3D" parent="World" unique_id=410271076]
+transform = Transform3D(0.9396926, 0, 0.34202015, 0, 1, 0, -0.34202015, 0, 0.9396926, 0.9, 0.15, 40.10679)
+
+[node name="EnemySpawn3" type="Marker3D" parent="World" unique_id=410271077]
+transform = Transform3D(0.9961947, 0, -0.08715574, 0, 1, 0, 0.08715574, 0, 0.9961947, -0.8, 0.15, 54.90596)
+
+[node name="Enemy01" parent="World" unique_id=410271079 instance=ExtResource("11_enemy")]
+transform = Transform3D(0.9848077, 0, -0.17364818, 0, 1, 0, 0.17364818, 0, 0.9848077, -0.5, 0.15, 25.713045)
+visible = false
+
+[node name="Enemy02" parent="World" unique_id=410271080 instance=ExtResource("11_enemy")]
+transform = Transform3D(0.9396926, 0, 0.34202015, 0, 1, 0, -0.34202015, 0, 0.9396926, 0.9, 0.15, 40.10679)
+visible = false
+
+[node name="Enemy03" parent="World" unique_id=410271081 instance=ExtResource("11_enemy")]
+transform = Transform3D(0.9961947, 0, -0.08715574, 0, 1, 0, 0.08715574, 0, 0.9961947, -0.8, 0.15, 54.90596)
+visible = false
 
 [node name="Room3Door" parent="World" unique_id=410271072 instance=ExtResource("6_slide_door")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.2278469, 1.25, 160)
+
+[node name="Room3Button" parent="World" unique_id=410271078 instance=ExtResource("9_door_button")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.0016875, 1.8021901, 158.30879)
+door_path = NodePath("../Room3Door")
+locked = true
+required_item_id = "key_2"
+
+[node name="Room3Keycard" parent="World" unique_id=410271082 instance=ExtResource("5_key")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 1.25, 54.90596)
+visible = false
+key_id = "key_2"
 
 [node name="Rose" parent="World" unique_id=1861027441 instance=ExtResource("7_rose")]
 transform = Transform3D(0.996195, 0, -0.0871557, 0, 1, 0, 0.0871557, 0, 0.996195, -6.2, 0, 160.1)

@@ -1,0 +1,65 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/gun_item.gd" id="1_gun"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gun"]
+size = Vector3(0.72, 0.22, 0.24)
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(0.62, 0.14, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_handle"]
+size = Vector3(0.12, 0.2, 0.08)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_barrel"]
+top_radius = 0.035
+bottom_radius = 0.035
+height = 0.3
+
+[sub_resource type="BoxMesh" id="BoxMesh_aura"]
+size = Vector3(0.78, 0.28, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.1, 0.1, 0.12, 1)
+metallic = 0.42
+roughness = 0.32
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_handle"]
+albedo_color = Color(0.22, 0.12, 0.08, 1)
+metallic = 0.08
+roughness = 0.72
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_barrel"]
+albedo_color = Color(0.6, 0.64, 0.68, 1)
+metallic = 0.86
+roughness = 0.18
+
+[node name="GunItem" type="StaticBody3D"]
+script = ExtResource("1_gun")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_gun")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="Handle" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, -0.14, 0)
+mesh = SubResource("BoxMesh_handle")
+surface_material_override/0 = SubResource("StandardMaterial3D_handle")
+
+[node name="Barrel" type="MeshInstance3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0.32, 0, 0)
+mesh = SubResource("CylinderMesh_barrel")
+surface_material_override/0 = SubResource("StandardMaterial3D_barrel")
+
+[node name="GunAura" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("BoxMesh_aura")
+
+[node name="GlowLight" type="OmniLight3D" parent="."]
+visible = false
+light_color = Color(1, 0.28, 0.1, 1)
+light_energy = 0.0
+omni_range = 4.0

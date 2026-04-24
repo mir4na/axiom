@@ -1,91 +1,123 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3 uid="uid://cj401kllxsikw"]
 
-[ext_resource type="Script" path="res://scripts/objects/enemy.gd" id="1_enemy"]
+[ext_resource type="Script" uid="uid://dr8rn6f7xg50c" path="res://scripts/objects/enemy.gd" id="1_enemy"]
 
-[sub_resource type="CapsuleShape3D" id="1"]
-radius = 0.25
-height = 1.5
+[sub_resource type="CapsuleShape3D" id="1_collision"]
+radius = 0.4
+height = 1.1
 
-[sub_resource type="CapsuleMesh" id="1_mesh"]
-radius = 0.25
-height = 1.5
-
-[sub_resource type="StandardMaterial3D" id="2_glitch"]
+[sub_resource type="StandardMaterial3D" id="4_core_mat"]
 transparency = 1
-albedo_color = Color(0.12, 0.14, 0.16, 0.78)
-emission_enabled = true
-emission = Color(0.24, 0.92, 1, 1)
-emission_energy_multiplier = 1.8
+albedo_color = Color(0.06, 0.09, 0.13, 0.92)
+metallic = 0.4
 roughness = 0.08
-metallic = 0.25
-
-[sub_resource type="StandardMaterial3D" id="3_glitch_mag"]
-transparency = 1
-albedo_color = Color(0.2, 0.1, 0.18, 0.72)
 emission_enabled = true
-emission = Color(1, 0.18, 0.78, 1)
-emission_energy_multiplier = 1.65
+emission = Color(0.18, 0.88, 1, 1)
+emission_energy_multiplier = 2.6
+
+[sub_resource type="BoxMesh" id="2_core_mesh"]
+size = Vector3(0.78, 0.92, 0.56)
+
+[sub_resource type="StandardMaterial3D" id="5_shard_mat"]
+transparency = 1
+albedo_color = Color(0.18, 0.08, 0.16, 0.8)
+metallic = 0.28
 roughness = 0.12
-metallic = 0.18
-
-[sub_resource type="CylinderMesh" id="4_laser"]
-top_radius = 0.05
-bottom_radius = 0.05
-height = 1.0
-
-[sub_resource type="StandardMaterial3D" id="5_laser_mat"]
-transparency = 1
-albedo_color = Color(0.3, 0.92, 1, 0.88)
 emission_enabled = true
-emission = Color(1, 0.18, 0.84, 1)
-emission_energy_multiplier = 3.2
-shading_mode = 0
+emission = Color(1, 0.16, 0.56, 1)
+emission_energy_multiplier = 2.0
 
-[node name="Enemy" type="CharacterBody3D"]
+[sub_resource type="BoxMesh" id="3_shard_mesh"]
+size = Vector3(0.34, 0.64, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="7_bar_back"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.08, 0.02, 0.02, 0.88)
+billboard_mode = 1
+
+[sub_resource type="BoxMesh" id="6_bar_mesh"]
+size = Vector3(1.1, 0.12, 0.02)
+
+[sub_resource type="StandardMaterial3D" id="8_bar_fill"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.12, 0.14, 0.96)
+billboard_mode = 1
+
+[sub_resource type="StandardMaterial3D" id="10_laser_mat"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.14, 0.9, 0.9)
+
+[sub_resource type="BoxMesh" id="9_laser_mesh"]
+
+[sub_resource type="StandardMaterial3D" id="11_target_mat"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.15, 0.14, 0.54)
+
+[node name="Enemy" type="CharacterBody3D" unique_id=45735170]
 script = ExtResource("1_enemy")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("1")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=82648142]
+shape = SubResource("1_collision")
 
-[node name="VisualRoot" type="Node3D" parent="."]
+[node name="VisualRoot" type="Node3D" parent="." unique_id=1219572526]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.29959798, 0)
 
-[node name="Core" type="MeshInstance3D" parent="VisualRoot"]
-mesh = SubResource("1_mesh")
-material_override = SubResource("2_glitch")
+[node name="Core" type="MeshInstance3D" parent="VisualRoot" unique_id=179720679]
+transform = Transform3D(0.997564, 0.0697565, 0, -0.0697565, 0.997564, 0, 0, 0, 1, 0, 0.86, 0)
+material_override = SubResource("4_core_mat")
+mesh = SubResource("2_core_mesh")
 
-[node name="ShardA" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(0.861629, 0, 0.507538, 0, 1, 0, -0.507538, 0, 0.861629, -0.32, 0.22, 0.18)
-mesh = SubResource("1_mesh")
-scale = Vector3(0.45, 0.55, 0.22)
-material_override = SubResource("3_glitch_mag")
+[node name="ShardA" type="MeshInstance3D" parent="VisualRoot" unique_id=339611730]
+transform = Transform3D(0.443163, 0.0397952, 0.111223, -0.0154765, 0.639117, -0.118176, -0.149007, 0.101434, 0.279003, -0.44, 0.68, 0.16)
+material_override = SubResource("5_shard_mat")
+mesh = SubResource("3_shard_mesh")
 
-[node name="ShardB" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(0.766044, 0.321394, 0.55667, -0.271654, 0.94693, -0.173648, -0.582563, -0.0180283, 0.812832, 0.34, -0.18, -0.12)
-mesh = SubResource("1_mesh")
-scale = Vector3(0.32, 0.42, 0.18)
-material_override = SubResource("2_glitch")
+[node name="ShardB" type="MeshInstance3D" parent="VisualRoot" unique_id=1367835868]
+transform = Transform3D(0.269772, -0.170999, -0.0501903, 0.0623783, 0.590581, -0.249418, 0.20343, 0.182995, 0.142911, 0.48, 0.44, -0.18)
+material_override = SubResource("4_core_mat")
+mesh = SubResource("3_shard_mesh")
 
-[node name="ShardC" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(0.707107, -0.353553, -0.612372, 0, 0.866025, -0.5, 0.707107, 0.353553, 0.612372, 0.08, 0.44, 0.28)
-mesh = SubResource("1_mesh")
-scale = Vector3(0.24, 0.36, 0.14)
-material_override = SubResource("3_glitch_mag")
+[node name="ShardC" type="MeshInstance3D" parent="VisualRoot" unique_id=44022847]
+transform = Transform3D(0.188091, 0.0765367, 0.170147, -0.0253659, 0.548074, -0.247062, -0.185005, 0.23615, 0.152758, 0.14, 1.18, 0.26)
+material_override = SubResource("5_shard_mat")
+mesh = SubResource("3_shard_mesh")
 
-[node name="Glow" type="OmniLight3D" parent="VisualRoot"]
-light_color = Color(0.28, 0.88, 1, 1)
-light_energy = 1.1
-omni_range = 5.5
-
-[node name="Muzzle" type="Node3D" parent="VisualRoot"]
-position = Vector3(0, 1.18, 0)
-
-[node name="LaserBeam" type="MeshInstance3D" parent="."]
-visible = false
-mesh = SubResource("4_laser")
-material_override = SubResource("5_laser_mat")
-
-[node name="LaserLight" type="OmniLight3D" parent="."]
-visible = false
-light_color = Color(1, 0.26, 0.84, 1)
+[node name="Glow" type="OmniLight3D" parent="VisualRoot" unique_id=1103420389]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+light_color = Color(0.24, 0.84, 1, 1)
 light_energy = 1.6
-omni_range = 4.2
+omni_range = 5.4
+
+[node name="Muzzle" type="Node3D" parent="VisualRoot" unique_id=876332001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.08, 0)
+
+[node name="HealthPivot" type="Node3D" parent="VisualRoot" unique_id=1378947154]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+
+[node name="Back" type="MeshInstance3D" parent="VisualRoot/HealthPivot" unique_id=201657734]
+material_override = SubResource("7_bar_back")
+mesh = SubResource("6_bar_mesh")
+
+[node name="Fill" type="MeshInstance3D" parent="VisualRoot/HealthPivot" unique_id=40966762]
+transform = Transform3D(0.5, 0, 0, 0, 1, 0, 0, 0, 1, -0.275, 0, 0.004)
+material_override = SubResource("8_bar_fill")
+mesh = SubResource("6_bar_mesh")
+
+[node name="LaserBeam" type="MeshInstance3D" parent="." unique_id=997349994]
+visible = false
+material_override = SubResource("10_laser_mat")
+mesh = SubResource("9_laser_mesh")
+
+[node name="TargetBeam" type="MeshInstance3D" parent="." unique_id=725159224]
+visible = false
+material_override = SubResource("11_target_mat")
+mesh = SubResource("9_laser_mesh")
+
+[node name="LaserLight" type="OmniLight3D" parent="." unique_id=677552578]
+visible = false
+light_color = Color(1, 0.22, 0.86, 1)
+light_energy = 2.4

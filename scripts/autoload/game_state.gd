@@ -215,6 +215,19 @@ func reset_world_state() -> void:
 	world_scale = 1.0
 	is_aligned = false
 
+func reset_axiom_recording() -> void:
+	recording_enabled = true
+	rewind_mode_active = false
+	is_scrubbing_past = false
+	time_direction = TIME_FORWARD
+	rewind_pointer_index = -1
+	world_history.clear()
+	history_index = -1
+	mark_indices.clear()
+	timeline_position = 0.0
+	rewind_mode_changed.emit(false)
+	time_direction_changed.emit(time_direction)
+
 func full_reset_inventory() -> void:
 	slots = ["", "", ""]
 	selected_slot = 0

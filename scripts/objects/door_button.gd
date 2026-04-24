@@ -10,10 +10,15 @@ signal locked_interaction(button: Node)
 
 var _door = null
 var _prompt_override_until: float = 0.0
+var _persistent_highlight: bool = false
+var _highlight_enabled: bool = false
+
+@onready var _mesh: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
 
 func _ready() -> void:
 	if door_path:
 		_door = get_node(door_path)
+	_setup_highlight_material()
 	_update_prompt()
 
 func _process(_delta: float) -> void:
@@ -51,3 +56,37 @@ func interact() -> void:
 			_update_prompt()
 			return
 	_door.interact()
+
+func set_persistent_highlight(enabled: bool) -> void:
+	_persistent_highlight = enabled
+	set_highlight_enabled(enabled)
+
+func set_highlight_enabled(enabled: bool) -> void:
+	_highlight_enabled = enabled or _persistent_highlight
+	if not _highlight_enabled:
+		_apply_highlight(0.0)
+
+func set_highlight_strength(strength: float) -> void:
+	if not _highlight_enabled:
+		return
+	_apply_highlight(strength)
+
+func _setup_highlight_material() -> void:
+	if _mesh == null:
+		return
+	var base_material: StandardMaterial3D = _mesh.material_override as StandardMaterial3D
+	if base_material == null:
+		base_material = StandardMaterial3D.new()
+		base_material.albedo_color = Color(0.18, 0.08, 0.08, 1.0)
+	var highlight_material: StandardMaterial3D = base_material.duplicate() as StandardMaterial3D
+	_mesh.material_override = highlight_material
+
+func _apply_highlight(strength: float) -> void:
+	if _mesh == null:
+		return
+	var material: StandardMaterial3D = _mesh.material_override as StandardMaterial3D
+	if material == null:
+		return
+	material.emission_enabled = strength > 0.001
+	material.emission = Color(1.0, 0.24, 0.18, 1.0)
+	material.emission_energy_multiplier = 0.6 + strength * 4.0

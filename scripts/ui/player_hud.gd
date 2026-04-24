@@ -36,6 +36,12 @@ var _glitch_tween: Tween
 var _health_ratio: float = 1.0
 var _stamina_ratio: float = 1.0
 var _slot_effect_tweens: Array[Tween] = []
+var _ammo_container: Control
+var _ammo_back: ColorRect
+var _ammo_label: Label
+var _reload_container: Control
+var _reload_track: ColorRect
+var _reload_fill: ColorRect
 
 func set_dig_progress(val: float, is_vis: bool) -> void:
 	dig_progress_bar.set_progress(val, is_vis)
@@ -52,8 +58,33 @@ func set_stamina(current: float, maximum: float) -> void:
 	stamina_value.text = "%d / %d" % [int(round(current)), int(round(safe_max))]
 	call_deferred("_update_status_bars")
 
+func set_weapon_hud_visible(visible_state: bool) -> void:
+	if _ammo_container == null:
+		return
+	_ammo_container.visible = visible_state
+	if not visible_state and _reload_container != null:
+		_reload_container.visible = false
+
+func set_ammo(current: int, clip_size: int) -> void:
+	if _ammo_label == null:
+		return
+	var safe_clip: int = maxi(clip_size, 1)
+	var clamped_current: int = clampi(current, 0, safe_clip)
+	_ammo_label.text = "AMMO %02d / \u221e" % clamped_current
+
+func set_reload_progress(progress: float, visible_state: bool) -> void:
+	if _reload_container == null or _reload_fill == null or _reload_track == null:
+		return
+	_reload_container.visible = visible_state
+	if not visible_state:
+		return
+	var clamped := clampf(progress, 0.0, 1.0)
+	var width := maxf(_reload_track.size.x - 8.0, 0.0)
+	_reload_fill.size.x = width * clamped
+
 func _ready() -> void:
 	prompt_label.visible = false
+	_setup_weapon_hud()
 
 	GameState.inventory_changed.connect(_update_inventory_ui)
 	GameState.time_direction_changed.connect(_on_time_direction_changed)
@@ -63,6 +94,9 @@ func _ready() -> void:
 	_update_inventory_ui()
 	set_health(100.0, 100.0)
 	set_stamina(100.0, 100.0)
+	set_ammo(0, 1)
+	set_weapon_hud_visible(false)
+	set_reload_progress(0.0, false)
 	call_deferred("_update_status_bars")
 	_slot_effect_tweens.resize(3)
 
@@ -241,8 +275,10 @@ func _update_inventory_ui() -> void:
 func _format_slot_name(item_id: String) -> String:
 	if item_id == "":
 		return "EMPTY"
-	if item_id == "PunchSkill":
-		return "PUNCH SKILL"
+	if item_id == "Gun":
+		return "GUN"
+	if item_id == "key_1" or item_id == "key_2":
+		return "KEYCARD"
 	return item_id.replace("_", " ").to_upper()
 
 func _update_status_bars() -> void:
@@ -298,3 +334,68 @@ func _get_slot_accent(slot_index: int) -> ColorRect:
 		2:
 			return slot_3_accent
 	return null
+
+func _setup_weapon_hud() -> void:
+	_ammo_container = Control.new()
+	_ammo_container.anchor_left = 1.0
+	_ammo_container.anchor_top = 1.0
+	_ammo_container.anchor_right = 1.0
+	_ammo_container.anchor_bottom = 1.0
+	_ammo_container.offset_left = -250.0
+	_ammo_container.offset_top = -126.0
+	_ammo_container.offset_right = -24.0
+	_ammo_container.offset_bottom = -56.0
+	_ammo_container.visible = false
+	add_child(_ammo_container)
+
+	_ammo_back = ColorRect.new()
+	_ammo_back.anchor_right = 1.0
+	_ammo_back.anchor_bottom = 1.0
+	_ammo_back.offset_right = 0.0
+	_ammo_back.offset_bottom = 0.0
+	_ammo_back.color = Color(0.03, 0.03, 0.04, 0.84)
+	_ammo_container.add_child(_ammo_back)
+
+	_ammo_label = Label.new()
+	_ammo_label.anchor_right = 1.0
+	_ammo_label.anchor_bottom = 1.0
+	_ammo_label.offset_left = 18.0
+	_ammo_label.offset_top = 16.0
+	_ammo_label.offset_right = -14.0
+	_ammo_label.offset_bottom = -14.0
+	_ammo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_ammo_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ammo_label.add_theme_font_size_override("font_size", 24)
+	_ammo_label.add_theme_color_override("font_color", Color(1.0, 0.94, 0.8, 1.0))
+	_ammo_label.add_theme_color_override("font_outline_color", Color(0.01, 0.01, 0.01, 0.9))
+	_ammo_label.add_theme_constant_override("outline_size", 8)
+	_ammo_label.text = "AMMO 00 / \u221e"
+	_ammo_container.add_child(_ammo_label)
+
+	_reload_container = Control.new()
+	_reload_container.anchor_left = 0.5
+	_reload_container.anchor_top = 0.5
+	_reload_container.anchor_right = 0.5
+	_reload_container.anchor_bottom = 0.5
+	_reload_container.offset_left = -182.0
+	_reload_container.offset_top = 188.0
+	_reload_container.offset_right = 182.0
+	_reload_container.offset_bottom = 222.0
+	_reload_container.visible = false
+	add_child(_reload_container)
+
+	_reload_track = ColorRect.new()
+	_reload_track.anchor_right = 1.0
+	_reload_track.anchor_bottom = 1.0
+	_reload_track.offset_right = 0.0
+	_reload_track.offset_bottom = 28.0
+	_reload_track.color = Color(0.06, 0.06, 0.08, 0.86)
+	_reload_container.add_child(_reload_track)
+
+	_reload_fill = ColorRect.new()
+	_reload_fill.offset_left = 4.0
+	_reload_fill.offset_top = 4.0
+	_reload_fill.offset_right = 4.0
+	_reload_fill.offset_bottom = 24.0
+	_reload_fill.color = Color(0.98, 0.28, 0.12, 0.96)
+	_reload_track.add_child(_reload_fill)

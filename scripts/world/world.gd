@@ -58,6 +58,8 @@ var _hint_label: Label
 var _loading_label: Label
 var _top_bar: ColorRect
 var _bottom_bar: ColorRect
+var _objective_tween: Tween
+var _objective_transition_serial: int = 0
 var _sofa_aura: MeshInstance3D
 var _sofa_light: OmniLight3D
 var _meteor: MeshInstance3D
@@ -65,6 +67,17 @@ var _meteor_light: OmniLight3D
 var _level_one_flow
 var _level_two_key: Node3D
 var _level_two_door: Node3D
+var _level_two_gun: Node3D
+var _level_two_room3_button: Node3D
+var _level_two_room3_door: Node3D
+var _level_two_combat_trigger: Area3D
+var _level_two_enemy_nodes: Array[Node3D] = []
+var _level_two_active_enemies: Array[Node3D] = []
+var _level_two_enemy_started: bool = false
+var _level_two_enemy_reward_spawned: bool = false
+var _level_two_enemy_total: int = 3
+var _level_two_enemy_defeated: int = 0
+var _level_two_room3_key: Node3D
 var _level_two_trap_gate_south: StaticBody3D
 var _level_two_trap_gate_north: StaticBody3D
 var _level_two_trap_laser: Node3D
@@ -138,17 +151,38 @@ func _process(delta: float) -> void:
 			_level_one_flow.process_objectives()
 		return
 	if _is_level_two_scene():
+		if not _level_two_enemy_started and GameState.has_item("Gun") and _is_player_inside_level_two_combat_trigger():
+			_start_level_two_enemy_encounter()
 		if _objective_state == "level2_key" and is_instance_valid(_level_two_key):
 			_set_level_two_target_glow(_level_two_key, true)
 			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_room3_key, false)
 			_update_hint_marker(_level_two_key.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _level_two_key.global_position)
 		elif _objective_state == "level2_door" and is_instance_valid(_level_two_door):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, true)
+			_set_level_two_target_glow(_level_two_room3_key, false)
 			_update_hint_marker(_level_two_door.global_position + Vector3(0.0, 1.0, 0.0), "DOOR", _level_two_door.global_position)
+		elif _objective_state == "level2_enemy":
+			_set_level_two_target_glow(_level_two_key, false)
+			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_room3_key, false)
+			_hint_marker.visible = false
+			_hint_label.visible = false
+		elif _objective_state == "level2_room3_key" and is_instance_valid(_level_two_room3_key):
+			_set_level_two_target_glow(_level_two_key, false)
+			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_room3_key, true)
+			_update_hint_marker(_level_two_room3_key.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _level_two_room3_key.global_position)
+		elif _objective_state == "level2_room3_door" and is_instance_valid(_level_two_room3_button):
+			_set_level_two_target_glow(_level_two_key, false)
+			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_room3_key, false)
+			_update_hint_marker(_level_two_room3_button.global_position + Vector3(0.0, 0.35, 0.0), "DOOR", _level_two_room3_button.global_position)
 		else:
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_room3_key, false)
 			_hint_marker.visible = false
 			_hint_label.visible = false
 		return
@@ -186,6 +220,9 @@ func _on_inventory_changed() -> void:
 			elif not _level_two_trap_running:
 				_objective_state = "level2_door"
 				_show_objective("Open door 1")
+		elif _objective_state == "level2_room3_key" and GameState.has_item("key_2"):
+			_objective_state = "level2_room3_door"
+			_show_objective("Open room 3")
 		return
 	if not _is_world_intro_scene():
 		return
@@ -554,9 +591,39 @@ func _play_level_one_small_meteor_explosion(position: Vector3, hit_player: bool)
 func _cache_level_two_targets() -> void:
 	_level_two_key = get_node_or_null("KeyItem") as Node3D
 	_level_two_door = get_node_or_null("Door2") as Node3D
+	_level_two_gun = get_node_or_null("Gun") as Node3D
+	_level_two_room3_button = get_node_or_null("Room3Button") as Node3D
+	_level_two_room3_door = get_node_or_null("Room3Door") as Node3D
+	_level_two_combat_trigger = get_node_or_null("CombatTrigger") as Area3D
+	_level_two_room3_key = get_node_or_null("Room3Keycard") as Node3D
+	_level_two_enemy_nodes.clear()
+	for node_name in ["Enemy01", "Enemy02", "Enemy03"]:
+		var enemy_node: Node3D = get_node_or_null(node_name) as Node3D
+		if enemy_node != null:
+			_level_two_enemy_nodes.append(enemy_node)
 	_level_two_trap_gate_south = get_node_or_null("TrapGateSouth") as StaticBody3D
 	_level_two_trap_gate_north = get_node_or_null("TrapGateNorth") as StaticBody3D
 	_level_two_trap_laser = get_node_or_null("TrapLaser") as Node3D
+	if _level_two_room3_button != null:
+		_level_two_room3_button.set("locked", true)
+		_level_two_room3_button.set("required_item_id", "key_2")
+		_level_two_room3_button.set("consume_required_item", true)
+	if _level_two_combat_trigger != null:
+		_level_two_combat_trigger.body_entered.connect(Callable(self, "_on_level_two_combat_trigger_entered"))
+	if _level_two_door != null and _level_two_door.has_signal("opened"):
+		_level_two_door.connect("opened", Callable(self, "_on_level_two_door_one_opened"))
+	if _level_two_room3_door != null and _level_two_room3_door.has_signal("opened"):
+		_level_two_room3_door.connect("opened", Callable(self, "_on_level_two_room3_opened"))
+	if is_instance_valid(_level_two_room3_key) and _level_two_room3_key.has_method("set_interactable_enabled"):
+		_level_two_room3_key.call("set_interactable_enabled", false)
+		_level_two_room3_key.visible = false
+	for enemy_node in _level_two_enemy_nodes:
+		if enemy_node.has_signal("defeated"):
+			enemy_node.connect("defeated", Callable(self, "_on_level_two_enemy_defeated"))
+		if enemy_node.has_method("reset_enemy_state"):
+			enemy_node.call("reset_enemy_state")
+		if enemy_node.has_method("set_encounter_enabled"):
+			enemy_node.call("set_encounter_enabled", false)
 	if _level_two_trap_laser != null:
 		_level_two_trap_beam = _level_two_trap_laser.get_node_or_null("Beam") as MeshInstance3D
 		_level_two_trap_light = _level_two_trap_laser.get_node_or_null("Light") as OmniLight3D
@@ -575,6 +642,10 @@ func _cache_level_two_targets() -> void:
 		_level_two_trap_laser.visible = false
 	_level_two_trap_triggered = false
 	_level_two_trap_running = false
+	_level_two_enemy_started = false
+	_level_two_enemy_reward_spawned = false
+	_level_two_enemy_defeated = 0
+	_reset_level_two_enemy_nodes()
 	_configure_level_two_trap_gate(_level_two_trap_gate_south, false)
 	_configure_level_two_trap_gate(_level_two_trap_gate_north, false)
 
@@ -698,6 +769,107 @@ func _is_player_inside_level_two_trap() -> bool:
 	var within_z := player_position.z >= -14.15 and player_position.z <= -9.85
 	var within_y := player_position.y >= -0.5 and player_position.y <= 3.6
 	return within_x and within_z and within_y
+
+func _on_level_two_combat_trigger_entered(body: Node) -> void:
+	if body != player:
+		return
+	if _level_two_enemy_started:
+		return
+	if not GameState.has_item("Gun"):
+		return
+	_start_level_two_enemy_encounter()
+
+func _is_player_inside_level_two_combat_trigger() -> bool:
+	if player == null or not is_instance_valid(player):
+		return false
+	if _level_two_combat_trigger == null or not is_instance_valid(_level_two_combat_trigger):
+		return false
+	var shape_node: CollisionShape3D = _level_two_combat_trigger.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if shape_node == null or shape_node.shape == null:
+		return false
+	var box_shape: BoxShape3D = shape_node.shape as BoxShape3D
+	if box_shape == null:
+		return false
+	var local_position: Vector3 = _level_two_combat_trigger.to_local(player.global_position)
+	var half_size: Vector3 = box_shape.size * 0.5
+	return absf(local_position.x) <= half_size.x and absf(local_position.y) <= half_size.y and absf(local_position.z) <= half_size.z
+
+func _start_level_two_enemy_encounter() -> void:
+	_level_two_enemy_started = true
+	_level_two_enemy_defeated = 0
+	if _level_two_combat_trigger != null and is_instance_valid(_level_two_combat_trigger):
+		_level_two_combat_trigger.call_deferred("queue_free")
+	_level_two_combat_trigger = null
+	_objective_state = "level2_enemy"
+	_show_objective("Beat enemy 0/%d" % _level_two_enemy_total)
+	_enable_level_two_enemy_nodes()
+
+func _enable_level_two_enemy_nodes() -> void:
+	_level_two_active_enemies.clear()
+	for enemy_node in _level_two_enemy_nodes:
+		if enemy_node == null or not is_instance_valid(enemy_node):
+			continue
+		if enemy_node.has_method("reset_enemy_state"):
+			enemy_node.call("reset_enemy_state")
+		if enemy_node.has_method("set_encounter_enabled"):
+			enemy_node.call("set_encounter_enabled", true)
+		enemy_node.set("max_health", 50.0)
+		_level_two_active_enemies.append(enemy_node)
+
+func _reset_level_two_enemy_nodes() -> void:
+	_level_two_active_enemies.clear()
+	for enemy_node in _level_two_enemy_nodes:
+		if enemy_node == null or not is_instance_valid(enemy_node):
+			continue
+		if enemy_node.has_method("reset_enemy_state"):
+			enemy_node.call("reset_enemy_state")
+		if enemy_node.has_method("set_encounter_enabled"):
+			enemy_node.call("set_encounter_enabled", false)
+
+func _on_level_two_enemy_defeated(enemy: Node3D, defeat_position: Vector3) -> void:
+	var remaining_enemies: Array[Node3D] = []
+	for entry in _level_two_active_enemies:
+		if is_instance_valid(entry) and entry != enemy:
+			remaining_enemies.append(entry)
+	_level_two_active_enemies = remaining_enemies
+	_level_two_enemy_defeated += 1
+	if _level_two_enemy_defeated < _level_two_enemy_total:
+		_show_objective("Beat enemy %d/%d" % [_level_two_enemy_defeated, _level_two_enemy_total])
+		return
+	_show_objective("Beat enemy %d/%d" % [_level_two_enemy_total, _level_two_enemy_total])
+	if not _level_two_enemy_reward_spawned:
+		_level_two_enemy_reward_spawned = true
+		call_deferred("_spawn_level_two_room3_keycard", defeat_position)
+
+func _spawn_level_two_room3_keycard(spawn_position: Vector3) -> void:
+	var keycard: Node3D = _level_two_room3_key
+	if keycard == null or not is_instance_valid(keycard):
+		return
+	keycard.global_position = spawn_position + Vector3(0.0, 0.25, 0.0)
+	if keycard.has_method("set_interactable_enabled"):
+		keycard.call("set_interactable_enabled", false)
+	keycard.visible = true
+	keycard.scale = Vector3.ZERO
+	var rise_target: Vector3 = spawn_position + Vector3(0.0, 1.1, 0.0)
+	var reveal: Tween = create_tween().set_parallel(true)
+	reveal.tween_property(keycard, "global_position", rise_target, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	reveal.tween_property(keycard, "rotation_degrees", Vector3(0.0, 360.0, 0.0), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	reveal.tween_property(keycard, "scale", Vector3.ONE, 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	await reveal.finished
+	if is_instance_valid(keycard) and keycard.has_method("set_interactable_enabled"):
+		keycard.call("set_interactable_enabled", true)
+	_objective_state = "level2_room3_key"
+	_show_objective("Take the keycard")
+
+func _on_level_two_room3_opened() -> void:
+	if _objective_state == "level2_room3_door":
+		_objective_state = ""
+		_hide_objective()
+
+func _on_level_two_door_one_opened() -> void:
+	if _objective_state == "level2_door":
+		_objective_state = ""
+		_hide_objective()
 
 func _set_level_two_target_glow(target, enabled: bool) -> void:
 	if target == null:
@@ -838,13 +1010,48 @@ func _show_subtitle(text: String, duration: float) -> void:
 	await fade.finished
 
 func _show_objective(text: String) -> void:
-	_objective_label.text = text
+	if _objective_panel == null or _objective_label == null:
+		return
+	_objective_transition_serial += 1
+	var transition_serial: int = _objective_transition_serial
+	if _objective_tween != null:
+		_objective_tween.kill()
+	var has_visible_objective: bool = _objective_panel.visible and _objective_panel.modulate.a > 0.01
+	if has_visible_objective:
+		_objective_tween = create_tween().set_parallel(true)
+		_objective_tween.tween_property(_objective_panel, "modulate:a", 0.0, 0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		_objective_tween.tween_property(_objective_panel, "position:y", -10.0, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		await _objective_tween.finished
+		if transition_serial != _objective_transition_serial:
+			return
+	_apply_objective_text(text)
 	_objective_panel.modulate = Color(1, 1, 1, 0)
-	_objective_panel.position.y = 12.0
 	_objective_panel.visible = true
-	var tween := create_tween().set_parallel(true)
-	tween.tween_property(_objective_panel, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(_objective_panel, "position:y", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_objective_tween = create_tween().set_parallel(true)
+	_objective_tween.tween_property(_objective_panel, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_objective_tween.tween_property(_objective_panel, "position:y", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+func _hide_objective(animated: bool = true) -> void:
+	if _objective_panel == null:
+		return
+	_objective_transition_serial += 1
+	if _objective_tween != null:
+		_objective_tween.kill()
+	if not animated:
+		_objective_panel.visible = false
+		return
+	_objective_tween = create_tween().set_parallel(true)
+	_objective_tween.tween_property(_objective_panel, "modulate:a", 0.0, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_objective_tween.tween_property(_objective_panel, "position:y", -12.0, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	await _objective_tween.finished
+	if _objective_panel != null:
+		_objective_panel.visible = false
+
+func _apply_objective_text(text: String) -> void:
+	if _objective_label == null or _objective_panel == null:
+		return
+	_objective_label.text = text
+	_objective_panel.position.y = 12.0
 
 func _objective_text(key: String, fallback: String) -> String:
 	if objective_config != null and objective_config.has_method("get_objective_text"):
@@ -859,7 +1066,7 @@ func _update_objective_text() -> void:
 	elif _objective_state == "rest":
 		_show_objective(_objective_text("rest", "Rest on the sofa"))
 	elif _objective_panel != null:
-		_objective_panel.visible = false
+		_hide_objective(false)
 
 func _update_hint_marker(world_target: Vector3, label_text: String, distance_target: Vector3) -> void:
 	if player_camera == null or player == null:
@@ -1139,8 +1346,7 @@ func restart_current_level() -> void:
 		return
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
 	GameState.full_reset_inventory()
-	GameState.rewind_mode_active = false
-	GameState.time_direction = GameState.TIME_FORWARD
+	GameState.reset_axiom_recording()
 	var screen_fx := _screen_fx()
 	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
 		await screen_fx.reboot_to_scene(current_scene.scene_file_path, true)
