@@ -78,6 +78,7 @@ var _level_two_enemy_reward_spawned: bool = false
 var _level_two_enemy_total: int = 3
 var _level_two_enemy_defeated: int = 0
 var _level_two_room3_key: Node3D
+var _level_two_corridor_obstacle: Node3D
 var _level_two_trap_gate_south: StaticBody3D
 var _level_two_trap_gate_north: StaticBody3D
 var _level_two_trap_laser: Node3D
@@ -149,6 +150,8 @@ func _process(delta: float) -> void:
 	if _is_level_one_scene():
 		if _level_one_flow != null:
 			_level_one_flow.process_objectives()
+		if player_hud != null and player_hud.has_method("set_threat_warning_intensity"):
+			player_hud.call("set_threat_warning_intensity", 0.0)
 		return
 	if _is_level_two_scene():
 		if not _level_two_enemy_started and GameState.has_item("Gun") and _is_player_inside_level_two_combat_trigger():
@@ -157,35 +160,50 @@ func _process(delta: float) -> void:
 			_set_level_two_target_glow(_level_two_key, true)
 			_set_level_two_target_glow(_level_two_door, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_key.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _level_two_key.global_position)
 		elif _objective_state == "level2_door" and is_instance_valid(_level_two_door):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, true)
 			_set_level_two_target_glow(_level_two_room3_key, false)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_door.global_position + Vector3(0.0, 1.0, 0.0), "DOOR", _level_two_door.global_position)
 		elif _objective_state == "level2_enemy":
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_hint_marker.visible = false
 			_hint_label.visible = false
 		elif _objective_state == "level2_room3_key" and is_instance_valid(_level_two_room3_key):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
 			_set_level_two_target_glow(_level_two_room3_key, true)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_room3_key.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _level_two_room3_key.global_position)
+		elif _objective_state == "level2_obstacle" and is_instance_valid(_level_two_corridor_obstacle):
+			_set_level_two_target_glow(_level_two_key, false)
+			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_room3_key, false)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, true)
+			_update_hint_marker(_level_two_corridor_obstacle.global_position + Vector3(0.0, 1.25, 0.0), "TARGET", _level_two_corridor_obstacle.global_position)
 		elif _objective_state == "level2_room3_door" and is_instance_valid(_level_two_room3_button):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_room3_button.global_position + Vector3(0.0, 0.35, 0.0), "DOOR", _level_two_room3_button.global_position)
 		else:
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_hint_marker.visible = false
 			_hint_label.visible = false
+		_update_level_two_obstacle_warning()
 		return
+	if player_hud != null and player_hud.has_method("set_threat_warning_intensity"):
+		player_hud.call("set_threat_warning_intensity", 0.0)
 	if not _is_world_intro_scene():
 		return
 
@@ -221,8 +239,7 @@ func _on_inventory_changed() -> void:
 				_objective_state = "level2_door"
 				_show_objective("Open door 1")
 		elif _objective_state == "level2_room3_key" and GameState.has_item("key_2"):
-			_objective_state = "level2_room3_door"
-			_show_objective("Open room 3")
+			_start_level_two_obstacle_phase()
 		return
 	if not _is_world_intro_scene():
 		return
@@ -596,6 +613,7 @@ func _cache_level_two_targets() -> void:
 	_level_two_room3_door = get_node_or_null("Room3Door") as Node3D
 	_level_two_combat_trigger = get_node_or_null("CombatTrigger") as Area3D
 	_level_two_room3_key = get_node_or_null("Room3Keycard") as Node3D
+	_level_two_corridor_obstacle = get_node_or_null("CorridorObstacle") as Node3D
 	_level_two_enemy_nodes.clear()
 	for node_name in ["Enemy01", "Enemy02", "Enemy03"]:
 		var enemy_node: Node3D = get_node_or_null(node_name) as Node3D
@@ -604,10 +622,12 @@ func _cache_level_two_targets() -> void:
 	_level_two_trap_gate_south = get_node_or_null("TrapGateSouth") as StaticBody3D
 	_level_two_trap_gate_north = get_node_or_null("TrapGateNorth") as StaticBody3D
 	_level_two_trap_laser = get_node_or_null("TrapLaser") as Node3D
+
 	if _level_two_room3_button != null:
 		_level_two_room3_button.set("locked", true)
-		_level_two_room3_button.set("required_item_id", "key_2")
+		_level_two_room3_button.set("required_item_id", "key_2_blocked")
 		_level_two_room3_button.set("consume_required_item", true)
+
 	if _level_two_combat_trigger != null:
 		_level_two_combat_trigger.body_entered.connect(Callable(self, "_on_level_two_combat_trigger_entered"))
 	if _level_two_door != null and _level_two_door.has_signal("opened"):
@@ -624,6 +644,14 @@ func _cache_level_two_targets() -> void:
 			enemy_node.call("reset_enemy_state")
 		if enemy_node.has_method("set_encounter_enabled"):
 			enemy_node.call("set_encounter_enabled", false)
+	if _level_two_corridor_obstacle != null:
+		var destroyed_callable: Callable = Callable(self, "_on_level_two_corridor_obstacle_destroyed")
+		if _level_two_corridor_obstacle.has_signal("destroyed") and not _level_two_corridor_obstacle.is_connected("destroyed", destroyed_callable):
+			_level_two_corridor_obstacle.connect("destroyed", destroyed_callable)
+		if _level_two_corridor_obstacle.has_method("reset_obstacle_state"):
+			_level_two_corridor_obstacle.call("reset_obstacle_state")
+		elif _level_two_corridor_obstacle.has_method("set_obstacle_enabled"):
+			_level_two_corridor_obstacle.call("set_obstacle_enabled", false)
 	if _level_two_trap_laser != null:
 		_level_two_trap_beam = _level_two_trap_laser.get_node_or_null("Beam") as MeshInstance3D
 		_level_two_trap_light = _level_two_trap_laser.get_node_or_null("Light") as OmniLight3D
@@ -845,21 +873,51 @@ func _spawn_level_two_room3_keycard(spawn_position: Vector3) -> void:
 	var keycard: Node3D = _level_two_room3_key
 	if keycard == null or not is_instance_valid(keycard):
 		return
-	keycard.global_position = spawn_position + Vector3(0.0, 0.25, 0.0)
+	var floor_position: Vector3 = spawn_position
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var floor_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(spawn_position + Vector3(0.0, 2.6, 0.0), spawn_position + Vector3(0.0, -3.4, 0.0))
+	floor_query.collide_with_areas = false
+	floor_query.collide_with_bodies = true
+	var floor_hit: Dictionary = space_state.intersect_ray(floor_query)
+	if not floor_hit.is_empty():
+		floor_position = floor_hit.get("position", spawn_position)
+	floor_position.y += 0.05
+	keycard.global_position = floor_position + Vector3(0.0, 1.3, 0.0)
 	if keycard.has_method("set_interactable_enabled"):
 		keycard.call("set_interactable_enabled", false)
 	keycard.visible = true
 	keycard.scale = Vector3.ZERO
-	var rise_target: Vector3 = spawn_position + Vector3(0.0, 1.1, 0.0)
+	var settle_rotation: Vector3 = keycard.rotation_degrees + Vector3(0.0, 540.0, 0.0)
 	var reveal: Tween = create_tween().set_parallel(true)
-	reveal.tween_property(keycard, "global_position", rise_target, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	reveal.tween_property(keycard, "rotation_degrees", Vector3(0.0, 360.0, 0.0), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	reveal.tween_property(keycard, "scale", Vector3.ONE, 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	reveal.tween_property(keycard, "global_position", floor_position, 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	reveal.tween_property(keycard, "rotation_degrees", settle_rotation, 0.46).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	reveal.tween_property(keycard, "scale", Vector3.ONE, 0.36).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await reveal.finished
 	if is_instance_valid(keycard) and keycard.has_method("set_interactable_enabled"):
 		keycard.call("set_interactable_enabled", true)
 	_objective_state = "level2_room3_key"
 	_show_objective("Take the keycard")
+
+func _start_level_two_obstacle_phase() -> void:
+	_objective_state = "level2_obstacle"
+	_show_objective("Destroy the electric obstacle")
+	if _level_two_room3_button != null and is_instance_valid(_level_two_room3_button):
+		_level_two_room3_button.set("locked", true)
+		_level_two_room3_button.set("required_item_id", "key_2_blocked")
+		_level_two_room3_button.set("consume_required_item", true)
+	if _level_two_corridor_obstacle != null and is_instance_valid(_level_two_corridor_obstacle):
+		if _level_two_corridor_obstacle.has_method("set_obstacle_enabled"):
+			_level_two_corridor_obstacle.call("set_obstacle_enabled", true)
+
+func _on_level_two_corridor_obstacle_destroyed(_obstacle: Node3D) -> void:
+	if _objective_state != "level2_obstacle":
+		return
+	if _level_two_room3_button != null and is_instance_valid(_level_two_room3_button):
+		_level_two_room3_button.set("locked", true)
+		_level_two_room3_button.set("required_item_id", "key_2")
+		_level_two_room3_button.set("consume_required_item", true)
+	_objective_state = "level2_room3_door"
+	_show_objective("Open room 3")
 
 func _on_level_two_room3_opened() -> void:
 	if _objective_state == "level2_room3_door":
@@ -882,6 +940,32 @@ func _set_level_two_target_glow(target, enabled: bool) -> void:
 		target.call("set_highlight_enabled", enabled)
 	if enabled and target.has_method("set_highlight_strength"):
 		target.call("set_highlight_strength", 0.65 + (sin(_pulse_time * 1.45) * 0.5 + 0.5) * 0.75)
+
+func _update_level_two_obstacle_warning() -> void:
+	if player_hud == null or not player_hud.has_method("set_threat_warning_intensity"):
+		return
+	if _objective_state != "level2_obstacle":
+		player_hud.call("set_threat_warning_intensity", 0.0)
+		return
+	if player == null or not is_instance_valid(player):
+		player_hud.call("set_threat_warning_intensity", 0.0)
+		return
+	if _level_two_corridor_obstacle == null or not is_instance_valid(_level_two_corridor_obstacle):
+		player_hud.call("set_threat_warning_intensity", 0.0)
+		return
+	if not _level_two_corridor_obstacle.has_method("get_nearest_projectile_distance_to"):
+		player_hud.call("set_threat_warning_intensity", 0.0)
+		return
+	var nearest_distance_variant: Variant = _level_two_corridor_obstacle.call("get_nearest_projectile_distance_to", player.global_position)
+	var nearest_distance: float = 999999.0
+	if typeof(nearest_distance_variant) == TYPE_FLOAT or typeof(nearest_distance_variant) == TYPE_INT:
+		nearest_distance = float(nearest_distance_variant)
+	if nearest_distance >= 900000.0:
+		player_hud.call("set_threat_warning_intensity", 0.0)
+		return
+	var warning_distance: float = 22.0
+	var intensity: float = clampf(1.0 - (nearest_distance / warning_distance), 0.0, 1.0)
+	player_hud.call("set_threat_warning_intensity", intensity)
 
 func _play_camera_shot(start_transform: Transform3D, end_transform: Transform3D, duration: float) -> void:
 	if _intro_camera == null:

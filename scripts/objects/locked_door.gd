@@ -1,5 +1,7 @@
 extends Interactable
 
+signal opened
+
 @export var required_key: String = "key_1"
 
 @onready var _collision: CollisionShape3D = $CollisionShape3D
@@ -17,6 +19,7 @@ func _ready() -> void:
 func interact() -> void:
 	if GameState.slots[GameState.selected_slot] == required_key:
 		GameState.consume_selected()
+		opened.emit()
 		queue_free()
 	else:
 		var players = get_tree().get_nodes_in_group("player")

@@ -42,6 +42,8 @@ var _ammo_label: Label
 var _reload_container: Control
 var _reload_track: ColorRect
 var _reload_fill: ColorRect
+var _threat_warning_overlay: ColorRect
+var _threat_warning_intensity: float = 0.0
 
 func set_dig_progress(val: float, is_vis: bool) -> void:
 	dig_progress_bar.set_progress(val, is_vis)
@@ -82,9 +84,20 @@ func set_reload_progress(progress: float, visible_state: bool) -> void:
 	var width := maxf(_reload_track.size.x - 8.0, 0.0)
 	_reload_fill.size.x = width * clamped
 
+func set_threat_warning_intensity(intensity: float) -> void:
+	_threat_warning_intensity = clampf(intensity, 0.0, 1.0)
+	if _threat_warning_overlay == null:
+		return
+	if _threat_warning_intensity <= 0.001:
+		_threat_warning_overlay.visible = false
+		_threat_warning_overlay.color = Color(1.0, 0.08, 0.06, 0.0)
+		return
+	_threat_warning_overlay.visible = true
+
 func _ready() -> void:
 	prompt_label.visible = false
 	_setup_weapon_hud()
+	_setup_threat_warning()
 
 	GameState.inventory_changed.connect(_update_inventory_ui)
 	GameState.time_direction_changed.connect(_on_time_direction_changed)
@@ -120,8 +133,15 @@ func _process(_delta: float) -> void:
 		var secs_ago = int((1.0 - ratio) * GameState.world_history.size() / 60.0)
 		timeline_label.text = "-%ds" % secs_ago if secs_ago > 0 else "NOW"
 		timeline_label.position.x = clampf(pointer_line.position.x + 4.0, 0.0, strip_w - 64.0)
-
 		_update_mark_nodes()
+	if _threat_warning_overlay != null:
+		if _threat_warning_intensity <= 0.001:
+			_threat_warning_overlay.visible = false
+		else:
+			_threat_warning_overlay.visible = true
+			var pulse: float = 0.64 + 0.36 * sin(Time.get_ticks_msec() * 0.0125)
+			var alpha: float = clampf(_threat_warning_intensity * 0.42 * pulse, 0.0, 0.62)
+			_threat_warning_overlay.color = Color(1.0, 0.08, 0.06, alpha)
 
 func _update_mark_nodes() -> void:
 	var strip_w = film_strip.size.x
@@ -399,3 +419,11 @@ func _setup_weapon_hud() -> void:
 	_reload_fill.offset_bottom = 24.0
 	_reload_fill.color = Color(0.98, 0.28, 0.12, 0.96)
 	_reload_track.add_child(_reload_fill)
+
+func _setup_threat_warning() -> void:
+	_threat_warning_overlay = ColorRect.new()
+	_threat_warning_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_threat_warning_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_threat_warning_overlay.color = Color(1.0, 0.08, 0.06, 0.0)
+	_threat_warning_overlay.visible = false
+	add_child(_threat_warning_overlay)

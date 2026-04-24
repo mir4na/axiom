@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/door_button.tscn" id="9_door_button"]
 [ext_resource type="PackedScene" path="res://scenes/objects/gun_item.tscn" id="10_gun"]
 [ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="11_enemy"]
+[ext_resource type="PackedScene" uid="uid://c5287n5mgov23" path="res://scenes/objects/electric_obstacle.tscn" id="12_obstacle"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -600,6 +601,9 @@ required_item_id = "key_2"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 1.25, 54.90596)
 visible = false
 key_id = "key_2"
+
+[node name="CorridorObstacle" parent="World" unique_id=410271083 instance=ExtResource("12_obstacle")]
+transform = Transform3D(0.978148, 0, 0.207912, 0, 1, 0, -0.207912, 0, 0.978148, 0, 1.05, 139.6624)
 
 [node name="Rose" parent="World" unique_id=1861027441 instance=ExtResource("7_rose")]
 transform = Transform3D(0.996195, 0, -0.0871557, 0, 1, 0, 0.0871557, 0, 0.996195, -6.2, 0, 160.1)

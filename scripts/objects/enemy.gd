@@ -61,6 +61,7 @@ var _last_target_cell: Vector2i = Vector2i(999999, 999999)
 var _spawn_animating: bool = false
 var _spawn_anim_time: float = 0.0
 var _spawn_anim_duration: float = 0.72
+var _dying: bool = false
 
 func _ready() -> void:
 	add_to_group("time_actor")
@@ -82,6 +83,9 @@ func _ready() -> void:
 		set_encounter_enabled(false)
 
 func _physics_process(delta: float) -> void:
+	if _dying:
+		_hide_attack_fx()
+		return
 	if _spawn_animating:
 		_process_spawn_animation(delta)
 		_hide_attack_fx()
@@ -317,11 +321,19 @@ func _update_visuals(delta: float) -> void:
 		)
 
 func take_damage(amount: float) -> void:
+	if _dying:
+		return
 	_health = maxf(0.0, _health - amount)
 	_flash_timer = 0.22
 	_update_health_bar()
 	if _health > 0.0:
 		return
+	_dying = true
+	if _collision_shape != null:
+		_collision_shape.disabled = true
+	velocity = Vector3.ZERO
+	_hide_attack_fx()
+	await _play_defeat_sequence()
 	emit_signal("defeated", self, global_position)
 	queue_free()
 
@@ -344,6 +356,8 @@ func set_encounter_enabled(enabled: bool) -> void:
 		_hide_attack_fx()
 
 func reset_enemy_state() -> void:
+	_dying = false
+	set_physics_process(true)
 	global_position = _spawn_position
 	velocity = Vector3.ZERO
 	_direction = 1
@@ -460,13 +474,37 @@ func _sync_collision_with_visual() -> void:
 func _update_spawn_material_flash(strength: float) -> void:
 	if _visual_materials.is_empty():
 		return
-	var clamped_strength: float = clampf(strength, 0.0, 1.0)
+	var clamped_strength := clampf(strength, 0.0, 1.0)
 	for index in range(_visual_materials.size()):
-		var material: StandardMaterial3D = _visual_materials[index]
-		var base_albedo: Color = _base_albedo_colors[index]
-		var base_emission: Color = _base_emission_colors[index]
-		var base_energy: float = _base_emission_energies[index]
-		var emission_boost: float = clamped_strength * (4.2 + randf() * 2.2)
+		var material := _visual_materials[index]
+		var base_albedo := _base_albedo_colors[index]
+		var base_emission := _base_emission_colors[index]
+		var base_energy := _base_emission_energies[index]
+		var emission_boost := clamped_strength * (4.2 + randf() * 2.2)
 		material.albedo_color = base_albedo.lerp(Color(0.9, 0.2, 1.0, base_albedo.a), clamped_strength * 0.55)
 		material.emission = base_emission.lerp(Color(1.0, 0.18, 0.94, 1.0), clamped_strength)
 		material.emission_energy_multiplier = base_energy + emission_boost
+
+func _play_defeat_sequence() -> void:
+	var explode: Tween = create_tween().set_parallel(true)
+	if _visual_root != null:
+		explode.tween_property(_visual_root, "scale", Vector3.ONE * 1.75, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		explode.tween_property(_visual_root, "rotation_degrees", _visual_root.rotation_degrees + Vector3(36.0, 220.0, -42.0), 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		explode.tween_property(_visual_root, "scale", Vector3.ZERO, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN).set_delay(0.14)
+	if _laser_light != null:
+		explode.tween_property(_laser_light, "light_energy", 16.0, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		explode.tween_property(_laser_light, "omni_range", 9.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		explode.tween_property(_laser_light, "light_energy", 0.0, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN).set_delay(0.1)
+	for index in range(_visual_materials.size()):
+		var material: StandardMaterial3D = _visual_materials[index]
+		if material == null:
+			continue
+		var start_energy: float = material.emission_energy_multiplier
+		explode.tween_method(_set_material_emission_energy.bind(material), start_energy, start_energy + 6.5, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		explode.tween_method(_set_material_emission_energy.bind(material), start_energy + 6.5, 0.0, 0.32).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN).set_delay(0.12)
+	await explode.finished
+
+func _set_material_emission_energy(value: float, material: StandardMaterial3D) -> void:
+	if material == null:
+		return
+	material.emission_energy_multiplier = value

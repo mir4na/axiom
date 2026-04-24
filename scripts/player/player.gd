@@ -57,7 +57,7 @@ var _gun_reload_timer: float = 0.0
 var _gun_reloading: bool = false
 var _gun_shot_cooldown: float = 0.18
 var _gun_shot_timer: float = 0.0
-var _gun_damage: float = 35.0
+var _gun_damage: float = 30.0
 var _gun_range: float = 52.0
 var _gun_recoil: float = 0.0
 

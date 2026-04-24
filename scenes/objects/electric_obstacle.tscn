@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://c5287n5mgov23"]
+
+[ext_resource type="Script" uid="uid://c121qbdpk2uou" path="res://scripts/objects/electric_obstacle.gd" id="1_obstacle_script"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_core"]
+radius = 0.88
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_core"]
+albedo_color = Color(0.12, 0.16, 0.2, 1)
+metallic = 0.55
+roughness = 0.18
+emission_enabled = true
+emission = Color(0.2, 0.95, 1, 1)
+emission_energy_multiplier = 2.8
+
+[sub_resource type="SphereMesh" id="SphereMesh_core"]
+radius = 0.88
+height = 1.76
+
+[sub_resource type="SphereMesh" id="SphereMesh_aura"]
+radius = 1.2
+height = 2.4
+
+[node name="ElectricObstacle" type="Node3D" unique_id=623081207]
+visible = false
+script = ExtResource("1_obstacle_script")
+
+[node name="CoreBody" type="StaticBody3D" parent="." unique_id=2087449170]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CoreBody" unique_id=271249905]
+shape = SubResource("SphereShape3D_core")
+disabled = true
+
+[node name="CoreMesh" type="MeshInstance3D" parent="CoreBody" unique_id=2006619885]
+material_override = SubResource("StandardMaterial3D_core")
+mesh = SubResource("SphereMesh_core")
+
+[node name="AuraMesh" type="MeshInstance3D" parent="." unique_id=321557095]
+transform = Transform3D(1.25, 0, 0, 0, 1.42, 0, 0, 0, 1.25, 0, 0, 0)
+visible = false
+mesh = SubResource("SphereMesh_aura")
+
+[node name="GlowLight" type="OmniLight3D" parent="." unique_id=398791875]
+visible = false
+light_color = Color(0.2, 0.95, 1, 1)
+light_energy = 1.2
+omni_range = 5.8
+
+[node name="Muzzle" type="Marker3D" parent="." unique_id=1245328282]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 1.6)
+
+[node name="CorridorLightA" type="OmniLight3D" parent="." unique_id=1899937281]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, -28)
+visible = false
+light_color = Color(0.22, 0.92, 1, 1)
+light_energy = 0.0
+omni_range = 26.0
+
+[node name="CorridorLightB" type="OmniLight3D" parent="." unique_id=1899937282]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+visible = false
+light_color = Color(0.22, 0.92, 1, 1)
+light_energy = 0.0
+omni_range = 22.0
+
+[node name="CorridorLightC" type="OmniLight3D" parent="." unique_id=1899937283]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 28)
+visible = false
+light_color = Color(0.22, 0.92, 1, 1)
+light_energy = 0.0
+omni_range = 26.0

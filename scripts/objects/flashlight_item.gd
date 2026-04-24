@@ -11,6 +11,12 @@ var _persistent_highlight: bool = true
 
 func _ready() -> void:
 	prompt_text = "Press E to pick up Flashlight"
+	var body_node: Node = self
+	if body_node is RigidBody3D:
+		var body: RigidBody3D = body_node as RigidBody3D
+		body.freeze = true
+		body.linear_velocity = Vector3.ZERO
+		body.angular_velocity = Vector3.ZERO
 	_setup_aura_materials()
 	set_highlight_enabled(true)
 	set_highlight_strength(1.0)
