@@ -11,38 +11,15 @@ render_priority = 0
 shader = ExtResource("2_orb_shader")
 shader_parameter/tint_a = Color(0.2, 0.94, 1, 0.95)
 shader_parameter/tint_b = Color(0.8, 0.25, 1, 0.92)
-shader_parameter/glow_strength = 9.8
-shader_parameter/flicker_speed = 14.0
-shader_parameter/ripple_speed = 7.2
+shader_parameter/glow_strength = 10.6
+shader_parameter/flicker_speed = 16.0
+shader_parameter/ripple_speed = 8.2
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_side"]
-render_priority = 0
-shader = ExtResource("2_orb_shader")
-shader_parameter/tint_a = Color(0.17, 0.95, 1, 0.88)
-shader_parameter/tint_b = Color(1, 0.42, 0.74, 0.84)
-shader_parameter/glow_strength = 7.6
-shader_parameter/flicker_speed = 17.2
-shader_parameter/ripple_speed = 9.0
+[sub_resource type="SphereMesh" id="SphereMesh_core"]
+radius = 1.5
+height = 3.0
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_trail"]
-render_priority = 0
-shader = ExtResource("2_orb_shader")
-shader_parameter/tint_a = Color(0.18, 0.84, 1, 0.5)
-shader_parameter/tint_b = Color(0.56, 0.2, 1, 0.45)
-shader_parameter/glow_strength = 5.4
-shader_parameter/flicker_speed = 9.0
-shader_parameter/ripple_speed = 4.2
-
-[sub_resource type="BoxMesh" id="BoxMesh_core"]
-size = Vector3(2.1, 1.8, 6.4)
-
-[sub_resource type="BoxMesh" id="BoxMesh_side"]
-size = Vector3(1.0, 0.8, 4.0)
-
-[sub_resource type="BoxMesh" id="BoxMesh_trail"]
-size = Vector3(2.4, 1.6, 12.0)
-
-[node name="ElectricOrb" type="CharacterBody3D" unique_id=1151066551 groups=["time_actor"]]
+[node name="ElectricOrb" type="CharacterBody3D" unique_id=1151066551]
 script = ExtResource("1_orb_script")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=488463843]
@@ -50,27 +27,7 @@ shape = SubResource("SphereShape3D_orb")
 
 [node name="CoreShard" type="MeshInstance3D" parent="." unique_id=583525094]
 material_override = SubResource("ShaderMaterial_core")
-mesh = SubResource("BoxMesh_core")
-
-[node name="SideShardA" type="MeshInstance3D" parent="." unique_id=2113597320]
-transform = Transform3D(0.985556, 0.14695, -0.0844404, -0.12083, 0.965424, 0.231418, 0.11568, -0.217634, 0.969159, 1.5, 0.5, 0)
-material_override = SubResource("ShaderMaterial_side")
-mesh = SubResource("BoxMesh_side")
-
-[node name="SideShardB" type="MeshInstance3D" parent="." unique_id=1945132048]
-transform = Transform3D(0.91514, -0.292372, 0.277784, 0.283291, 0.956122, 0.0754697, -0.287038, 0.00998907, 0.957869, -1.25, -0.45, 0.35)
-material_override = SubResource("ShaderMaterial_side")
-mesh = SubResource("BoxMesh_side")
-
-[node name="SideShardC" type="MeshInstance3D" parent="." unique_id=1293847749]
-transform = Transform3D(0.979242, 0.103923, -0.174221, -0.150104, 0.944878, -0.291188, 0.136338, 0.311118, 0.94044, 0.45, -0.9, -0.6)
-material_override = SubResource("ShaderMaterial_side")
-mesh = SubResource("BoxMesh_side")
-
-[node name="TrailShard" type="MeshInstance3D" parent="." unique_id=1257457350]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4.8)
-material_override = SubResource("ShaderMaterial_trail")
-mesh = SubResource("BoxMesh_trail")
+mesh = SubResource("SphereMesh_core")
 
 [node name="GlowLight" type="OmniLight3D" parent="." unique_id=2134898988]
 light_color = Color(0.28, 0.92, 1, 1)

@@ -2,7 +2,9 @@ extends CharacterBody3D
 
 signal finished(projectile: Node3D)
 
-@export var speed: float = 10.5
+const ORB_SCALE := 1.5
+
+@export var speed: float = 8.5
 @export var damage: float = 75.0
 @export var lifetime: float = 16.0
 @export var radius: float = 2.9
@@ -29,7 +31,6 @@ var _base_side_b_rotation: Vector3 = Vector3.ZERO
 var _base_side_c_rotation: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
-	add_to_group("time_actor")
 	_life_left = lifetime
 	if _collision_shape != null:
 		_collision_shape.disabled = true
@@ -78,7 +79,7 @@ func _physics_process(delta: float) -> void:
 	global_position += _velocity * delta
 	_phase = wrapf(_phase + delta * 9.6, 0.0, TAU)
 	if _core_shard != null:
-		var core_pulse: float = 0.84 + (sin(_phase * 1.3) * 0.5 + 0.5) * 0.38
+		var core_pulse: float = 0.88 + (sin(_phase * 1.3) * 0.5 + 0.5) * 0.24
 		_core_shard.scale = _base_core_scale * core_pulse
 		_core_shard.rotate_object_local(Vector3(0.0, 0.0, 1.0), delta * 14.0)
 	if _side_shard_a != null:
@@ -94,7 +95,7 @@ func _physics_process(delta: float) -> void:
 		_side_shard_c.scale = _base_side_c_scale * side_c_pulse
 		_side_shard_c.rotation = _base_side_c_rotation + Vector3(sin(_phase * 2.6) * 0.17, 0.0, cos(_phase * 2.0) * 0.2)
 	if _trail_shard != null:
-		var trail_pulse: float = 0.82 + (sin(_phase * 2.7 + 0.7) * 0.5 + 0.5) * 0.36
+		var trail_pulse: float = 0.8 + (sin(_phase * 2.7 + 0.7) * 0.5 + 0.5) * 0.22
 		_trail_shard.scale = _base_trail_scale * trail_pulse
 	if _glow_light != null:
 		_glow_light.light_energy = 4.2 + (sin(_phase * 1.7) * 0.5 + 0.5) * 3.4
@@ -111,7 +112,7 @@ func _try_hit_player() -> bool:
 	var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
 	if player == null or not is_instance_valid(player):
 		return false
-	var hit_distance: float = maxf(0.6, radius + 0.62)
+	var hit_distance: float = maxf(0.6, radius * ORB_SCALE + 0.62)
 	if global_position.distance_to(player.global_position + Vector3(0.0, 0.9, 0.0)) > hit_distance:
 		return false
 	if player.has_method("take_damage"):
@@ -146,23 +147,24 @@ func _orb_explode() -> void:
 	queue_free()
 
 func _apply_radius() -> void:
-	var clamped_radius: float = maxf(0.2, radius)
+	var clamped_radius: float = maxf(0.2, radius) * ORB_SCALE
 	if _collision_shape != null and _collision_shape.shape is SphereShape3D:
 		(_collision_shape.shape as SphereShape3D).radius = clamped_radius
-	if _core_shard != null and _core_shard.mesh is BoxMesh:
-		var core_mesh: BoxMesh = _core_shard.mesh as BoxMesh
-		core_mesh.size = Vector3(clamped_radius * 0.72, clamped_radius * 0.62, clamped_radius * 2.15)
+	if _core_shard != null and _core_shard.mesh is SphereMesh:
+		var core_mesh: SphereMesh = _core_shard.mesh as SphereMesh
+		core_mesh.radius = clamped_radius * 0.52
+		core_mesh.height = clamped_radius * 1.04
 	if _side_shard_a != null and _side_shard_a.mesh is BoxMesh:
 		var side_mesh_a: BoxMesh = _side_shard_a.mesh as BoxMesh
-		side_mesh_a.size = Vector3(clamped_radius * 0.34, clamped_radius * 0.3, clamped_radius * 1.34)
+		side_mesh_a.size = Vector3(clamped_radius * 0.2, clamped_radius * 0.18, clamped_radius * 0.62)
 	if _side_shard_b != null and _side_shard_b.mesh is BoxMesh:
 		var side_mesh_b: BoxMesh = _side_shard_b.mesh as BoxMesh
-		side_mesh_b.size = Vector3(clamped_radius * 0.34, clamped_radius * 0.3, clamped_radius * 1.34)
+		side_mesh_b.size = Vector3(clamped_radius * 0.2, clamped_radius * 0.18, clamped_radius * 0.62)
 	if _side_shard_c != null and _side_shard_c.mesh is BoxMesh:
 		var side_mesh_c: BoxMesh = _side_shard_c.mesh as BoxMesh
-		side_mesh_c.size = Vector3(clamped_radius * 0.34, clamped_radius * 0.3, clamped_radius * 1.34)
+		side_mesh_c.size = Vector3(clamped_radius * 0.2, clamped_radius * 0.18, clamped_radius * 0.62)
 	if _trail_shard != null and _trail_shard.mesh is BoxMesh:
 		var trail_mesh: BoxMesh = _trail_shard.mesh as BoxMesh
-		trail_mesh.size = Vector3(clamped_radius * 0.82, clamped_radius * 0.58, clamped_radius * 4.0)
+		trail_mesh.size = Vector3(clamped_radius * 0.34, clamped_radius * 0.28, clamped_radius * 1.05)
 	if _glow_light != null:
 		_glow_light.omni_range = clamped_radius * 3.6

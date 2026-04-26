@@ -2,38 +2,82 @@
 
 [ext_resource type="Script" uid="uid://c121qbdpk2uou" path="res://scripts/objects/electric_obstacle.gd" id="1_obstacle_script"]
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_core"]
-radius = 0.88
+[sub_resource type="BoxShape3D" id="BoxShape3D_core"]
+size = Vector3(2.2, 2, 3.8)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_core"]
-albedo_color = Color(0.12, 0.16, 0.2, 1)
-metallic = 0.55
-roughness = 0.18
+albedo_color = Color(0.26, 0.25, 0.24, 1)
+metallic = 0.78
+roughness = 0.42
 emission_enabled = true
-emission = Color(0.2, 0.95, 1, 1)
-emission_energy_multiplier = 2.8
+emission = Color(0.24, 0.16, 0.08, 1)
+emission_energy_multiplier = 0.35
 
-[sub_resource type="SphereMesh" id="SphereMesh_core"]
-radius = 0.88
-height = 1.76
+[sub_resource type="CylinderMesh" id="CylinderMesh_core"]
+top_radius = 0.92
+bottom_radius = 1.08
+height = 2.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_base"]
+top_radius = 1.2
+bottom_radius = 1.45
+height = 0.9
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_barrel"]
+bottom_radius = 0.62
+height = 3.8
+
+[sub_resource type="BoxMesh" id="BoxMesh_support"]
+size = Vector3(0.42, 0.95, 1.35)
+
+[sub_resource type="SphereMesh" id="SphereMesh_muzzle_ring"]
+radius = 0.34
+height = 0.68
 
 [sub_resource type="SphereMesh" id="SphereMesh_aura"]
 radius = 1.2
 height = 2.4
 
 [node name="ElectricObstacle" type="Node3D" unique_id=623081207]
-visible = false
 script = ExtResource("1_obstacle_script")
+fire_cooldown = 10.0
+projectile_speed = 8.0
 
 [node name="CoreBody" type="StaticBody3D" parent="." unique_id=2087449170]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CoreBody" unique_id=271249905]
-shape = SubResource("SphereShape3D_core")
+shape = SubResource("BoxShape3D_core")
 disabled = true
 
 [node name="CoreMesh" type="MeshInstance3D" parent="CoreBody" unique_id=2006619885]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 1.15, -0.2)
 material_override = SubResource("StandardMaterial3D_core")
-mesh = SubResource("SphereMesh_core")
+mesh = SubResource("CylinderMesh_core")
+
+[node name="BaseMesh" type="MeshInstance3D" parent="CoreBody" unique_id=1447008851]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.35, -0.35)
+material_override = SubResource("StandardMaterial3D_core")
+mesh = SubResource("CylinderMesh_base")
+
+[node name="BarrelMesh" type="MeshInstance3D" parent="CoreBody" unique_id=1447008852]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 1.55, 2)
+material_override = SubResource("StandardMaterial3D_core")
+mesh = SubResource("CylinderMesh_barrel")
+
+[node name="SupportLeft" type="MeshInstance3D" parent="CoreBody" unique_id=1447008853]
+transform = Transform3D(0.939693, 0, 0.34202, 0.17101, -0.866025, -0.469846, 0.296198, 0.5, -0.813798, -0.9, 1, 0.3)
+material_override = SubResource("StandardMaterial3D_core")
+mesh = SubResource("BoxMesh_support")
+
+[node name="SupportRight" type="MeshInstance3D" parent="CoreBody" unique_id=1447008854]
+transform = Transform3D(0.939693, 0, 0.34202, 0.17101, -0.866025, -0.469846, 0.296198, 0.5, -0.813798, 0.9, 1, 0.3)
+material_override = SubResource("StandardMaterial3D_core")
+mesh = SubResource("BoxMesh_support")
+
+[node name="MuzzleRing" type="MeshInstance3D" parent="CoreBody" unique_id=1447008855]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 0.4, 0, 1.55, 3.78)
+material_override = SubResource("StandardMaterial3D_core")
+mesh = SubResource("SphereMesh_muzzle_ring")
 
 [node name="AuraMesh" type="MeshInstance3D" parent="." unique_id=321557095]
 transform = Transform3D(1.25, 0, 0, 0, 1.42, 0, 0, 0, 1.25, 0, 0, 0)
@@ -47,7 +91,7 @@ light_energy = 1.2
 omni_range = 5.8
 
 [node name="Muzzle" type="Marker3D" parent="." unique_id=1245328282]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 1.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 4.15)
 
 [node name="CorridorLightA" type="OmniLight3D" parent="." unique_id=1899937281]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, -28)

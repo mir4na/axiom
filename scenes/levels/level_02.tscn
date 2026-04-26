@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://scenes/objects/locked_door.tscn" id="3_door"]
-[ext_resource type="PackedScene" path="res://scenes/objects/exit_door.tscn" id="4_exit"]
 [ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="5_key"]
 [ext_resource type="PackedScene" path="res://scenes/objects/sliding_door.tscn" id="6_slide_door"]
 [ext_resource type="PackedScene" uid="uid://df7x8h205lam1" path="res://scenes/characters/rose.tscn" id="7_rose"]
@@ -603,14 +602,12 @@ visible = false
 key_id = "key_2"
 
 [node name="CorridorObstacle" parent="World" unique_id=410271083 instance=ExtResource("12_obstacle")]
-transform = Transform3D(0.978148, 0, 0.207912, 0, 1, 0, -0.207912, 0, 0.978148, 0, 1.05, 139.6624)
+transform = Transform3D(0.991595, 0, 0.12938432, 0, 1, 0, -0.12938432, 0, 0.991595, -0.056529284, 0.8440082, 139.59364)
+fire_cooldown = 15.0
+projectile_damage = 75.0
 
 [node name="Rose" parent="World" unique_id=1861027441 instance=ExtResource("7_rose")]
-transform = Transform3D(0.996195, 0, -0.0871557, 0, 1, 0, 0.0871557, 0, 0.996195, -6.2, 0, 160.1)
-
-[node name="ExitDoor" parent="World" unique_id=1230293221 instance=ExtResource("4_exit")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 165.5)
-visible = false
+transform = Transform3D(0.71515644, 0, -0.6989649, 0, 1, 0, 0.6989649, 0, 0.71515644, -6.2, 0, 160.1)
 
 [node name="Player" parent="World" unique_id=1812883366 instance=ExtResource("2_player")]
 transform = Transform3D(-0.9932741, 0, -0.11578677, 0, 1, 0, 0.11578677, 0, -0.9932741, 0, 1.8458242, -25.466845)

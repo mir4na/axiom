@@ -20,6 +20,7 @@ const SCALE_STEP := 0.1
 const LEVELS: Array[String] = [
 	"res://scenes/levels/level_01.tscn",
 	"res://scenes/levels/level_02.tscn",
+	"res://scenes/levels/level_03.tscn",
 ]
 
 var time_direction: int = TIME_FORWARD
@@ -56,12 +57,13 @@ func _physics_process(_delta: float) -> void:
 	if not recording_enabled:
 		return
 
-	var actors = get_tree().get_nodes_in_group("time_actor")
+	var actor: Node = _get_rewind_actor()
+	if actor == null:
+		return
 
 	if time_direction == 1 and not is_scrubbing_past:
 		var snap_dict = {}
-		for actor in actors:
-			snap_dict[actor.get_path()] = _get_actor_state(actor)
+		snap_dict[actor.get_path()] = _get_actor_state(actor)
 
 		world_history.append(snap_dict)
 		if world_history.size() > MAX_HISTORY:
@@ -76,10 +78,9 @@ func _physics_process(_delta: float) -> void:
 
 		if world_history.size() > 0:
 			var snap = world_history[history_index]
-			for actor in actors:
-				var path = actor.get_path()
-				if snap.has(path):
-					_apply_actor_state(actor, snap[path])
+			var path: NodePath = actor.get_path()
+			if snap.has(path):
+				_apply_actor_state(actor, snap[path])
 
 		timeline_position = (float(history_index) / float(MAX_HISTORY)) * 100.0
 
@@ -96,9 +97,9 @@ func activate_rewind_mode() -> void:
 func cancel_rewind_mode() -> void:
 	if world_history.size() > 0 and rewind_pointer_index >= 0:
 		var snap = world_history[history_index]
-		var actors = get_tree().get_nodes_in_group("time_actor")
-		for actor in actors:
-			var path = actor.get_path()
+		var actor: Node = _get_rewind_actor()
+		if actor != null:
+			var path: NodePath = actor.get_path()
 			if snap.has(path):
 				_apply_actor_state(actor, snap[path])
 	rewind_mode_active = false
@@ -110,9 +111,9 @@ func deactivate_rewind_mode(jump: bool) -> void:
 	if jump and world_history.size() > 0:
 		var target = clampi(rewind_pointer_index, 0, world_history.size() - 1)
 		var snap = world_history[target]
-		var actors = get_tree().get_nodes_in_group("time_actor")
-		for actor in actors:
-			var path = actor.get_path()
+		var actor: Node = _get_rewind_actor()
+		if actor != null:
+			var path: NodePath = actor.get_path()
 			if snap.has(path):
 				_apply_actor_state(actor, snap[path])
 
@@ -139,9 +140,9 @@ func move_rewind_pointer(direction: int) -> void:
 
 	if world_history.size() > 0:
 		var snap = world_history[rewind_pointer_index]
-		var actors = get_tree().get_nodes_in_group("time_actor")
-		for actor in actors:
-			var path = actor.get_path()
+		var actor: Node = _get_rewind_actor()
+		if actor != null:
+			var path: NodePath = actor.get_path()
 			if snap.has(path):
 				_apply_actor_state(actor, snap[path])
 
@@ -155,6 +156,9 @@ func prune_timeline() -> void:
 		world_history = world_history.slice(0, history_index + 1)
 		is_scrubbing_past = false
 		mark_indices = mark_indices.filter(func(i): return i < world_history.size())
+
+func _get_rewind_actor() -> Node:
+	return get_tree().get_first_node_in_group("player")
 
 func _get_actor_state(actor: Node) -> Dictionary:
 	var state = {"pos": actor.position, "rot": actor.rotation}

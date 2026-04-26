@@ -8,17 +8,20 @@ uniform float flicker_speed = 9.0;
 uniform float ripple_speed = 3.4;
 
 void fragment() {
-	float swirl = UV.x * 11.0 + TIME * ripple_speed;
-	float side_warp = sin((UV.y + TIME * 0.35) * 34.0) * 0.24;
-	float filaments = abs(sin((swirl + side_warp) * TAU));
-	filaments = pow(filaments, 8.0);
-	float sparks = abs(sin((UV.x * 29.0 - TIME * flicker_speed) * TAU + UV.y * 57.0));
-	sparks = pow(sparks, 14.0);
-	float envelope = smoothstep(0.02, 0.3, UV.y) * (1.0 - smoothstep(0.7, 0.98, UV.y));
-	float flicker = 0.62 + 0.38 * sin(TIME * flicker_speed + UV.x * 31.0 + UV.y * 19.0);
-	float alpha = clamp((filaments * envelope + sparks * 0.5) * tint_a.a * flicker, 0.0, 1.0);
-	vec3 blend = mix(tint_a.rgb, tint_b.rgb, 0.5 + 0.5 * sin(TIME * 2.6 + UV.x * TAU * 5.0));
+	vec2 centered_uv = UV * 2.0 - 1.0;
+	float radial = length(centered_uv);
+	float orb_mask = 1.0 - smoothstep(0.28, 1.0, radial);
+	float swirl = atan(centered_uv.y, centered_uv.x) * 2.2 + TIME * ripple_speed;
+	float branch_a = abs(sin(swirl * 3.0 + radial * 19.0 - TIME * flicker_speed));
+	float branch_b = abs(sin(swirl * 4.7 - radial * 23.0 + TIME * (flicker_speed * 0.7)));
+	float lightning = pow(max(branch_a, branch_b), 8.5);
+	float sparks = abs(sin((UV.x * 31.0 - TIME * flicker_speed) * TAU + UV.y * 61.0));
+	sparks = pow(sparks, 15.0) * orb_mask;
+	float halo = 1.0 - smoothstep(0.12, 0.86, radial);
+	float flicker = 0.68 + 0.32 * sin(TIME * flicker_speed + UV.x * 27.0 + UV.y * 19.0);
+	float alpha = clamp((orb_mask * 0.46 + lightning * halo + sparks * 0.52) * tint_a.a * flicker, 0.0, 1.0);
+	vec3 blend = mix(tint_a.rgb, tint_b.rgb, 0.5 + 0.5 * sin(TIME * 2.6 + radial * 12.0 + swirl * 0.4));
 	ALBEDO = blend;
-	EMISSION = blend * glow_strength * (0.32 + filaments * 1.35 + sparks * 1.1) * flicker;
+	EMISSION = blend * glow_strength * (0.28 + orb_mask * 0.55 + lightning * 1.45 + sparks * 1.1) * flicker;
 	ALPHA = alpha;
 }

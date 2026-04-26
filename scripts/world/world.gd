@@ -12,9 +12,12 @@ const INTRO_LINES := [
 const WORLD_SCENE_PATH := "res://scenes/world/world.tscn"
 const LEVEL_ONE_SCENE_PATH := "res://scenes/levels/level_01.tscn"
 const LEVEL_TWO_SCENE_PATH := "res://scenes/levels/level_02.tscn"
+const LEVEL_THREE_SCENE_PATH := "res://scenes/levels/level_03.tscn"
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const LEVEL_ONE_FLOW := preload("res://scripts/world/level_one_flow.gd")
 const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
+const BLACKHOLE_PORTAL_SCENE := preload("res://scenes/objects/blackhole_portal.tscn")
+const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 
 @onready var player: CharacterBody3D = get_node_or_null("Player") as CharacterBody3D
 @onready var player_camera: Camera3D = get_node_or_null("Player/root/Skeleton3D/BoneAttachment3D/Head/Camera3D") as Camera3D
@@ -86,6 +89,12 @@ var _level_two_trap_beam: MeshInstance3D
 var _level_two_trap_light: OmniLight3D
 var _level_two_trap_triggered: bool = false
 var _level_two_trap_running: bool = false
+var _level_two_rose: Node3D
+var _level_two_exit_door: Node3D
+var _level_two_end_cap_near: Node3D
+var _level_two_portal: Node3D
+var _level_two_room3_sequence_running: bool = false
+var _level_two_room3_sequence_played: bool = false
 
 func _screen_fx() -> CanvasLayer:
 	return get_node_or_null("/root/ScreenFX") as CanvasLayer
@@ -193,6 +202,12 @@ func _process(delta: float) -> void:
 			_set_level_two_target_glow(_level_two_room3_key, false)
 			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_room3_button.global_position + Vector3(0.0, 0.35, 0.0), "DOOR", _level_two_room3_button.global_position)
+		elif _objective_state == "level2_portal" and is_instance_valid(_level_two_portal):
+			_set_level_two_target_glow(_level_two_key, false)
+			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_room3_key, false)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
+			_update_hint_marker(_level_two_portal.global_position + Vector3(0.0, 1.6, 0.0), "PORTAL", _level_two_portal.global_position)
 		else:
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
@@ -614,6 +629,9 @@ func _cache_level_two_targets() -> void:
 	_level_two_combat_trigger = get_node_or_null("CombatTrigger") as Area3D
 	_level_two_room3_key = get_node_or_null("Room3Keycard") as Node3D
 	_level_two_corridor_obstacle = get_node_or_null("CorridorObstacle") as Node3D
+	_level_two_rose = get_node_or_null("Rose") as Node3D
+	_level_two_exit_door = get_node_or_null("ExitDoor") as Node3D
+	_level_two_end_cap_near = get_node_or_null("TunnelShell/EndCapNear") as Node3D
 	_level_two_enemy_nodes.clear()
 	for node_name in ["Enemy01", "Enemy02", "Enemy03"]:
 		var enemy_node: Node3D = get_node_or_null(node_name) as Node3D
@@ -673,6 +691,11 @@ func _cache_level_two_targets() -> void:
 	_level_two_enemy_started = false
 	_level_two_enemy_reward_spawned = false
 	_level_two_enemy_defeated = 0
+	_level_two_room3_sequence_running = false
+	_level_two_room3_sequence_played = false
+	if is_instance_valid(_level_two_portal):
+		_level_two_portal.queue_free()
+	_level_two_portal = null
 	_reset_level_two_enemy_nodes()
 	_configure_level_two_trap_gate(_level_two_trap_gate_south, false)
 	_configure_level_two_trap_gate(_level_two_trap_gate_north, false)
@@ -920,9 +943,12 @@ func _on_level_two_corridor_obstacle_destroyed(_obstacle: Node3D) -> void:
 	_show_objective("Open room 3")
 
 func _on_level_two_room3_opened() -> void:
+	if _level_two_room3_sequence_running or _level_two_room3_sequence_played:
+		return
 	if _objective_state == "level2_room3_door":
 		_objective_state = ""
 		_hide_objective()
+	await _play_level_two_room3_sequence()
 
 func _on_level_two_door_one_opened() -> void:
 	if _objective_state == "level2_door":
@@ -966,6 +992,272 @@ func _update_level_two_obstacle_warning() -> void:
 	var warning_distance: float = 22.0
 	var intensity: float = clampf(1.0 - (nearest_distance / warning_distance), 0.0, 1.0)
 	player_hud.call("set_threat_warning_intensity", intensity)
+
+func _play_level_two_room3_sequence() -> void:
+	_level_two_room3_sequence_running = true
+	_level_two_room3_sequence_played = true
+	if GameState.rewind_mode_active:
+		GameState.cancel_rewind_mode()
+	if player != null:
+		player.set_cinematic_lock(true)
+	if _level_two_rose != null and _level_two_rose.has_method("play_idle"):
+		_level_two_rose.call("play_idle")
+	_set_level_two_cinematic_ui(false)
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	await _set_cinematic_bars(true, 0.28)
+	if _intro_camera == null:
+		_create_intro_camera()
+	if _intro_camera == null:
+		await _finish_level_two_room3_sequence()
+		return
+	var rose_target: Vector3 = (_level_two_rose.global_position if _level_two_rose != null else Vector3(0.0, 1.5, 0.0)) + Vector3(0.0, 1.35, 0.0)
+	var player_view_transform: Transform3D = player_camera.global_transform if player_camera != null else _make_look_transform(rose_target + Vector3(0.0, 1.6, -5.0), rose_target)
+	var rose_align_transform: Transform3D = _make_look_transform(player_view_transform.origin, rose_target)
+	var rose_end_origin: Vector3 = player_view_transform.origin + rose_align_transform.basis.z * -0.12
+	var rose_start_transform: Transform3D = rose_align_transform
+	var rose_end_transform: Transform3D = _make_look_transform(rose_end_origin, rose_target)
+	_intro_camera.global_transform = player_view_transform
+	_intro_camera.make_current()
+	await _play_camera_shot(player_view_transform, rose_start_transform, 0.72)
+	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(rose_target)
+	await _play_camera_shot(rose_start_transform, rose_end_transform, 2.2)
+	await _show_subtitle("Hello. So you finally opened it.", 2.4)
+	await _show_subtitle("This world keeps breaking itself every time you doubt your next step.", 2.7)
+	await _show_subtitle("I can help you pass through the hardest part and push you toward the future you want.", 3.0)
+	await _show_subtitle("Watch closely. I'll open a path for us.", 2.6)
+	if is_instance_valid(flashlight_fx):
+		flashlight_fx.queue_free()
+	await _play_level_two_rose_glitch_disappear()
+	var tunnel_anchor: Vector3 = (_level_two_end_cap_near.global_position if _level_two_end_cap_near != null else (_level_two_exit_door.global_position if _level_two_exit_door != null else rose_target + Vector3(0.0, 0.0, 7.5))) + Vector3(0.0, 0.75, 0.0)
+	var tunnel_start_transform: Transform3D = rose_end_transform
+	var tunnel_end_transform: Transform3D = _make_look_transform(rose_end_origin, tunnel_anchor)
+	_intro_camera.global_transform = tunnel_start_transform
+	_intro_camera.make_current()
+	await _play_camera_shot(tunnel_start_transform, tunnel_end_transform, 1.15)
+	await _play_level_two_tunnel_breach_sequence(tunnel_anchor)
+	await _show_subtitle("I opened the way. Move. The portal will carry us out.", 2.6)
+	var portal_position: Vector3 = tunnel_anchor + Vector3(0.0, 1.05, 1.3)
+	var portal_instance: Node3D = BLACKHOLE_PORTAL_SCENE.instantiate() as Node3D
+	add_child(portal_instance)
+	portal_instance.global_position = portal_position
+	portal_instance.rotation_degrees = Vector3.ZERO
+	_level_two_portal = portal_instance
+	if portal_instance.has_signal("player_entered"):
+		portal_instance.connect("player_entered", Callable(self, "_on_level_two_portal_entered"))
+	if portal_instance.has_method("play_open_sequence"):
+		portal_instance.call("play_open_sequence")
+		await get_tree().create_timer(2.0).timeout
+	await _complete_level_two_room3_cutscene()
+
+func _complete_level_two_room3_cutscene() -> void:
+	await _set_cinematic_bars(false, 0.2)
+	if player_camera != null:
+		player_camera.make_current()
+	if player != null:
+		player.set_cinematic_lock(false)
+	if player_hud != null:
+		player_hud.visible = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	_objective_state = "level2_portal"
+	_show_objective("Enter the portal")
+	_level_two_room3_sequence_running = false
+
+func _set_level_two_cinematic_ui(visible: bool) -> void:
+	if player_hud != null:
+		player_hud.visible = visible
+	if _objective_panel != null and not visible:
+		_objective_panel.visible = false
+	if _hint_marker != null and not visible:
+		_hint_marker.visible = false
+	if _hint_label != null and not visible:
+		_hint_label.visible = false
+	if _subtitle_label != null:
+		_subtitle_label.visible = true
+
+func _on_level_two_portal_entered(body: Node3D) -> void:
+	if _objective_state != "level2_portal":
+		return
+	if body != player:
+		return
+	_objective_state = ""
+	_hide_objective()
+	call_deferred("_finish_level_two_room3_sequence")
+
+func _finish_level_two_room3_sequence() -> void:
+	if player != null:
+		player.set_cinematic_lock(true)
+	if player_hud != null:
+		player_hud.visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	if is_instance_valid(_level_two_portal) and _level_two_portal.has_method("play_close_sequence"):
+		await _level_two_portal.call("play_close_sequence")
+	if _fade_overlay != null:
+		_fade_overlay.visible = true
+		_fade_overlay.modulate.a = 0.0
+		var fade: Tween = create_tween()
+		fade.tween_property(_fade_overlay, "modulate:a", 1.0, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		await fade.finished
+	GameState.current_level_index = 2
+	var screen_fx := _screen_fx()
+	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
+		await screen_fx.reboot_to_scene(LEVEL_THREE_SCENE_PATH, true)
+	else:
+		get_tree().change_scene_to_file(LEVEL_THREE_SCENE_PATH)
+
+func _make_look_transform(origin: Vector3, target: Vector3) -> Transform3D:
+	var pivot: Node3D = Node3D.new()
+	add_child(pivot)
+	pivot.global_position = origin
+	pivot.look_at(target, Vector3.UP)
+	var result: Transform3D = pivot.global_transform
+	pivot.queue_free()
+	return result
+
+func _create_level_two_flashlight_fx(target: Vector3) -> SpotLight3D:
+	if _intro_camera == null:
+		return null
+	var light: SpotLight3D = SpotLight3D.new()
+	light.light_color = Color(1.0, 0.96, 0.84, 1.0)
+	light.light_energy = 4.2
+	light.spot_range = 28.0
+	light.spot_angle = 18.0
+	light.spot_attenuation = 0.45
+	light.shadow_enabled = true
+	_intro_camera.add_child(light)
+	light.position = Vector3.ZERO
+	light.look_at(target, Vector3.UP)
+	return light
+
+func _play_level_two_rose_glitch_disappear() -> void:
+	if _level_two_rose == null or not is_instance_valid(_level_two_rose):
+		return
+	var materials: Array[ShaderMaterial] = []
+	_collect_level_two_glitch_materials(_level_two_rose, materials)
+	if _glitch_overlay != null:
+		_glitch_overlay.visible = true
+		_glitch_overlay.modulate.a = 0.0
+		_set_arrival_glitch_strength(0.0)
+	var flash_in: Tween = create_tween().set_parallel(true)
+	flash_in.tween_method(_set_level_two_glitch_material_intensity.bind(materials), 0.0, 1.9, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	flash_in.parallel().tween_property(_level_two_rose, "scale", Vector3.ONE * 1.05, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if _glitch_overlay != null:
+		flash_in.parallel().tween_property(_glitch_overlay, "modulate:a", 0.72, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		flash_in.parallel().tween_method(_set_arrival_glitch_strength, 0.0, 0.9, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await flash_in.finished
+	var flash_out: Tween = create_tween().set_parallel(true)
+	flash_out.tween_method(_set_level_two_glitch_material_intensity.bind(materials), 1.9, 3.4, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	flash_out.parallel().tween_property(_level_two_rose, "scale", Vector3.ONE * 0.05, 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	if _glitch_overlay != null:
+		flash_out.parallel().tween_property(_glitch_overlay, "modulate:a", 0.0, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		flash_out.parallel().tween_method(_set_arrival_glitch_strength, 0.9, 0.0, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await flash_out.finished
+	_level_two_rose.visible = false
+	if _glitch_overlay != null:
+		_glitch_overlay.visible = false
+	_level_two_rose.scale = Vector3.ONE
+
+func _collect_level_two_glitch_materials(node: Node, materials: Array[ShaderMaterial]) -> void:
+	if node is MeshInstance3D:
+		var mesh_instance: MeshInstance3D = node as MeshInstance3D
+		var material: ShaderMaterial = ShaderMaterial.new()
+		material.shader = SPATIAL_GLITCH_SHADER
+		material.set_shader_parameter("base_color", Vector3(0.18, 1.0, 0.98))
+		material.set_shader_parameter("emission_energy", 5.4)
+		material.set_shader_parameter("rim_strength", 3.8)
+		material.set_shader_parameter("pulse_strength", 1.6)
+		material.set_shader_parameter("glitch_speed", 7.5)
+		material.set_shader_parameter("glitch_intensity", 0.0)
+		mesh_instance.material_override = material
+		materials.append(material)
+	for child in node.get_children():
+		_collect_level_two_glitch_materials(child, materials)
+
+func _set_level_two_glitch_material_intensity(materials: Array[ShaderMaterial], value: float) -> void:
+	for material in materials:
+		if material != null:
+			material.set_shader_parameter("glitch_intensity", value)
+
+func _play_level_two_tunnel_breach_sequence(breach_position: Vector3) -> void:
+	var breach_root: Node3D = Node3D.new()
+	add_child(breach_root)
+	breach_root.global_position = breach_position
+	var seal: MeshInstance3D = MeshInstance3D.new()
+	var seal_mesh: BoxMesh = BoxMesh.new()
+	seal_mesh.size = Vector3(6.2, 5.4, 0.8)
+	seal.mesh = seal_mesh
+	var seal_material: ShaderMaterial = ShaderMaterial.new()
+	seal_material.shader = SPATIAL_GLITCH_SHADER
+	seal_material.set_shader_parameter("base_color", Vector3(0.16, 0.94, 1.0))
+	seal_material.set_shader_parameter("emission_energy", 4.6)
+	seal_material.set_shader_parameter("rim_strength", 3.4)
+	seal_material.set_shader_parameter("pulse_strength", 1.4)
+	seal_material.set_shader_parameter("glitch_speed", 5.8)
+	seal_material.set_shader_parameter("glitch_intensity", 0.45)
+	seal.material_override = seal_material
+	breach_root.add_child(seal)
+	var blast_light: OmniLight3D = OmniLight3D.new()
+	blast_light.light_color = Color(1.0, 0.72, 0.48, 1.0)
+	blast_light.light_energy = 0.0
+	blast_light.omni_range = 18.0
+	breach_root.add_child(blast_light)
+	var shards: Array[MeshInstance3D] = []
+	for index in range(10):
+		var shard: MeshInstance3D = MeshInstance3D.new()
+		var shard_mesh: BoxMesh = BoxMesh.new()
+		shard_mesh.size = Vector3(randf_range(0.3, 0.85), randf_range(0.3, 1.2), randf_range(0.12, 0.36))
+		shard.mesh = shard_mesh
+		var shard_material: ShaderMaterial = ShaderMaterial.new()
+		shard_material.shader = SPATIAL_GLITCH_SHADER
+		shard_material.set_shader_parameter("base_color", Vector3(0.3, 1.0, 0.95))
+		shard_material.set_shader_parameter("emission_energy", 6.8)
+		shard_material.set_shader_parameter("rim_strength", 4.2)
+		shard_material.set_shader_parameter("pulse_strength", 1.85)
+		shard_material.set_shader_parameter("glitch_speed", 8.2)
+		shard_material.set_shader_parameter("glitch_intensity", 1.2)
+		shard.material_override = shard_material
+		shard.position = Vector3(randf_range(-2.2, 2.2), randf_range(-1.9, 1.9), randf_range(-0.2, 0.2))
+		breach_root.add_child(shard)
+		shards.append(shard)
+	if _white_overlay != null:
+		_white_overlay.visible = true
+		_white_overlay.modulate.a = 0.0
+	if _glitch_overlay != null:
+		_glitch_overlay.visible = true
+		_glitch_overlay.modulate.a = 0.0
+		_set_arrival_glitch_strength(0.0)
+	var flash_in: Tween = create_tween().set_parallel(true)
+	if _white_overlay != null:
+		flash_in.tween_property(_white_overlay, "modulate:a", 0.85, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if _glitch_overlay != null:
+		flash_in.parallel().tween_property(_glitch_overlay, "modulate:a", 0.88, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		flash_in.parallel().tween_method(_set_arrival_glitch_strength, 0.0, 1.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	flash_in.parallel().tween_property(blast_light, "light_energy", 10.5, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await flash_in.finished
+	var burst: Tween = create_tween().set_parallel(true)
+	burst.tween_property(seal, "scale", Vector3(0.08, 0.08, 0.08), 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	for shard in shards:
+		var target_position: Vector3 = shard.position + Vector3(randf_range(-3.8, 3.8), randf_range(-2.4, 2.4), randf_range(2.4, 4.6))
+		var target_rotation: Vector3 = Vector3(randf_range(280.0, 720.0), randf_range(280.0, 720.0), randf_range(280.0, 720.0))
+		burst.parallel().tween_property(shard, "position", target_position, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		burst.parallel().tween_property(shard, "rotation_degrees", target_rotation, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		burst.parallel().tween_property(shard, "scale", Vector3.ZERO, 0.62).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	if _white_overlay != null:
+		burst.parallel().tween_property(_white_overlay, "modulate:a", 0.0, 0.48).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if _glitch_overlay != null:
+		burst.parallel().tween_property(_glitch_overlay, "modulate:a", 0.0, 0.52).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		burst.parallel().tween_method(_set_arrival_glitch_strength, 1.0, 0.0, 0.52).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	burst.parallel().tween_property(blast_light, "light_energy", 0.0, 0.56).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await burst.finished
+	if _white_overlay != null:
+		_white_overlay.visible = false
+	if _glitch_overlay != null:
+		_glitch_overlay.visible = false
+	if _level_two_end_cap_near != null and is_instance_valid(_level_two_end_cap_near):
+		_level_two_end_cap_near.visible = false
+	if _level_two_exit_door != null and is_instance_valid(_level_two_exit_door):
+		_level_two_exit_door.visible = false
+	breach_root.queue_free()
+
 
 func _play_camera_shot(start_transform: Transform3D, end_transform: Transform3D, duration: float) -> void:
 	if _intro_camera == null:

@@ -7,7 +7,7 @@ signal destroyed(obstacle: Node3D)
 @export var fire_cooldown: float = 8.0
 @export var projectile_speed: float = 10.5
 @export var projectile_damage: float = 50.0
-@export var projectile_radius: float = 2.9
+@export var projectile_radius: float = 4.35
 @export var detection_range: float = 260.0
 
 @onready var _core_body: StaticBody3D = get_node_or_null("CoreBody") as StaticBody3D
@@ -80,8 +80,9 @@ func reset_obstacle_state() -> void:
 		_core_mesh.scale = Vector3.ONE
 		_core_mesh.rotation = Vector3.ZERO
 	if _core_material != null:
-		_core_material.albedo_color = Color(0.12, 0.16, 0.2, 1.0)
-		_core_material.emission_energy_multiplier = 2.8
+		_core_material.albedo_color = Color(0.26, 0.25, 0.24, 1.0)
+		_core_material.emission = Color(0.24, 0.16, 0.08, 1.0)
+		_core_material.emission_energy_multiplier = 0.35
 	_clear_projectiles()
 	set_obstacle_enabled(false)
 
@@ -201,12 +202,12 @@ func _setup_materials() -> void:
 		var base_material: StandardMaterial3D = _core_mesh.material_override as StandardMaterial3D
 		if base_material == null:
 			base_material = StandardMaterial3D.new()
-			base_material.albedo_color = Color(0.12, 0.16, 0.2, 1.0)
-			base_material.metallic = 0.55
-			base_material.roughness = 0.18
+			base_material.albedo_color = Color(0.26, 0.25, 0.24, 1.0)
+			base_material.metallic = 0.78
+			base_material.roughness = 0.42
 			base_material.emission_enabled = true
-			base_material.emission = Color(0.2, 0.95, 1.0, 1.0)
-			base_material.emission_energy_multiplier = 2.8
+			base_material.emission = Color(0.24, 0.16, 0.08, 1.0)
+			base_material.emission_energy_multiplier = 0.35
 		_core_material = base_material.duplicate() as StandardMaterial3D
 		_core_mesh.material_override = _core_material
 	if _aura_mesh != null:
@@ -235,9 +236,9 @@ func _update_damage_flash(delta: float) -> void:
 		return
 	_flash_timer = maxf(0.0, _flash_timer - delta)
 	var ratio: float = _flash_timer / 0.2
-	_core_material.albedo_color = Color(0.12, 0.16, 0.2, 1.0).lerp(Color(1.0, 0.2, 0.26, 1.0), ratio)
-	_core_material.emission = Color(0.2, 0.95, 1.0, 1.0).lerp(Color(1.0, 0.3, 0.4, 1.0), ratio)
-	_core_material.emission_energy_multiplier = lerpf(2.8, 6.2, ratio)
+	_core_material.albedo_color = Color(0.26, 0.25, 0.24, 1.0).lerp(Color(0.9, 0.34, 0.18, 1.0), ratio)
+	_core_material.emission = Color(0.24, 0.16, 0.08, 1.0).lerp(Color(1.0, 0.34, 0.12, 1.0), ratio)
+	_core_material.emission_energy_multiplier = lerpf(0.35, 3.2, ratio)
 
 func _update_corridor_lights(delta: float) -> void:
 	if not _enabled or _destroyed:
