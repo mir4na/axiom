@@ -1,0 +1,63 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/ending_board.gd" id="1_script"]
+
+[sub_resource type="BoxMesh" id="BoardMesh"]
+size = Vector3(2.4, 2.7, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="BoardMaterial"]
+albedo_color = Color(0.16, 0.12, 0.08, 1)
+roughness = 0.65
+
+[sub_resource type="BoxMesh" id="StandMesh"]
+size = Vector3(0.25, 1.0, 0.25)
+
+[sub_resource type="StandardMaterial3D" id="AuraMaterial"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.92, 0.98, 1, 0.2)
+emission_enabled = true
+emission = Color(0.42, 0.86, 1, 1)
+emission_energy_multiplier = 0.55
+
+[sub_resource type="BoxMesh" id="AuraMesh"]
+size = Vector3(2.65, 2.92, 0.2)
+
+[sub_resource type="BoxShape3D" id="CollisionBox"]
+size = Vector3(2.6, 2.8, 0.55)
+
+[node name="EndingBoard" type="StaticBody3D"]
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
+shape = SubResource("CollisionBox")
+
+[node name="Board" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
+mesh = SubResource("BoardMesh")
+material_override = SubResource("BoardMaterial")
+
+[node name="Stand" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.05)
+mesh = SubResource("StandMesh")
+material_override = SubResource("BoardMaterial")
+
+[node name="Aura" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.01, 0, 0, 0, 1.01, 0, 0, 0, 1.01, 0, 1.35, -0.015)
+mesh = SubResource("AuraMesh")
+material_override = SubResource("AuraMaterial")
+
+[node name="GlowLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0.7)
+light_color = Color(0.8, 0.95, 1, 1)
+light_energy = 0.0
+omni_range = 5.2
+
+[node name="Message" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.58, 0.12)
+text = "congratulations\nthank you for playing this game :D"
+modulate = Color(0.97, 0.97, 0.95, 1)
+
+[node name="Focus" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0.95)

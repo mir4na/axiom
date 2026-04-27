@@ -14,10 +14,13 @@ const LEVEL_ONE_SCENE_PATH := "res://scenes/levels/level_01.tscn"
 const LEVEL_TWO_SCENE_PATH := "res://scenes/levels/level_02.tscn"
 const LEVEL_THREE_SCENE_PATH := "res://scenes/levels/level_03.tscn"
 const LEVEL_FOUR_SCENE_PATH := "res://scenes/levels/level_04.tscn"
+const MAIN_MENU_SCENE_PATH := "res://scenes/ui/main_menu.tscn"
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
+const LEVEL_FOUR_RETURN_WAKE_META := "level_four_return_wake"
 const LEVEL_ONE_FLOW := preload("res://scripts/world/level_one_flow.gd")
 const LEVEL_FOUR_FLOW := preload("res://scripts/world/level_four_flow.gd")
 const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
+const ENDING_BOARD_SCENE := preload("res://scenes/objects/ending_board.tscn")
 const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 
 @onready var player: CharacterBody3D = get_node_or_null("Player") as CharacterBody3D
@@ -53,6 +56,7 @@ var _blink_overlay: ColorRect
 var _fade_overlay: ColorRect
 var _white_overlay: ColorRect
 var _glitch_overlay: ColorRect
+var _sky_crack_overlay: ColorRect
 var _subtitle_label: Label
 var _objective_panel: Control
 var _objective_tag: Label
@@ -100,6 +104,11 @@ var _level_two_tunnel_blast_focus: Node3D
 var _level_two_portal_look_target: Node3D
 var _level_two_room3_sequence_running: bool = false
 var _level_two_room3_sequence_played: bool = false
+var _ending_mode_active: bool = false
+var _ending_cinematic_running: bool = false
+var _ending_credits_running: bool = false
+var _ending_board: Node3D
+var _ending_board_spawned: bool = false
 
 func _screen_fx() -> CanvasLayer:
 	return get_node_or_null("/root/ScreenFX") as CanvasLayer
@@ -153,6 +162,10 @@ func _ready() -> void:
 	_create_sofa_interactable()
 	_create_sofa_highlight()
 	_create_meteor_nodes()
+	if _consume_level_four_return_meta():
+		_prepare_level_four_return_phase()
+		call_deferred("_play_level_four_return_wake_sequence")
+		return
 	_prepare_world_phase()
 	_set_intro_lock(true)
 	call_deferred("_play_intro_sequence")
@@ -255,6 +268,9 @@ func _process(delta: float) -> void:
 		player_hud.call("set_threat_warning_intensity", 0.0)
 	if not _is_world_intro_scene():
 		return
+	if _ending_mode_active:
+		_update_ending_board_hint()
+		return
 
 	if _objective_state == "scoop" and is_instance_valid(shovel):
 		_update_shovel_highlight()
@@ -295,6 +311,8 @@ func _on_inventory_changed() -> void:
 		return
 	if not _is_world_intro_scene():
 		return
+	if _ending_mode_active:
+		return
 	if _objective_state == "scoop" and GameState.has_item("Shovel"):
 		_begin_dig_phase()
 
@@ -321,6 +339,16 @@ func _create_intro_ui() -> void:
 	_fade_overlay.color = Color(0, 0, 0, 1)
 	_fade_overlay.modulate.a = 0.0
 	_intro_ui.add_child(_fade_overlay)
+
+	_sky_crack_overlay = ColorRect.new()
+	_sky_crack_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sky_crack_overlay.color = Color(1, 1, 1, 1)
+	var crack_material := ShaderMaterial.new()
+	crack_material.shader = load("res://shaders/sky_crack_overlay.gdshader")
+	_sky_crack_overlay.material = crack_material
+	_sky_crack_overlay.modulate.a = 0.0
+	_sky_crack_overlay.visible = false
+	_intro_ui.add_child(_sky_crack_overlay)
 
 	_white_overlay = ColorRect.new()
 	_white_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -763,6 +791,11 @@ func _reset_intro_view_state() -> void:
 	if _glitch_overlay != null:
 		_glitch_overlay.modulate.a = 0.0
 		_glitch_overlay.visible = false
+	if _sky_crack_overlay != null:
+		_sky_crack_overlay.modulate.a = 0.0
+		_sky_crack_overlay.visible = false
+		if _sky_crack_overlay.material is ShaderMaterial:
+			_sky_crack_overlay.material.set_shader_parameter("crack_intensity", 0.0)
 	if player_camera != null:
 		player_camera.make_current()
 	if player_hud != null:
@@ -1706,9 +1739,13 @@ func _blend_rest_camera(weight: float, start_transform: Transform3D, end_transfo
 func _fade_black(target_alpha: float, duration: float) -> void:
 	if _fade_overlay == null:
 		return
+	if target_alpha > 0.001:
+		_fade_overlay.visible = true
 	var tween := create_tween()
 	tween.tween_property(_fade_overlay, "modulate:a", target_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await tween.finished
+	if target_alpha <= 0.001:
+		_fade_overlay.visible = false
 
 func _fade_white(target_alpha: float, duration: float) -> void:
 	if _white_overlay == null:
@@ -1764,6 +1801,8 @@ func _set_subtitle_palette(dark_text: bool) -> void:
 		_subtitle_label.add_theme_constant_override("outline_size", 12)
 
 func _on_sofa_rest_requested() -> void:
+	if _ending_mode_active:
+		return
 	if _objective_state != "rest" or _transition_started:
 		return
 	_transition_started = true
@@ -1793,11 +1832,280 @@ func _play_level_four_victory_subtitle() -> void:
 	if _level_four_flow != null:
 		await _level_four_flow.play_victory_subtitle()
 
+func _consume_level_four_return_meta() -> bool:
+	if not GameState.has_meta(LEVEL_FOUR_RETURN_WAKE_META):
+		return false
+	var active: bool = bool(GameState.get_meta(LEVEL_FOUR_RETURN_WAKE_META))
+	GameState.set_meta(LEVEL_FOUR_RETURN_WAKE_META, false)
+	return active
+
+func _prepare_level_four_return_phase() -> void:
+	_intro_running = false
+	_transition_started = false
+	_objective_state = ""
+	GameState.current_level_index = 0
+	GameState.full_reset_inventory()
+	GameState.reset_axiom_recording()
+	GameState.recording_enabled = false
+	GameState.axiom_equipped = false
+	GameState.axiom_unlocked = false
+	GameState.axiom_equipped_changed.emit()
+	GameState.ui_updated.emit()
+	_ending_mode_active = true
+	_ending_cinematic_running = true
+	_ending_credits_running = false
+	_ending_board_spawned = false
+	_ending_board = null
+	_hide_objective(false)
+	_clear_target_highlights()
+	if _hint_marker != null:
+		_hint_marker.visible = false
+	if _hint_label != null:
+		_hint_label.visible = false
+	if _sofa_interactable != null:
+		_sofa_interactable.set_interactable_enabled(false)
+	_position_player_for_level_four_return()
+
+func _position_player_for_level_four_return() -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	var target_position: Vector3 = _player_spawn_position
+	var target_yaw: float = _player_spawn_rotation_y
+	if _sofa_target != null and is_instance_valid(_sofa_target):
+		target_position = _sofa_target.to_global(Vector3(0.0, -0.9, -0.28))
+		target_yaw = _sofa_target.global_rotation.y
+	_player_spawn_position = target_position
+	_player_spawn_rotation_y = target_yaw
+	player.global_position = target_position
+	player.rotation.y = target_yaw
+	if player.get("camera_x_rotation") != null:
+		player.set("camera_x_rotation", -6.0)
+
+func _play_level_four_return_wake_sequence() -> void:
+	if not _ending_mode_active:
+		return
+	_reset_intro_view_state()
+	_set_intro_lock(true)
+	_intro_running = false
+	if player != null:
+		player.visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	if _intro_camera == null:
+		_create_intro_camera()
+	if _intro_camera == null:
+		_ending_cinematic_running = false
+		_set_intro_lock(false)
+		_spawn_ending_board()
+		return
+	var wake_eye: Vector3 = _player_spawn_position + Vector3(0.0, 1.02, 0.04)
+	var wake_focus: Vector3 = wake_eye + Vector3(0.0, 2.85, 0.1)
+	if _sofa_target != null and is_instance_valid(_sofa_target):
+		wake_eye = _sofa_target.to_global(Vector3(0.0, -0.84, -0.2))
+		wake_focus = _sofa_target.to_global(Vector3(0.0, 2.15, 0.18))
+	_intro_camera.global_transform = _make_look_transform(wake_eye, wake_focus)
+	_intro_camera.make_current()
+	if _wake_overlay != null:
+		_wake_overlay.visible = true
+	_set_wake_blur_strength(2.8)
+	_set_wake_haze_strength(0.28)
+	_set_wake_desaturate_strength(0.22)
+	if _white_overlay != null:
+		_white_overlay.visible = true
+		_white_overlay.modulate.a = 1.0
+	await get_tree().create_timer(0.36).timeout
+	await _fade_white(0.0, 2.25)
+	await _tween_wake_overlay(0.0, 1.35)
+	await get_tree().create_timer(0.28).timeout
+	if player != null:
+		player.visible = true
+	await _return_intro_camera_to_player(0.9)
+	_set_intro_lock(false)
+	_ending_cinematic_running = false
+	_spawn_ending_board()
+
+func _spawn_ending_board() -> void:
+	if _ending_board_spawned:
+		return
+	_ending_board_spawned = true
+	if ENDING_BOARD_SCENE == null:
+		return
+	var board_instance: Node3D = ENDING_BOARD_SCENE.instantiate() as Node3D
+	if board_instance == null:
+		return
+	add_child(board_instance)
+	var board_position: Vector3 = _player_spawn_position + Vector3(1.85, 0.0, 2.2)
+	var face_target: Vector3 = _player_spawn_position + Vector3(0.0, 1.1, 0.0)
+	var front_door: Node3D = null
+	if house != null and is_instance_valid(house):
+		front_door = house.get_node_or_null("FrontDoor") as Node3D
+	if front_door != null and is_instance_valid(front_door):
+		var outward: Vector3 = front_door.global_position - house.global_position
+		outward.y = 0.0
+		if outward.length_squared() <= 0.0001:
+			outward = house.global_transform.basis.z
+			outward.y = 0.0
+		if outward.length_squared() <= 0.0001:
+			outward = Vector3.FORWARD
+		else:
+			outward = outward.normalized()
+		board_position = front_door.global_position + outward * 1.9
+		face_target = front_door.global_position + Vector3(0.0, 1.1, 0.0)
+	elif _sofa_target != null and is_instance_valid(_sofa_target):
+		board_position = _sofa_target.to_global(Vector3(0.0, 0.0, 2.4))
+	if player != null and is_instance_valid(player):
+		face_target = player.global_position + Vector3(0.0, 1.15, 0.0)
+	if front_door != null and is_instance_valid(front_door):
+		face_target = front_door.global_position + Vector3(0.0, 1.1, 0.0)
+	board_position = _ground_position(board_position)
+	board_position.y -= 0.08
+	board_instance.global_position = board_position
+	board_instance.look_at(face_target, Vector3.UP)
+	_ending_board = board_instance
+	if _ending_board.has_method("set_board_text"):
+		_ending_board.call("set_board_text", "congratulations\nthank you for playing this game :D")
+	if _ending_board.has_method("set_message_visible"):
+		_ending_board.call("set_message_visible", false)
+	if _ending_board.has_method("set_interactable_enabled"):
+		_ending_board.call("set_interactable_enabled", true)
+	if _ending_board.has_signal("board_activated"):
+		var activated_callable: Callable = Callable(self, "_on_ending_board_activated")
+		if not _ending_board.is_connected("board_activated", activated_callable):
+			_ending_board.connect("board_activated", activated_callable)
+	_show_objective("Inspect the board")
+
+func _update_ending_board_hint() -> void:
+	if _ending_cinematic_running or _ending_credits_running:
+		if _hint_marker != null:
+			_hint_marker.visible = false
+		if _hint_label != null:
+			_hint_label.visible = false
+		return
+	if _ending_board == null or not is_instance_valid(_ending_board):
+		if _hint_marker != null:
+			_hint_marker.visible = false
+		if _hint_label != null:
+			_hint_label.visible = false
+		return
+	_update_hint_marker(_ending_board.global_position + Vector3(0.0, 1.45, 0.0), "BOARD", _ending_board.global_position)
+
+func _on_ending_board_activated() -> void:
+	if _ending_cinematic_running or _ending_credits_running:
+		return
+	call_deferred("_play_ending_board_cinematic")
+
+func _play_ending_board_cinematic() -> void:
+	if _ending_board == null or not is_instance_valid(_ending_board):
+		return
+	_ending_cinematic_running = true
+	_ending_credits_running = true
+	_hide_objective(false)
+	if _hint_marker != null:
+		_hint_marker.visible = false
+	if _hint_label != null:
+		_hint_label.visible = false
+	if _subtitle_label != null:
+		_subtitle_label.visible = false
+	_set_intro_lock(true)
+	if player_hud != null:
+		player_hud.visible = false
+	if _intro_camera == null:
+		_create_intro_camera()
+	if _intro_camera == null:
+		await _return_to_main_menu_after_credits()
+		return
+	var start_transform: Transform3D = player_camera.global_transform if player_camera != null else _intro_camera.global_transform
+	var focus_target: Vector3 = _ending_board.global_position + Vector3(0.0, 1.45, 0.0)
+	var board_center: Vector3 = _ending_board.global_position + Vector3(0.0, 1.45, 0.0)
+	if _ending_board.has_method("get_focus_position"):
+		var focus_value: Variant = _ending_board.call("get_focus_position")
+		if typeof(focus_value) == TYPE_VECTOR3:
+			focus_target = focus_value
+	var camera_dir: Vector3 = focus_target - board_center
+	if camera_dir.length_squared() <= 0.0001:
+		camera_dir = _ending_board.global_transform.basis.z
+	camera_dir = camera_dir.normalized()
+	var side_offset: Vector3 = _ending_board.global_transform.basis.x.normalized() * 0.06
+	var end_origin: Vector3 = focus_target + camera_dir * 0.95 + side_offset + Vector3(0.0, 0.02, 0.0)
+	var end_transform: Transform3D = _make_look_transform(end_origin, focus_target)
+	_intro_camera.global_transform = start_transform
+	_intro_camera.make_current()
+	_intro_camera.fov = 46.0
+	await _set_cinematic_bars(true, 0.35)
+	await _play_camera_shot(start_transform, end_transform, 1.35)
+	if _ending_board.has_method("set_message_visible"):
+		_ending_board.call("set_message_visible", true)
+	await _fade_black(1.0, 5.0)
+	await _show_ending_credits_roll()
+	await _return_to_main_menu_after_credits()
+
+func _show_ending_credits_roll() -> void:
+	if _intro_ui == null:
+		return
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var credits_root := Control.new()
+	credits_root.name = "EndingCredits"
+	credits_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_intro_ui.add_child(credits_root)
+	var background := ColorRect.new()
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.color = Color(0, 0, 0, 1)
+	credits_root.add_child(background)
+	var credit_text := Label.new()
+	credit_text.anchor_left = 0.08
+	credit_text.anchor_top = 0.0
+	credit_text.anchor_right = 0.92
+	credit_text.anchor_bottom = 0.0
+	credit_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	credit_text.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	credit_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	credit_text.add_theme_font_size_override("font_size", 34)
+	credit_text.add_theme_color_override("font_color", Color(0.96, 0.96, 0.96, 1.0))
+	credit_text.text = "CREDITS\n\nAXIOM\n\nDesign, Programming, Art\nmir4na\n\nSpecial Thanks\nYou, for playing\n\nThank you for playing this game."
+	credit_text.custom_minimum_size = Vector2(viewport_size.x * 0.84, 1680.0)
+	credit_text.size = credit_text.custom_minimum_size
+	credits_root.add_child(credit_text)
+	var start_y: float = viewport_size.y + 110.0
+	var end_y: float = -credit_text.custom_minimum_size.y - 180.0
+	credit_text.position = Vector2(0.0, start_y)
+	var credits_tween := create_tween()
+	credits_tween.tween_property(credit_text, "position:y", end_y, 23.0).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
+	await credits_tween.finished
+	credits_root.queue_free()
+
+func _return_to_main_menu_after_credits() -> void:
+	var screen_fx := _screen_fx()
+	if screen_fx != null and screen_fx.has_method("set_gameplay_filter_enabled"):
+		screen_fx.set_gameplay_filter_enabled(false)
+	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
+
+func _ground_position(position: Vector3) -> Vector3:
+	var result: Vector3 = position
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(position + Vector3(0.0, 4.5, 0.0), position + Vector3(0.0, -10.0, 0.0))
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	var hit: Dictionary = space_state.intersect_ray(query)
+	if not hit.is_empty():
+		var hit_position: Variant = hit.get("position", position)
+		if typeof(hit_position) == TYPE_VECTOR3:
+			result.y = (hit_position as Vector3).y
+	return result
+
+func _set_sky_crack_intensity(value: float) -> void:
+	if _sky_crack_overlay == null:
+		return
+	var intensity: float = clampf(value, 0.0, 1.0)
+	if _sky_crack_overlay.material is ShaderMaterial:
+		_sky_crack_overlay.material.set_shader_parameter("crack_intensity", intensity)
+	_sky_crack_overlay.modulate.a = intensity
+	_sky_crack_overlay.visible = intensity > 0.001
+
 func restart_current_level() -> void:
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
 		return
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
+	GameState.set_meta(LEVEL_FOUR_RETURN_WAKE_META, false)
 	if _is_level_one_scene():
 		GameState.reset_progression()
 	else:
