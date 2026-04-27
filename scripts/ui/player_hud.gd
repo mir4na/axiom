@@ -27,6 +27,9 @@ extends CanvasLayer
 @onready var pointer_line: ColorRect = $TimelineBarContainer/FilmStrip/PointerLine
 @onready var timeline_label: Label = $TimelineBarContainer/FilmStrip/TimelineLabel
 @onready var marks_container: Control = $TimelineBarContainer/FilmStrip/MarksContainer
+@onready var boss_bar: Control = $BossBar
+@onready var boss_name: Label = $BossBar/Name
+@onready var boss_fill: ColorRect = $BossBar/BarTrack/BarFill
 @onready var inventory_bar: HBoxContainer = $InventoryBar
 @onready var dig_progress_bar: Control = $DigProgress
 
@@ -44,6 +47,7 @@ var _reload_track: ColorRect
 var _reload_fill: ColorRect
 var _threat_warning_overlay: ColorRect
 var _threat_warning_intensity: float = 0.0
+var _boss_ratio: float = 1.0
 
 func set_dig_progress(val: float, is_vis: bool) -> void:
 	dig_progress_bar.set_progress(val, is_vis)
@@ -94,6 +98,23 @@ func set_threat_warning_intensity(intensity: float) -> void:
 		return
 	_threat_warning_overlay.visible = true
 
+func show_boss_bar(name_text: String, ratio: float) -> void:
+	_boss_ratio = clampf(ratio, 0.0, 1.0)
+	if boss_name != null:
+		boss_name.text = name_text
+	if boss_bar != null:
+		boss_bar.visible = true
+		boss_bar.modulate.a = 1.0
+	_update_boss_bar()
+
+func set_boss_bar_ratio(ratio: float) -> void:
+	_boss_ratio = clampf(ratio, 0.0, 1.0)
+	_update_boss_bar()
+
+func hide_boss_bar() -> void:
+	if boss_bar != null:
+		boss_bar.visible = false
+
 func _ready() -> void:
 	prompt_label.visible = false
 	_setup_weapon_hud()
@@ -110,6 +131,7 @@ func _ready() -> void:
 	set_ammo(0, 1)
 	set_weapon_hud_visible(false)
 	set_reload_progress(0.0, false)
+	hide_boss_bar()
 	call_deferred("_update_status_bars")
 	_slot_effect_tweens.resize(3)
 
@@ -308,6 +330,13 @@ func _update_status_bars() -> void:
 	var stamina_width := maxf(224.0 - 8.0, 0.0)
 	health_bar_fill.size.x = health_width * _health_ratio
 	stamina_bar_fill.size.x = stamina_width * _stamina_ratio
+	_update_boss_bar()
+
+func _update_boss_bar() -> void:
+	if boss_fill == null:
+		return
+	var boss_width: float = maxf(436.0 - 12.0, 0.0)
+	boss_fill.size.x = boss_width * _boss_ratio
 
 func _apply_slot_state(back: ColorRect, accent: ColorRect, selected: bool) -> void:
 	if selected:

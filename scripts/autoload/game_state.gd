@@ -21,6 +21,7 @@ const LEVELS: Array[String] = [
 	"res://scenes/levels/level_01.tscn",
 	"res://scenes/levels/level_02.tscn",
 	"res://scenes/levels/level_03.tscn",
+	"res://scenes/levels/level_04.tscn",
 ]
 
 var time_direction: int = TIME_FORWARD

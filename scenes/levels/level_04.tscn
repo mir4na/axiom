@@ -1,0 +1,381 @@
+[gd_scene format=3 uid="uid://dibex0nmnxkpd"]
+
+[ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
+[ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="Script" uid="uid://njng5yim6rnu" path="res://scripts/objects/reset_zone.gd" id="2_reset"]
+[ext_resource type="PackedScene" path="res://scenes/objects/axia_boss.tscn" id="3_axia_boss"]
+[ext_resource type="Texture2D" uid="uid://dyr45beqt4wtx" path="res://assets/skyboxes/level4_epic_glorious_pink.png" id="4_pink_sky"]
+
+[sub_resource type="PanoramaSkyMaterial" id="SkyMat"]
+panorama = ExtResource("4_pink_sky")
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 3
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.9
+reflected_light_source = 1
+tonemap_mode = 2
+ssr_enabled = true
+glow_enabled = true
+glow_intensity = 1.28
+glow_bloom = 0.2
+glow_hdr_threshold = 0.68
+glow_hdr_scale = 1.22
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.0038
+volumetric_fog_albedo = Color(0.93, 0.9, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="MatWater"]
+transparency = 1
+albedo_color = Color(0.94, 0.97, 1, 0.42)
+metallic = 1.0
+roughness = 0.0
+emission_enabled = true
+emission = Color(0.88, 0.93, 1, 1)
+emission_energy_multiplier = 0.24
+
+[sub_resource type="BoxMesh" id="WaterMesh"]
+size = Vector3(560, 0.1, 560)
+
+[sub_resource type="StandardMaterial3D" id="MatWhiteStone"]
+albedo_color = Color(0.97, 0.98, 1, 1)
+metallic = 0.08
+roughness = 0.24
+emission_enabled = true
+emission = Color(0.86, 0.92, 1, 1)
+emission_energy_multiplier = 0.32
+
+[sub_resource type="CylinderMesh" id="MainPlatformMesh"]
+top_radius = 18.0
+bottom_radius = 20.0
+height = 1.1
+
+[sub_resource type="CylinderShape3D" id="MainPlatformShape"]
+height = 1.25
+radius = 18.4
+
+[sub_resource type="StandardMaterial3D" id="MatSoftGold"]
+albedo_color = Color(0.98, 0.88, 0.58, 1)
+metallic = 0.42
+roughness = 0.24
+emission_enabled = true
+emission = Color(1, 0.82, 0.46, 1)
+emission_energy_multiplier = 0.42
+
+[sub_resource type="CylinderMesh" id="DiscRingOuterMesh"]
+top_radius = 17.8
+bottom_radius = 18.2
+height = 0.16
+
+[sub_resource type="StandardMaterial3D" id="MatPlatformBlue"]
+albedo_color = Color(0.56, 0.69, 0.95, 1)
+metallic = 0.16
+roughness = 0.3
+emission_enabled = true
+emission = Color(0.44, 0.66, 1, 1)
+emission_energy_multiplier = 0.28
+
+[sub_resource type="CylinderMesh" id="DiscRingInnerMesh"]
+top_radius = 11.8
+bottom_radius = 12.2
+height = 0.16
+
+[sub_resource type="StandardMaterial3D" id="MatPlatformPink"]
+albedo_color = Color(0.88, 0.62, 0.81, 1)
+metallic = 0.14
+roughness = 0.3
+emission_enabled = true
+emission = Color(1, 0.56, 0.86, 1)
+emission_energy_multiplier = 0.24
+
+[sub_resource type="CylinderMesh" id="DiscCoreMesh"]
+top_radius = 6.2
+bottom_radius = 6.2
+height = 0.12
+
+[sub_resource type="CylinderMesh" id="DiscPetalMesh"]
+top_radius = 2.4
+bottom_radius = 2.4
+height = 0.1
+
+[sub_resource type="StandardMaterial3D" id="MatCrystal"]
+transparency = 1
+albedo_color = Color(0.5686275, 1, 1, 0.72156864)
+metallic = 0.08
+roughness = 0.06
+emission_enabled = true
+emission = Color(0.92903304, 0.8958328, 1.540184e-06, 1)
+emission_energy_multiplier = 1.2
+refraction_enabled = true
+refraction_scale = 0.03
+
+[sub_resource type="PrismMesh" id="CrystalMesh"]
+left_to_right = 1.0
+size = Vector3(0.55, 4.2, 0.55)
+
+[sub_resource type="CylinderShape3D" id="CenterObjectiveShape"]
+height = 2.8
+radius = 3.8
+
+[sub_resource type="StandardMaterial3D" id="MatCloud"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 1, 1, 0.32)
+
+[sub_resource type="SphereMesh" id="CloudMeshLarge"]
+radius = 9.0
+height = 18.0
+
+[sub_resource type="SphereMesh" id="CloudMeshMed"]
+radius = 5.2
+height = 10.4
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_motes"]
+emission_shape = 1
+emission_sphere_radius = 1.0
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.05
+initial_velocity_max = 0.22
+gravity = Vector3(0, 0, 0)
+scale_min = 0.08
+scale_max = 0.22
+color = Color(0.98, 0.99, 1, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_motes"]
+size = Vector2(0.18, 0.18)
+
+[sub_resource type="BoxShape3D" id="ResetZoneShape"]
+size = Vector3(1167.0466, 30, 1259.2021)
+
+[node name="Level04" type="Node3D" unique_id=1782277152]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=146836873]
+environment = SubResource("Env")
+
+[node name="HolySun" type="DirectionalLight3D" parent="." unique_id=510367397]
+transform = Transform3D(0.8480481, -0.33508322, 0.4101134, 0, 0.7749445, 0.63202906, -0.52991927, -0.535994, 0.6561115, 0, 22, 0)
+light_color = Color(1, 0.965, 0.9, 1)
+light_energy = 1.9
+shadow_enabled = true
+
+[node name="SkyFill" type="DirectionalLight3D" parent="." unique_id=682602877]
+transform = Transform3D(0.6691306, 0.1116189, -0.7347081, 0, 0.9886572, 0.15018825, 0.7431449, -0.10049793, 0.6615426, 0, 16, 0)
+light_color = Color(1, 0.82, 0.9, 1)
+light_energy = 0.65
+
+[node name="BloomCore" type="OmniLight3D" parent="." unique_id=1411529786]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.8, 0)
+light_color = Color(1, 0.96, 0.86, 1)
+light_energy = 3.0
+omni_range = 40.0
+
+[node name="PlayerSpawn" type="Marker3D" parent="." unique_id=1188989940]
+transform = Transform3D(0.99939084, 0, -0.034899496, 0, 1, 0, 0.034899496, 0, 0.99939084, 0, 1.62, 8.8)
+
+[node name="World" type="Node3D" parent="." unique_id=1958357782]
+script = ExtResource("1_world")
+
+[node name="WaterPlane" type="MeshInstance3D" parent="World" unique_id=1167373583]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+material_override = SubResource("MatWater")
+mesh = SubResource("WaterMesh")
+
+[node name="FloatingRealm" type="Node3D" parent="World" unique_id=1048741307]
+
+[node name="MainPlatform" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=146042800]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+material_override = SubResource("MatWhiteStone")
+mesh = SubResource("MainPlatformMesh")
+
+[node name="MainPlatformBody" type="StaticBody3D" parent="World/FloatingRealm" unique_id=328184011]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/FloatingRealm/MainPlatformBody" unique_id=1420500175]
+shape = SubResource("MainPlatformShape")
+
+[node name="OuterRing" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=135302840]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.73, 0)
+material_override = SubResource("MatSoftGold")
+mesh = SubResource("DiscRingOuterMesh")
+
+[node name="MainPlatformRing" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=1795120659]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.52, 0)
+material_override = SubResource("MatPlatformBlue")
+mesh = SubResource("DiscRingInnerMesh")
+
+[node name="CoreDisc" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=2024361804]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.64, 0)
+material_override = SubResource("MatPlatformPink")
+mesh = SubResource("DiscCoreMesh")
+
+[node name="PetalNorth" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=1492608342]
+transform = Transform3D(1.7, 0, 0, 0, 1, 0, 0, 0, 0.72, 0, 0.67, -8.2)
+material_override = SubResource("MatPlatformBlue")
+mesh = SubResource("DiscPetalMesh")
+
+[node name="PetalSouth" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=1716608259]
+transform = Transform3D(1.7, 0, 0, 0, 1, 0, 0, 0, 0.72, 0, 0.67, 8.2)
+material_override = SubResource("MatPlatformBlue")
+mesh = SubResource("DiscPetalMesh")
+
+[node name="PetalEast" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=794245656]
+transform = Transform3D(0.72, 0, 0, 0, 1, 0, 0, 0, 1.7, 8.2, 0.67, 0)
+material_override = SubResource("MatPlatformPink")
+mesh = SubResource("DiscPetalMesh")
+
+[node name="PetalWest" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=1161552488]
+transform = Transform3D(0.72, 0, 0, 0, 1, 0, 0, 0, 1.7, -8.2, 0.67, 0)
+material_override = SubResource("MatPlatformPink")
+mesh = SubResource("DiscPetalMesh")
+
+[node name="CrystalClusterA" type="Node3D" parent="World/FloatingRealm" unique_id=1307599628]
+transform = Transform3D(0.95105654, 0, -0.309017, 0, 1, 0, 0.309017, 0, 0.95105654, -6.5, 0.42, -3.2)
+
+[node name="CrystalA1" type="MeshInstance3D" parent="World/FloatingRealm/CrystalClusterA" unique_id=1755497895]
+transform = Transform3D(0.9961947, -0.08715574, 0, 0.08715574, 0.9961947, 0, 0, 0, 1, 0, 1.8, 0)
+material_override = SubResource("MatCrystal")
+mesh = SubResource("CrystalMesh")
+
+[node name="CrystalA2" type="MeshInstance3D" parent="World/FloatingRealm/CrystalClusterA" unique_id=1098399020]
+transform = Transform3D(0.9063078, 0.42261827, 0, -0.42261827, 0.9063078, 0, 0, 0, 1, 0.95, 1.1, 0.4)
+material_override = SubResource("MatCrystal")
+mesh = SubResource("CrystalMesh")
+
+[node name="CrystalA3" type="MeshInstance3D" parent="World/FloatingRealm/CrystalClusterA" unique_id=376567051]
+transform = Transform3D(0.81915206, -0.57357645, 0, 0.57357645, 0.81915206, 0, 0, 0, 1, -0.9, 0.9, -0.3)
+material_override = SubResource("MatCrystal")
+mesh = SubResource("CrystalMesh")
+
+[node name="CrystalClusterB" type="Node3D" parent="World/FloatingRealm" unique_id=1228998344]
+transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, 7.2, 0.42, 2.7)
+
+[node name="CrystalB1" type="MeshInstance3D" parent="World/FloatingRealm/CrystalClusterB" unique_id=1358701698]
+transform = Transform3D(0.9961947, 0.08715574, 0, -0.08715574, 0.9961947, 0, 0, 0, 1, 0, 1.65, 0)
+material_override = SubResource("MatCrystal")
+mesh = SubResource("CrystalMesh")
+
+[node name="CrystalB2" type="MeshInstance3D" parent="World/FloatingRealm/CrystalClusterB" unique_id=682110594]
+transform = Transform3D(0.9063078, -0.42261827, 0, 0.42261827, 0.9063078, 0, 0, 0, 1, -1, 1.05, 0.55)
+material_override = SubResource("MatCrystal")
+mesh = SubResource("CrystalMesh")
+
+[node name="CrystalB3" type="MeshInstance3D" parent="World/FloatingRealm/CrystalClusterB" unique_id=1531914109]
+transform = Transform3D(0.9396926, 0.34202015, 0, -0.34202015, 0.9396926, 0, 0, 0, 1, 0.92, 0.86, -0.45)
+material_override = SubResource("MatCrystal")
+mesh = SubResource("CrystalMesh")
+
+[node name="AxiaSpawnMarker" type="Marker3D" parent="World/FloatingRealm" unique_id=383664883]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.8, 0.7, 2.8)
+
+[node name="AxiaBoss" parent="World/FloatingRealm" unique_id=1601645674 instance=ExtResource("3_axia_boss")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.8, 0.7, 2.8)
+visible = true
+
+[node name="CenterObjective" type="Area3D" parent="World/FloatingRealm" unique_id=1804861300]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+collision_layer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/FloatingRealm/CenterObjective" unique_id=203643182]
+shape = SubResource("CenterObjectiveShape")
+
+[node name="CloudLayer" type="Node3D" parent="World" unique_id=956335705]
+visible = false
+
+[node name="Cloud01" type="MeshInstance3D" parent="World/CloudLayer" unique_id=1361053562]
+transform = Transform3D(1.5, 0, 0, 0, 0.35, 0, 0, 0, 0.8, 0, 22, -44)
+material_override = SubResource("MatCloud")
+mesh = SubResource("CloudMeshLarge")
+
+[node name="Cloud02" type="MeshInstance3D" parent="World/CloudLayer" unique_id=2038598430]
+transform = Transform3D(1.15, 0, 0, 0, 0.28, 0, 0, 0, 0.65, 26, 18, -12)
+material_override = SubResource("MatCloud")
+mesh = SubResource("CloudMeshMed")
+
+[node name="Cloud03" type="MeshInstance3D" parent="World/CloudLayer" unique_id=1235456081]
+transform = Transform3D(1.3, 0, 0, 0, 0.32, 0, 0, 0, 0.74, -28, 17, -8)
+material_override = SubResource("MatCloud")
+mesh = SubResource("CloudMeshMed")
+
+[node name="Cloud04" type="MeshInstance3D" parent="World/CloudLayer" unique_id=969625972]
+transform = Transform3D(1.8, 0, 0, 0, 0.38, 0, 0, 0, 0.82, 0, 26, 34)
+material_override = SubResource("MatCloud")
+mesh = SubResource("CloudMeshLarge")
+
+[node name="Cloud05" type="MeshInstance3D" parent="World/CloudLayer" unique_id=869723090]
+transform = Transform3D(1, 0, 0, 0, 0.24, 0, 0, 0, 0.58, 18, 14, 21)
+material_override = SubResource("MatCloud")
+mesh = SubResource("CloudMeshMed")
+
+[node name="Cloud06" type="MeshInstance3D" parent="World/CloudLayer" unique_id=780946316]
+transform = Transform3D(1, 0, 0, 0, 0.24, 0, 0, 0, 0.58, -20, 14, 24)
+material_override = SubResource("MatCloud")
+mesh = SubResource("CloudMeshMed")
+
+[node name="CutsceneMarkers" type="Node3D" parent="World" unique_id=145663144]
+
+[node name="CenterHint" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1328900142]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
+
+[node name="AxiaSpawn" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1114243945]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.8, 0.7, 2.8)
+
+[node name="AxiaFocus" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1598155454]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.8, 1.62, 2.8)
+
+[node name="ReplyLook" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1417316547]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, 8.15)
+
+[node name="UnderLook" type="Marker3D" parent="World/CutsceneMarkers" unique_id=175983412]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.18, 7.65)
+
+[node name="CrystalFocus" type="Marker3D" parent="World/CutsceneMarkers" unique_id=381237156]
+transform = Transform3D(0.93358046, 0, -0.35836795, 0, 1, 0, 0.35836795, 0, 0.93358046, -6, 2.35, -3.1)
+
+[node name="SkyFocus" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1501836423]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20.5, 2.6)
+
+[node name="SkyHeadCamera" type="Camera3D" parent="World/CutsceneMarkers" unique_id=182916605]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 2.06, 9.35)
+
+[node name="SkyHeadRevealCamera" type="Camera3D" parent="World/CutsceneMarkers"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 2.02, 9.55)
+
+[node name="CrystalShotStart" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1099036438]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.35, -1.3)
+
+[node name="CrystalShotEnd" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1974674517]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.8, 1.15, -0.4)
+
+[node name="WalkPointA" type="Marker3D" parent="World/CutsceneMarkers" unique_id=211733121]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.2, 0.7, 2.8)
+
+[node name="WalkPointB" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1443969000]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3, 0.7, 2.8)
+
+[node name="CombatFocus" type="Marker3D" parent="World/CutsceneMarkers" unique_id=760703222]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.78, 2.7)
+
+[node name="Player" parent="World" unique_id=738808106 instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.224709, 0.9559891, -8.923719)
+
+[node name="LightMotes" type="GPUParticles3D" parent="World" unique_id=529387494]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 0)
+amount = 180
+lifetime = 12.0
+preprocess = 12.0
+process_material = SubResource("ParticleProcessMaterial_motes")
+draw_pass_1 = SubResource("QuadMesh_motes")
+
+[node name="ResetZone" type="Area3D" parent="World" unique_id=769581015]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -16, 0)
+script = ExtResource("2_reset")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/ResetZone" unique_id=1636557689]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.897827, -40.390594, 8.64209)
+shape = SubResource("ResetZoneShape")

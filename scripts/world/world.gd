@@ -13,10 +13,11 @@ const WORLD_SCENE_PATH := "res://scenes/world/world.tscn"
 const LEVEL_ONE_SCENE_PATH := "res://scenes/levels/level_01.tscn"
 const LEVEL_TWO_SCENE_PATH := "res://scenes/levels/level_02.tscn"
 const LEVEL_THREE_SCENE_PATH := "res://scenes/levels/level_03.tscn"
+const LEVEL_FOUR_SCENE_PATH := "res://scenes/levels/level_04.tscn"
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const LEVEL_ONE_FLOW := preload("res://scripts/world/level_one_flow.gd")
+const LEVEL_FOUR_FLOW := preload("res://scripts/world/level_four_flow.gd")
 const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
-const BLACKHOLE_PORTAL_SCENE := preload("res://scenes/objects/blackhole_portal.tscn")
 const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 
 @onready var player: CharacterBody3D = get_node_or_null("Player") as CharacterBody3D
@@ -68,6 +69,7 @@ var _sofa_light: OmniLight3D
 var _meteor: MeshInstance3D
 var _meteor_light: OmniLight3D
 var _level_one_flow
+var _level_four_flow
 var _level_two_key: Node3D
 var _level_two_door: Node3D
 var _level_two_gun: Node3D
@@ -93,6 +95,9 @@ var _level_two_rose: Node3D
 var _level_two_exit_door: Node3D
 var _level_two_end_cap_near: Node3D
 var _level_two_portal: Node3D
+var _level_two_rose_focus: Node3D
+var _level_two_tunnel_blast_focus: Node3D
+var _level_two_portal_look_target: Node3D
 var _level_two_room3_sequence_running: bool = false
 var _level_two_room3_sequence_played: bool = false
 
@@ -122,10 +127,19 @@ func _ready() -> void:
 		_create_intro_ui()
 		_create_intro_camera()
 		_cache_level_two_targets()
-		_reset_level_two_view_state()
+		_reset_intro_view_state()
 		_intro_running = false
 		_objective_state = "level2_key"
 		call_deferred("_play_level_two_intro")
+		return
+	if _is_level_four_scene():
+		_create_intro_ui()
+		_create_intro_camera()
+		_reset_intro_view_state()
+		_level_four_flow = LEVEL_FOUR_FLOW.new(self)
+		_level_four_flow.initialize()
+		if player_hud != null:
+			player_hud.visible = true
 		return
 	if not _is_world_intro_scene():
 		return
@@ -152,7 +166,7 @@ func _process(delta: float) -> void:
 	rotation.x = lerpf(rotation.x, _pitch, SCALE_LERP_SPEED * delta)
 
 	_pulse_time += delta * 3.6
-	if _intro_running:
+	if _intro_running and _is_world_intro_scene():
 		_intro_motion_time += delta
 		_update_intro_camera_motion()
 
@@ -174,12 +188,21 @@ func _process(delta: float) -> void:
 		elif _objective_state == "level2_door" and is_instance_valid(_level_two_door):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, true)
+			_set_level_two_target_glow(_level_two_gun, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
 			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_door.global_position + Vector3(0.0, 1.0, 0.0), "DOOR", _level_two_door.global_position)
+		elif _objective_state == "level2_gun" and is_instance_valid(_level_two_gun):
+			_set_level_two_target_glow(_level_two_key, false)
+			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_gun, true)
+			_set_level_two_target_glow(_level_two_room3_key, false)
+			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
+			_update_hint_marker(_level_two_gun.global_position + Vector3(0.0, 0.55, 0.0), "GUN", _level_two_gun.global_position)
 		elif _objective_state == "level2_enemy":
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_gun, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
 			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_hint_marker.visible = false
@@ -187,35 +210,46 @@ func _process(delta: float) -> void:
 		elif _objective_state == "level2_room3_key" and is_instance_valid(_level_two_room3_key):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_gun, false)
 			_set_level_two_target_glow(_level_two_room3_key, true)
 			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_room3_key.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _level_two_room3_key.global_position)
 		elif _objective_state == "level2_obstacle" and is_instance_valid(_level_two_corridor_obstacle):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_gun, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
 			_set_level_two_target_glow(_level_two_corridor_obstacle, true)
 			_update_hint_marker(_level_two_corridor_obstacle.global_position + Vector3(0.0, 1.25, 0.0), "TARGET", _level_two_corridor_obstacle.global_position)
 		elif _objective_state == "level2_room3_door" and is_instance_valid(_level_two_room3_button):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_gun, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
 			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_room3_button.global_position + Vector3(0.0, 0.35, 0.0), "DOOR", _level_two_room3_button.global_position)
 		elif _objective_state == "level2_portal" and is_instance_valid(_level_two_portal):
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_gun, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
 			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_update_hint_marker(_level_two_portal.global_position + Vector3(0.0, 1.6, 0.0), "PORTAL", _level_two_portal.global_position)
 		else:
 			_set_level_two_target_glow(_level_two_key, false)
 			_set_level_two_target_glow(_level_two_door, false)
+			_set_level_two_target_glow(_level_two_gun, false)
 			_set_level_two_target_glow(_level_two_room3_key, false)
 			_set_level_two_target_glow(_level_two_corridor_obstacle, false)
 			_hint_marker.visible = false
 			_hint_label.visible = false
 		_update_level_two_obstacle_warning()
+		return
+	if _is_level_four_scene():
+		if _level_four_flow != null:
+			_level_four_flow.process_frame()
+		if player_hud != null and player_hud.has_method("set_threat_warning_intensity"):
+			player_hud.call("set_threat_warning_intensity", 0.0)
 		return
 	if player_hud != null and player_hud.has_method("set_threat_warning_intensity"):
 		player_hud.call("set_threat_warning_intensity", 0.0)
@@ -253,6 +287,9 @@ func _on_inventory_changed() -> void:
 			elif not _level_two_trap_running:
 				_objective_state = "level2_door"
 				_show_objective("Open door 1")
+		elif _objective_state == "level2_gun" and GameState.has_item("Gun"):
+			_objective_state = ""
+			_hide_objective()
 		elif _objective_state == "level2_room3_key" and GameState.has_item("key_2"):
 			_start_level_two_obstacle_phase()
 		return
@@ -632,6 +669,10 @@ func _cache_level_two_targets() -> void:
 	_level_two_rose = get_node_or_null("Rose") as Node3D
 	_level_two_exit_door = get_node_or_null("ExitDoor") as Node3D
 	_level_two_end_cap_near = get_node_or_null("TunnelShell/EndCapNear") as Node3D
+	_level_two_portal = get_node_or_null("Portal") as Node3D
+	_level_two_rose_focus = get_node_or_null("CutsceneMarkers/RoseFocus") as Node3D
+	_level_two_tunnel_blast_focus = get_node_or_null("CutsceneMarkers/TunnelBlastFocus") as Node3D
+	_level_two_portal_look_target = get_node_or_null("CutsceneMarkers/PortalLookTarget") as Node3D
 	_level_two_enemy_nodes.clear()
 	for node_name in ["Enemy01", "Enemy02", "Enemy03"]:
 		var enemy_node: Node3D = get_node_or_null(node_name) as Node3D
@@ -655,6 +696,9 @@ func _cache_level_two_targets() -> void:
 	if is_instance_valid(_level_two_room3_key) and _level_two_room3_key.has_method("set_interactable_enabled"):
 		_level_two_room3_key.call("set_interactable_enabled", false)
 		_level_two_room3_key.visible = false
+	if is_instance_valid(_level_two_gun) and _level_two_gun.has_method("set_interactable_enabled"):
+		_level_two_gun.call("set_interactable_enabled", false)
+		_level_two_gun.visible = false
 	for enemy_node in _level_two_enemy_nodes:
 		if enemy_node.has_signal("defeated"):
 			enemy_node.connect("defeated", Callable(self, "_on_level_two_enemy_defeated"))
@@ -694,13 +738,13 @@ func _cache_level_two_targets() -> void:
 	_level_two_room3_sequence_running = false
 	_level_two_room3_sequence_played = false
 	if is_instance_valid(_level_two_portal):
-		_level_two_portal.queue_free()
-	_level_two_portal = null
+		_level_two_portal.visible = false
+		_level_two_portal.scale = Vector3.ZERO
 	_reset_level_two_enemy_nodes()
 	_configure_level_two_trap_gate(_level_two_trap_gate_south, false)
 	_configure_level_two_trap_gate(_level_two_trap_gate_north, false)
 
-func _reset_level_two_view_state() -> void:
+func _reset_intro_view_state() -> void:
 	if _wake_overlay != null:
 		if _wake_overlay.material is ShaderMaterial:
 			_wake_overlay.material.set_shader_parameter("blur_strength", 0.0)
@@ -952,8 +996,12 @@ func _on_level_two_room3_opened() -> void:
 
 func _on_level_two_door_one_opened() -> void:
 	if _objective_state == "level2_door":
-		_objective_state = ""
-		_hide_objective()
+		_objective_state = "level2_gun"
+		if is_instance_valid(_level_two_gun) and _level_two_gun.has_method("set_interactable_enabled"):
+			_level_two_gun.call("set_interactable_enabled", true)
+		elif is_instance_valid(_level_two_gun):
+			_level_two_gun.visible = true
+		_show_objective("Take the gun")
 
 func _set_level_two_target_glow(target, enabled: bool) -> void:
 	if target == null:
@@ -1010,7 +1058,7 @@ func _play_level_two_room3_sequence() -> void:
 	if _intro_camera == null:
 		await _finish_level_two_room3_sequence()
 		return
-	var rose_target: Vector3 = (_level_two_rose.global_position if _level_two_rose != null else Vector3(0.0, 1.5, 0.0)) + Vector3(0.0, 1.35, 0.0)
+	var rose_target: Vector3 = _level_two_rose_focus.global_position if _level_two_rose_focus != null else ((_level_two_rose.global_position if _level_two_rose != null else Vector3(0.0, 1.5, 0.0)) + Vector3(0.0, 1.35, 0.0))
 	var player_view_transform: Transform3D = player_camera.global_transform if player_camera != null else _make_look_transform(rose_target + Vector3(0.0, 1.6, -5.0), rose_target)
 	var rose_align_transform: Transform3D = _make_look_transform(player_view_transform.origin, rose_target)
 	var rose_end_origin: Vector3 = player_view_transform.origin + rose_align_transform.basis.z * -0.12
@@ -1018,34 +1066,31 @@ func _play_level_two_room3_sequence() -> void:
 	var rose_end_transform: Transform3D = _make_look_transform(rose_end_origin, rose_target)
 	_intro_camera.global_transform = player_view_transform
 	_intro_camera.make_current()
-	await _play_camera_shot(player_view_transform, rose_start_transform, 0.72)
+	await _play_camera_shot(player_view_transform, rose_start_transform, 1.05)
 	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(rose_target)
-	await _play_camera_shot(rose_start_transform, rose_end_transform, 2.2)
-	await _show_subtitle("Hello. So you finally opened it.", 2.4)
-	await _show_subtitle("This world keeps breaking itself every time you doubt your next step.", 2.7)
-	await _show_subtitle("I can help you pass through the hardest part and push you toward the future you want.", 3.0)
-	await _show_subtitle("Watch closely. I'll open a path for us.", 2.6)
+	await _play_camera_shot(rose_start_transform, rose_end_transform, 2.9)
+	await _show_subtitle("Axia: Hey... so you finally opened it.", 2.4, "axia")
+	await _show_subtitle("Axia: This place gets weird every time you start second-guessing yourself.", 2.8, "axia")
+	await _show_subtitle("Axia: I can help you get through this part... and get you closer to what you're after.", 3.1, "axia")
+	await _show_subtitle("Axia: Just watch, okay? I'll open the way.", 2.5, "axia")
 	if is_instance_valid(flashlight_fx):
 		flashlight_fx.queue_free()
 	await _play_level_two_rose_glitch_disappear()
-	var tunnel_anchor: Vector3 = (_level_two_end_cap_near.global_position if _level_two_end_cap_near != null else (_level_two_exit_door.global_position if _level_two_exit_door != null else rose_target + Vector3(0.0, 0.0, 7.5))) + Vector3(0.0, 0.75, 0.0)
+	var tunnel_anchor: Vector3 = _level_two_tunnel_blast_focus.global_position if _level_two_tunnel_blast_focus != null else ((_level_two_end_cap_near.global_position if _level_two_end_cap_near != null else (_level_two_exit_door.global_position if _level_two_exit_door != null else rose_target + Vector3(0.0, 0.0, 7.5))) + Vector3(0.0, 0.75, 0.0))
 	var tunnel_start_transform: Transform3D = rose_end_transform
 	var tunnel_end_transform: Transform3D = _make_look_transform(rose_end_origin, tunnel_anchor)
 	_intro_camera.global_transform = tunnel_start_transform
 	_intro_camera.make_current()
-	await _play_camera_shot(tunnel_start_transform, tunnel_end_transform, 1.15)
+	await _play_camera_shot(tunnel_start_transform, tunnel_end_transform, 1.7)
 	await _play_level_two_tunnel_breach_sequence(tunnel_anchor)
-	await _show_subtitle("I opened the way. Move. The portal will carry us out.", 2.6)
-	var portal_position: Vector3 = tunnel_anchor + Vector3(0.0, 1.05, 1.3)
-	var portal_instance: Node3D = BLACKHOLE_PORTAL_SCENE.instantiate() as Node3D
-	add_child(portal_instance)
-	portal_instance.global_position = portal_position
-	portal_instance.rotation_degrees = Vector3.ZERO
-	_level_two_portal = portal_instance
-	if portal_instance.has_signal("player_entered"):
-		portal_instance.connect("player_entered", Callable(self, "_on_level_two_portal_entered"))
-	if portal_instance.has_method("play_open_sequence"):
-		portal_instance.call("play_open_sequence")
+	await _show_subtitle("Axia: There. Go on... the portal will take you through.", 2.7, "axia")
+	if _level_two_portal != null:
+		var portal_target: Vector3 = _level_two_portal_look_target.global_position if _level_two_portal_look_target != null else tunnel_anchor
+		if _level_two_portal.has_signal("player_entered") and not _level_two_portal.is_connected("player_entered", Callable(self, "_on_level_two_portal_entered")):
+			_level_two_portal.connect("player_entered", Callable(self, "_on_level_two_portal_entered"))
+		if _level_two_portal.has_method("play_open_sequence"):
+			_level_two_portal.call("play_open_sequence")
+		_intro_camera.global_transform = _make_look_transform(rose_end_origin, portal_target)
 		await get_tree().create_timer(2.0).timeout
 	await _complete_level_two_room3_cutscene()
 
@@ -1108,7 +1153,16 @@ func _make_look_transform(origin: Vector3, target: Vector3) -> Transform3D:
 	var pivot: Node3D = Node3D.new()
 	add_child(pivot)
 	pivot.global_position = origin
-	pivot.look_at(target, Vector3.UP)
+	var direction: Vector3 = target - origin
+	if direction.length_squared() <= 0.000001:
+		direction = Vector3.FORWARD
+	var look_target: Vector3 = origin + direction.normalized()
+	var up_axis: Vector3 = Vector3.UP
+	if abs(direction.normalized().dot(up_axis)) > 0.98:
+		up_axis = Vector3.RIGHT
+		if abs(direction.normalized().dot(up_axis)) > 0.98:
+			up_axis = Vector3.FORWARD
+	pivot.look_at(look_target, up_axis)
 	var result: Transform3D = pivot.global_transform
 	pivot.queue_free()
 	return result
@@ -1371,9 +1425,10 @@ func _get_wake_desaturate_strength() -> float:
 			return value
 	return 0.0
 
-func _show_subtitle(text: String, duration: float) -> void:
+func _show_subtitle(text: String, duration: float, speaker: String = "") -> void:
 	if _subtitle_label == null:
 		return
+	_set_subtitle_speaker_palette(speaker)
 	_subtitle_label.text = text
 	_subtitle_label.modulate = Color(1, 1, 1, 0)
 	_subtitle_label.visible = true
@@ -1384,6 +1439,16 @@ func _show_subtitle(text: String, duration: float) -> void:
 	var fade := create_tween()
 	fade.tween_property(_subtitle_label, "modulate:a", 0.0, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await fade.finished
+
+func _set_subtitle_speaker_palette(speaker: String) -> void:
+	if _subtitle_label == null:
+		return
+	if speaker.to_lower() == "axia":
+		_subtitle_label.add_theme_color_override("font_color", Color(0.7, 0.94, 1.0, 1.0))
+		_subtitle_label.add_theme_color_override("font_outline_color", Color(0.02, 0.08, 0.12, 0.96))
+		_subtitle_label.add_theme_constant_override("outline_size", 12)
+		return
+	_set_subtitle_palette(false)
 
 func _show_objective(text: String) -> void:
 	if _objective_panel == null or _objective_label == null:
@@ -1716,13 +1781,28 @@ func _is_level_two_scene() -> bool:
 	var current_scene := get_tree().current_scene
 	return current_scene != null and current_scene.scene_file_path == LEVEL_TWO_SCENE_PATH
 
+func _is_level_four_scene() -> bool:
+	var current_scene := get_tree().current_scene
+	return current_scene != null and current_scene.scene_file_path == LEVEL_FOUR_SCENE_PATH
+
+func _play_level_four_intro_sequence() -> void:
+	if _level_four_flow != null:
+		await _level_four_flow.play_intro_sequence()
+
+func _play_level_four_victory_subtitle() -> void:
+	if _level_four_flow != null:
+		await _level_four_flow.play_victory_subtitle()
+
 func restart_current_level() -> void:
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
 		return
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
-	GameState.full_reset_inventory()
-	GameState.reset_axiom_recording()
+	if _is_level_one_scene():
+		GameState.reset_progression()
+	else:
+		GameState.full_reset_inventory()
+		GameState.reset_axiom_recording()
 	var screen_fx := _screen_fx()
 	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
 		await screen_fx.reboot_to_scene(current_scene.scene_file_path, true)

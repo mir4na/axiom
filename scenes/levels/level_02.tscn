@@ -8,9 +8,10 @@
 [ext_resource type="PackedScene" uid="uid://df7x8h205lam1" path="res://scenes/characters/rose.tscn" id="7_rose"]
 [ext_resource type="PackedScene" path="res://scenes/objects/flashlight_item.tscn" id="8_flashlight"]
 [ext_resource type="PackedScene" path="res://scenes/objects/door_button.tscn" id="9_door_button"]
-[ext_resource type="PackedScene" path="res://scenes/objects/gun_item.tscn" id="10_gun"]
+[ext_resource type="PackedScene" uid="uid://dei2dtsftmpyi" path="res://scenes/objects/gun_item.tscn" id="10_gun"]
 [ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="11_enemy"]
 [ext_resource type="PackedScene" uid="uid://c5287n5mgov23" path="res://scenes/objects/electric_obstacle.tscn" id="12_obstacle"]
+[ext_resource type="PackedScene" uid="uid://cp8n1f0xys6sq" path="res://scenes/objects/blackhole_portal.tscn" id="13_portal"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -189,6 +190,17 @@ size = Vector3(0.6, 2.505664, 1.9260315)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 1.1663452, -12.058786)
 operation = 2
 size = Vector3(0.6, 2.3326905, 1.9997222)
+
+[node name="CutsceneMarkers" type="Node3D" parent="World" unique_id=1351080197]
+
+[node name="RoseFocus" type="Marker3D" parent="World/CutsceneMarkers" unique_id=427106533]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2, 1.35, 160.1)
+
+[node name="TunnelBlastFocus" type="Marker3D" parent="World/CutsceneMarkers" unique_id=44815695]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.85, 166.2)
+
+[node name="PortalLookTarget" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1827075421]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 166.8)
 
 [node name="Stall1" type="CSGCombiner3D" parent="World" unique_id=1332012744]
 use_collision = true
@@ -558,7 +570,7 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.0016875, 1.8021901, 0.3087
 door_path = NodePath("../Room2Door")
 
 [node name="Gun" parent="World" unique_id=410271071 instance=ExtResource("10_gun")]
-transform = Transform3D(0.970296, 0, -0.241922, 0, 1, 0, 0.241922, 0, 0.970296, 6.7, 0.030008912, 1.95)
+transform = Transform3D(0.970296, 0, -0.241922, -0.23506309, 0.23643123, -0.9427864, 0.057197917, 0.9716482, 0.22940828, 6.7, 0.1991719, 1.95)
 
 [node name="CombatTrigger" type="Area3D" parent="World" unique_id=410271073]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 1.811847, 23.114544)
@@ -609,5 +621,13 @@ projectile_damage = 75.0
 [node name="Rose" parent="World" unique_id=1861027441 instance=ExtResource("7_rose")]
 transform = Transform3D(0.71515644, 0, -0.6989649, 0, 1, 0, 0.6989649, 0, 0.71515644, -6.2, 0, 160.1)
 
+[node name="Portal" parent="World" unique_id=1045021187 instance=ExtResource("13_portal")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 170.57257)
+
+[node name="Ring" parent="World/Portal/Pivot" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.04)
+
 [node name="Player" parent="World" unique_id=1812883366 instance=ExtResource("2_player")]
 transform = Transform3D(-0.9932741, 0, -0.11578677, 0, 1, 0, 0.11578677, 0, -0.9932741, 0, 1.8458242, -25.466845)
+
+[editable path="World/Portal"]

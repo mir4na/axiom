@@ -10,16 +10,6 @@ const TUTORIAL_PAGES := [
 	"Press R to enter rewind mode, then hold R or F to move the pointer through time.",
 	"Reach the underground hole before the timer ends."
 ]
-const GUEST_REVEAL_EXTERIOR_START_POS := Vector3(-24.6, 16.0, 30.7)
-const GUEST_REVEAL_EXTERIOR_START_LOOK := Vector3(0.7, -0.75, 7.2)
-const GUEST_REVEAL_EXTERIOR_END_POS := Vector3(18.7, 7.8, 40.4)
-const GUEST_REVEAL_EXTERIOR_END_LOOK := Vector3(1.9, -0.7, 6.8)
-const GUEST_REVEAL_GUEST_START_POS := Vector3(-0.8, -0.15, 5.1)
-const GUEST_REVEAL_GUEST_START_LOOK := Vector3(4.0, -0.85, 3.5)
-const GUEST_REVEAL_GUEST_END_POS := Vector3(0.2, -0.05, 4.7)
-const GUEST_REVEAL_GUEST_END_LOOK := Vector3(4.0, -0.85, 3.5)
-const GUEST_REVEAL_FRAGMENT_CENTER := Vector3(4.0, -0.85, 3.5)
-
 var _world
 var _front_door: Node3D
 var _front_button_out: Node3D
@@ -59,6 +49,22 @@ var _tutorial_panel: Panel
 var _tutorial_title: Label
 var _tutorial_body: Label
 var _tutorial_hint: Label
+var _marker_root: Node3D
+var _guest_reveal_exterior_start: Node3D
+var _guest_reveal_exterior_start_look: Node3D
+var _guest_reveal_exterior_end: Node3D
+var _guest_reveal_exterior_end_look: Node3D
+var _guest_reveal_guest_start: Node3D
+var _guest_reveal_guest_look: Node3D
+var _guest_reveal_guest_end: Node3D
+var _guest_reveal_fragment_center: Node3D
+var _axiom_spawn_marker: Node3D
+var _split_start_marker: Node3D
+var _split_start_look_marker: Node3D
+var _split_end_marker: Node3D
+var _split_end_look_marker: Node3D
+var _fail_start_marker: Node3D
+var _fail_start_look_marker: Node3D
 
 func _init(world_ref) -> void:
 	_world = world_ref
@@ -137,6 +143,22 @@ func _cache_nodes() -> void:
 	_guest_button_out = _world.house.get_node_or_null("GuestDoorBtnOut") as Node3D
 	_guest_button_in = _world.house.get_node_or_null("GuestDoorBtnIn") as Node3D
 	_guest_door_gap = _world.house.get_node_or_null("Partitions/GuestDoorGap") as CSGBox3D
+	_marker_root = _world.house.get_node_or_null("CutsceneMarkers") as Node3D
+	_guest_reveal_exterior_start = _get_marker("GuestRevealExteriorStart")
+	_guest_reveal_exterior_start_look = _get_marker("GuestRevealExteriorStartLook")
+	_guest_reveal_exterior_end = _get_marker("GuestRevealExteriorEnd")
+	_guest_reveal_exterior_end_look = _get_marker("GuestRevealExteriorEndLook")
+	_guest_reveal_guest_start = _get_marker("GuestRevealGuestStart")
+	_guest_reveal_guest_look = _get_marker("GuestRevealGuestLook")
+	_guest_reveal_guest_end = _get_marker("GuestRevealGuestEnd")
+	_guest_reveal_fragment_center = _get_marker("GuestRevealFragmentCenter")
+	_axiom_spawn_marker = _get_marker("AxiomSpawn")
+	_split_start_marker = _get_marker("SplitStart")
+	_split_start_look_marker = _get_marker("SplitStartLook")
+	_split_end_marker = _get_marker("SplitEnd")
+	_split_end_look_marker = _get_marker("SplitEndLook")
+	_fail_start_marker = _get_marker("FailStart")
+	_fail_start_look_marker = _get_marker("FailStartLook")
 	_glitch_fragments_root = _world.get_node_or_null("GlitchFragments") as Node3D
 	_terrain_root = _world.get_node_or_null("Terrain")
 	_key_item_instance = _world.get_node_or_null("KeyItem") as Node3D
@@ -377,7 +399,7 @@ func _spawn_axiom() -> void:
 	if _axiom_item_instance == null:
 		return
 	_world.add_child(_axiom_item_instance)
-	_axiom_item_instance.global_position = _world.house.to_global(Vector3(8.4, -1.0, 4.6))
+	_axiom_item_instance.global_position = _axiom_spawn_marker.global_position if _axiom_spawn_marker != null else _world.house.to_global(Vector3(8.4, -1.0, 4.6))
 
 func _cache_split_nodes() -> void:
 	if _world.house == null or _split_front_nodes.size() > 0 or _split_back_nodes.size() > 0:
@@ -529,10 +551,10 @@ func play_guest_door_reveal_cinematic() -> void:
 	await _world._set_cinematic_bars(true, 0.35)
 	
 	var player_transform: Transform3D = _world.player_camera.global_transform
-	var exterior_start: Transform3D = _make_house_camera_transform(GUEST_REVEAL_EXTERIOR_START_POS, GUEST_REVEAL_EXTERIOR_START_LOOK)
-	var exterior_end: Transform3D = _make_house_camera_transform(GUEST_REVEAL_EXTERIOR_END_POS, GUEST_REVEAL_EXTERIOR_END_LOOK)
-	var guest_start: Transform3D = _make_house_camera_transform(GUEST_REVEAL_GUEST_START_POS, GUEST_REVEAL_GUEST_START_LOOK)
-	var guest_end: Transform3D = _make_house_camera_transform(GUEST_REVEAL_GUEST_END_POS, GUEST_REVEAL_GUEST_END_LOOK)
+	var exterior_start: Transform3D = _make_marker_camera_transform(_guest_reveal_exterior_start, _guest_reveal_exterior_start_look)
+	var exterior_end: Transform3D = _make_marker_camera_transform(_guest_reveal_exterior_end, _guest_reveal_exterior_end_look)
+	var guest_start: Transform3D = _make_marker_camera_transform(_guest_reveal_guest_start, _guest_reveal_guest_look)
+	var guest_end: Transform3D = _make_marker_camera_transform(_guest_reveal_guest_end, _guest_reveal_guest_look)
 	
 	_world._intro_camera.global_transform = player_transform
 	_world._intro_camera.make_current()
@@ -632,8 +654,8 @@ func play_axiom_equip_sequence() -> void:
 	await _world._set_cinematic_bars(true, 0.35)
 	
 	var player_transform: Transform3D = _world.player_camera.global_transform
-	var split_start: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(16.0, 4.0, 8.0))).looking_at(_world.house.to_global(Vector3(0.0, -0.8, 0.0)), Vector3.UP)
-	var split_end: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(20.4, 12.0, 0.4))).looking_at(_world.house.to_global(Vector3(0.0, -1.1, 0.0)), Vector3.UP)
+	var split_start: Transform3D = _make_marker_camera_transform(_split_start_marker, _split_start_look_marker)
+	var split_end: Transform3D = _make_marker_camera_transform(_split_end_marker, _split_end_look_marker)
 	
 	_world._intro_camera.global_transform = player_transform
 	_world._intro_camera.make_current()
@@ -687,7 +709,7 @@ func play_escape_fail_sequence() -> void:
 	_world._intro_running = false
 	await _world._set_cinematic_bars(true, 0.28)
 	var house_origin: Vector3 = _world.house.global_position
-	var fail_start: Transform3D = Transform3D(Basis(), _world.house.to_global(Vector3(25.6, 14.2, 5.8))).looking_at(_world.house.to_global(Vector3(0.0, -0.8, 0.0)), Vector3.UP)
+	var fail_start: Transform3D = _make_marker_camera_transform(_fail_start_marker, _fail_start_look_marker)
 	_world._intro_camera.global_transform = fail_start
 	_world._intro_camera.make_current()
 	await _world.get_tree().create_timer(0.7).timeout
@@ -953,7 +975,7 @@ func _play_glitch_fragment_burst(from_weight: float, to_weight: float, duration:
 	_glitch_fragments_root.visible = false
 
 func _set_fragment_burst_weight(weight: float) -> void:
-	var center: Vector3 = _world.house.to_global(GUEST_REVEAL_FRAGMENT_CENTER)
+	var center: Vector3 = _guest_reveal_fragment_center.global_position if _guest_reveal_fragment_center != null else _world.house.to_global(Vector3(4.0, -0.85, 3.5))
 	var index := 0
 	var child_count := maxi(_glitch_fragment_original_positions.size(), 1)
 	for child in _glitch_fragment_original_positions.keys():
@@ -966,8 +988,17 @@ func _set_fragment_burst_weight(weight: float) -> void:
 		child.global_position = center + offset * weight * 3.2 + drift * weight
 		index += 1
 
-func _make_house_camera_transform(position_offset: Vector3, look_offset: Vector3) -> Transform3D:
-	return Transform3D(Basis(), _world.house.to_global(position_offset)).looking_at(_world.house.to_global(look_offset), Vector3.UP)
+func _make_marker_camera_transform(position_marker: Node3D, look_marker: Node3D) -> Transform3D:
+	if position_marker != null and look_marker != null:
+		return Transform3D(Basis(), position_marker.global_position).looking_at(look_marker.global_position, Vector3.UP)
+	if position_marker != null:
+		return position_marker.global_transform
+	return Transform3D()
+
+func _get_marker(name: String) -> Node3D:
+	if _marker_root == null:
+		return null
+	return _marker_root.get_node_or_null(name) as Node3D
 
 func _refresh_split_origins() -> void:
 	if _broken_house_instance != null:

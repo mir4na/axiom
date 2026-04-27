@@ -228,12 +228,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -4)
 [node name="GuestDoorGap" parent="House/Partitions" parent_id_path=PackedInt32Array(65160958, 1022552114) index="3" unique_id=237832774]
 visible = false
 
-[node name="GuestDoorBtnOut" parent="House" index="10" unique_id=1413763975]
-visible = false
-
-[node name="GuestDoorBtnIn" parent="House" index="11" unique_id=1904349629]
-visible = false
-
 [node name="Player" parent="." unique_id=758033891 instance=ExtResource("2_player")]
 transform = Transform3D(-0.9893817, 0, 0.14534062, 0, 1, 0, -0.14534062, 0, -0.9893817, 8.660072, 0.16559601, -7.59978)
 
@@ -1364,7 +1358,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.046556, 5, 0.5)
 shape = SubResource("ShapeYardEW")
 
 [node name="Shovel" parent="." unique_id=1577906131 instance=ExtResource("8_shovel")]
-transform = Transform3D(0.9659258, 0.258819, 0, -0.258819, 0.9659258, 0, 0, 0, 1, 5.6831894, 0, 8.451979)
+transform = Transform3D(0.9722074, -0.1926882, -0.13298142, 0.22170511, 0.9402355, 0.25846532, 0.075230606, -0.28076452, 0.9568237, 5.6831894, 0, 5.455897)
 
 [node name="DigSpot" parent="." unique_id=2020308069 instance=ExtResource("9_dig")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.569308, 0, 7.4110394)
@@ -1373,7 +1367,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.569308, 0, 7.4110394)
 transform = Transform3D(0.7157171, 0, -0.6983903, 0, 1, 0, 0.6983903, 0, 0.7157171, -7.879922, 0, 7.6391764)
 
 [node name="DigSpot3" parent="." unique_id=1835153815 instance=ExtResource("9_dig")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.87746, 0.4361863, -13.010099)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.877, 0, -13.01)
 
 [node name="DigSpot4" parent="." unique_id=86689281 instance=ExtResource("9_dig")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.461405, 0, 14.975068)

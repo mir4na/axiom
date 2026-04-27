@@ -1,0 +1,60 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/axia_sword_gate.gd" id="1_script"]
+[ext_resource type="Shader" path="res://shaders/axia_energy.gdshader" id="2_energy"]
+[ext_resource type="Shader" path="res://shaders/axia_blade.gdshader" id="3_blade"]
+
+[sub_resource type="ShaderMaterial" id="RingMat"]
+shader = ExtResource("2_energy")
+shader_parameter/base_color = Color(0.06, 0.14, 0.26, 0.34)
+shader_parameter/accent_color = Color(0.3, 0.1, 0.5, 0.72)
+shader_parameter/emission_energy = 4.2
+shader_parameter/pulse_speed = 3.2
+shader_parameter/flow_strength = 0.34
+shader_parameter/edge_softness = 1.24
+
+[sub_resource type="ShaderMaterial" id="DiscMat"]
+shader = ExtResource("3_blade")
+shader_parameter/base_color = Color(0.08, 0.16, 0.3, 0.3)
+shader_parameter/accent_color = Color(0.34, 0.12, 0.54, 0.84)
+shader_parameter/emission_energy = 3.5
+shader_parameter/pulse_speed = 2.6
+shader_parameter/streak_density = 28.0
+shader_parameter/streak_speed = 2.2
+shader_parameter/edge_power = 2.1
+shader_parameter/alpha_strength = 0.9
+
+[sub_resource type="CylinderMesh" id="RingMesh"]
+top_radius = 1.12
+bottom_radius = 1.12
+height = 0.06
+
+[sub_resource type="CylinderMesh" id="DiscMesh"]
+top_radius = 0.86
+bottom_radius = 0.86
+height = 0.04
+
+[sub_resource type="QuadMesh" id="FlareMesh"]
+size = Vector2(1.9, 1.9)
+
+[node name="AxiaSwordGate" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+material_override = SubResource("RingMat")
+mesh = SubResource("RingMesh")
+
+[node name="Disc" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.82, 0, 0, 0, 1, 0, 0, 0, 0.82, 0, 0.01, 0)
+material_override = SubResource("DiscMat")
+mesh = SubResource("DiscMesh")
+
+[node name="Flare" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.02, 0)
+material_override = SubResource("DiscMat")
+mesh = SubResource("FlareMesh")
+
+[node name="Light" type="OmniLight3D" parent="."]
+light_color = Color(0.38, 0.22, 0.5, 1)
+light_energy = 0.0
+omni_range = 5.5

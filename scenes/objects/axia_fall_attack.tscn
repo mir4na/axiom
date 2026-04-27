@@ -1,0 +1,63 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/axia_fall_attack.gd" id="1_script"]
+[ext_resource type="Shader" path="res://shaders/axia_energy.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="TelegraphMat"]
+shader = ExtResource("2_shader")
+shader_parameter/base_color = Color(0.24, 0.02, 0.04, 0.44)
+shader_parameter/accent_color = Color(0.46, 0.08, 0.1, 0.82)
+shader_parameter/emission_energy = 3.9
+shader_parameter/pulse_speed = 4.2
+shader_parameter/flow_strength = 0.26
+shader_parameter/edge_softness = 1.2
+
+[sub_resource type="ShaderMaterial" id="MeteorMat"]
+shader = ExtResource("2_shader")
+shader_parameter/base_color = Color(0.06, 0.18, 0.3, 0.92)
+shader_parameter/accent_color = Color(0.32, 0.08, 0.42, 1)
+shader_parameter/emission_energy = 4.4
+shader_parameter/pulse_speed = 3.2
+shader_parameter/flow_strength = 0.4
+shader_parameter/edge_softness = 1.45
+
+[sub_resource type="CylinderMesh" id="TelegraphMesh"]
+top_radius = 1.0
+bottom_radius = 1.0
+height = 0.05
+
+[sub_resource type="SphereMesh" id="CoreMesh"]
+radius = 0.55
+height = 1.1
+
+[sub_resource type="BoxMesh" id="ShardMesh"]
+size = Vector3(0.22, 0.82, 0.22)
+
+[node name="AxiaFallAttack" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Telegraph" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0)
+material_override = SubResource("TelegraphMat")
+mesh = SubResource("TelegraphMesh")
+
+[node name="MeteorRoot" type="Node3D" parent="."]
+
+[node name="Core" type="MeshInstance3D" parent="MeteorRoot"]
+material_override = SubResource("MeteorMat")
+mesh = SubResource("CoreMesh")
+
+[node name="ShardA" type="MeshInstance3D" parent="MeteorRoot"]
+transform = Transform3D(0.9659258, -0.25881904, 0, 0.25881904, 0.9659258, 0, 0, 0, 1, 0.42, 0, -0.18)
+material_override = SubResource("MeteorMat")
+mesh = SubResource("ShardMesh")
+
+[node name="ShardB" type="MeshInstance3D" parent="MeteorRoot"]
+transform = Transform3D(0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 0, 0, 0, 1, -0.35, 0.12, 0.28)
+material_override = SubResource("MeteorMat")
+mesh = SubResource("ShardMesh")
+
+[node name="Light" type="OmniLight3D" parent="."]
+light_color = Color(0.42, 0.08, 0.14, 1)
+light_energy = 0.0
+omni_range = 8.0

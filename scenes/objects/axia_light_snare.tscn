@@ -1,0 +1,61 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/axia_light_snare.gd" id="1_script"]
+[ext_resource type="Shader" path="res://shaders/axia_energy.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="RingMat"]
+shader = ExtResource("2_shader")
+shader_parameter/base_color = Color(0.07, 0.16, 0.3, 0.34)
+shader_parameter/accent_color = Color(0.32, 0.1, 0.52, 0.78)
+shader_parameter/emission_energy = 3.9
+shader_parameter/pulse_speed = 2.0
+shader_parameter/flow_strength = 0.28
+shader_parameter/edge_softness = 1.1
+
+[sub_resource type="ShaderMaterial" id="ColumnMat"]
+shader = ExtResource("2_shader")
+shader_parameter/base_color = Color(0.05, 0.12, 0.26, 0.28)
+shader_parameter/accent_color = Color(0.28, 0.08, 0.44, 0.58)
+shader_parameter/emission_energy = 3.2
+shader_parameter/pulse_speed = 1.8
+shader_parameter/flow_strength = 0.3
+shader_parameter/edge_softness = 1.08
+
+[sub_resource type="CylinderMesh" id="RingMesh"]
+top_radius = 2.0
+bottom_radius = 2.0
+height = 0.08
+
+[sub_resource type="CylinderMesh" id="ColumnMesh"]
+top_radius = 1.25
+bottom_radius = 1.25
+height = 2.8
+
+[sub_resource type="CylinderShape3D" id="AreaShape"]
+radius = 1.7
+height = 2.2
+
+[node name="AxiaLightSnare" type="Area3D"]
+script = ExtResource("1_script")
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+shape = SubResource("AreaShape")
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)
+material_override = SubResource("RingMat")
+mesh = SubResource("RingMesh")
+
+[node name="Column" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+material_override = SubResource("ColumnMat")
+mesh = SubResource("ColumnMesh")
+
+[node name="Light" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+light_color = Color(0.4, 0.14, 0.42, 1)
+light_energy = 4.0
+omni_range = 6.0

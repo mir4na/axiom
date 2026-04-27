@@ -1,0 +1,110 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/axia_sword_projectile.gd" id="1_script"]
+[ext_resource type="Shader" path="res://shaders/axia_blade.gdshader" id="2_blade"]
+
+[sub_resource type="StandardMaterial3D" id="BladeMetal"]
+albedo_color = Color(0.36, 0.4, 0.48, 1)
+metallic = 0.92
+roughness = 0.12
+
+[sub_resource type="StandardMaterial3D" id="GuardMetal"]
+albedo_color = Color(0.24, 0.21, 0.16, 1)
+metallic = 0.95
+roughness = 0.18
+emission_enabled = true
+emission = Color(0.34, 0.26, 0.14, 1)
+emission_energy_multiplier = 0.06
+
+[sub_resource type="ShaderMaterial" id="EdgeMat"]
+shader = ExtResource("2_blade")
+shader_parameter/base_color = Color(0.08, 0.18, 0.34, 0.66)
+shader_parameter/accent_color = Color(0.34, 0.12, 0.56, 0.9)
+shader_parameter/emission_energy = 4.0
+shader_parameter/pulse_speed = 2.4
+shader_parameter/streak_density = 28.0
+shader_parameter/streak_speed = 2.3
+shader_parameter/edge_power = 2.4
+shader_parameter/alpha_strength = 0.92
+
+[sub_resource type="ShaderMaterial" id="TrailMat"]
+shader = ExtResource("2_blade")
+shader_parameter/base_color = Color(0.06, 0.14, 0.3, 0.34)
+shader_parameter/accent_color = Color(0.28, 0.1, 0.48, 0.8)
+shader_parameter/emission_energy = 3.4
+shader_parameter/pulse_speed = 2.0
+shader_parameter/streak_density = 22.0
+shader_parameter/streak_speed = 1.9
+shader_parameter/edge_power = 1.9
+shader_parameter/alpha_strength = 0.86
+
+[sub_resource type="BoxMesh" id="BladeBodyMesh"]
+size = Vector3(0.08, 0.22, 1.38)
+
+[sub_resource type="BoxMesh" id="EdgeMesh"]
+size = Vector3(0.14, 0.28, 1.54)
+
+[sub_resource type="BoxMesh" id="TrailMesh"]
+size = Vector3(0.54, 0.54, 2.1)
+
+[sub_resource type="BoxMesh" id="GuardMesh"]
+size = Vector3(0.56, 0.08, 0.12)
+
+[sub_resource type="BoxMesh" id="GripMesh"]
+size = Vector3(0.1, 0.1, 0.34)
+
+[sub_resource type="SphereShape3D" id="HitShape"]
+radius = 0.44
+
+[node name="AxiaSwordProjectile" type="Area3D"]
+script = ExtResource("1_script")
+collision_layer = 0
+collision_mask = 1
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("HitShape")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="Trail" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0, 0, 0, 1, 0, 0, -0.92)
+material_override = SubResource("TrailMat")
+mesh = SubResource("TrailMesh")
+
+[node name="BladeBody" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.18)
+material_override = SubResource("BladeMetal")
+mesh = SubResource("BladeBodyMesh")
+
+[node name="BladeEdge" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1.06, 0, 0, 0, 1.06, 0, 0, 0, 1.02, 0, 0, 0.22)
+material_override = SubResource("EdgeMat")
+mesh = SubResource("EdgeMesh")
+
+[node name="Guard" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.52)
+material_override = SubResource("GuardMetal")
+mesh = SubResource("GuardMesh")
+
+[node name="Grip" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.75)
+material_override = SubResource("GuardMetal")
+mesh = SubResource("GripMesh")
+
+[node name="Pommel" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(0.65, 0, 0, 0, 0.65, 0, 0, 0, 0.65, 0, 0, -0.96)
+material_override = SubResource("EdgeMat")
+mesh = SubResource("GripMesh")
+
+[node name="ImpactFlash" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, 0, 0.58)
+visible = false
+material_override = SubResource("TrailMat")
+mesh = SubResource("TrailMesh")
+
+[node name="Light" type="OmniLight3D" parent="."]
+light_color = Color(0.36, 0.16, 0.52, 1)
+light_energy = 3.4
+omni_range = 5.5

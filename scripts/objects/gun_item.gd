@@ -11,8 +11,10 @@ var _persistent_highlight: bool = true
 func _ready() -> void:
 	prompt_text = "Press E to pick up Gun"
 	_setup_aura_materials()
-	set_highlight_enabled(true)
-	set_highlight_strength(1.0)
+	if _collision != null and _collision.disabled:
+		set_interactable_enabled(false)
+	else:
+		set_interactable_enabled(true)
 
 func interact() -> void:
 	if _picked_up:
@@ -33,6 +35,16 @@ func interact() -> void:
 	tween.tween_property(self, "scale", Vector3.ZERO, 0.35)
 	await tween.finished
 	queue_free()
+
+func set_interactable_enabled(enabled: bool) -> void:
+	visible = enabled
+	prompt_text = "Press E to pick up Gun" if enabled else ""
+	if _collision != null:
+		_collision.disabled = not enabled
+	_persistent_highlight = enabled
+	set_highlight_enabled(enabled)
+	if enabled:
+		set_highlight_strength(1.0)
 
 func set_highlight_enabled(enabled: bool) -> void:
 	_highlight_enabled = (enabled or _persistent_highlight) and visible and not _picked_up

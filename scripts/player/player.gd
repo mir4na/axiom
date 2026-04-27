@@ -60,6 +60,7 @@ var _gun_shot_timer: float = 0.0
 var _gun_damage: float = 30.0
 var _gun_range: float = 52.0
 var _gun_recoil: float = 0.0
+var mobility_locked: bool = false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -200,6 +201,17 @@ func _physics_process(delta: float) -> void:
 			_attack_locked = false
 			_attack_name = ""
 	if cinematic_locked:
+		velocity.x = lerpf(velocity.x, 0.0, acceleration * delta)
+		velocity.z = lerpf(velocity.z, 0.0, acceleration * delta)
+		if is_on_floor():
+			velocity.y = 0.0
+		else:
+			velocity.y = max(velocity.y - gravity * delta, -30.0)
+		move_and_slide()
+		_sync_hitboxes(delta)
+		_update_hud_status()
+		return
+	if mobility_locked and not GameState.rewind_mode_active:
 		velocity.x = lerpf(velocity.x, 0.0, acceleration * delta)
 		velocity.z = lerpf(velocity.z, 0.0, acceleration * delta)
 		if is_on_floor():
@@ -532,46 +544,13 @@ func _update_gun_state(delta: float) -> void:
 	_update_gun_view_model(delta)
 
 func _setup_gun_view_model() -> void:
-	_gun_view_root = Node3D.new()
+	var gun_view_scene: PackedScene = load("res://scenes/objects/gun_view_model.tscn") as PackedScene
+	if gun_view_scene == null:
+		return
+	_gun_view_root = gun_view_scene.instantiate() as Node3D
 	_gun_view_root.visible = false
 	camera.add_child(_gun_view_root)
-	var body := MeshInstance3D.new()
-	var body_mesh := BoxMesh.new()
-	body_mesh.size = Vector3(0.22, 0.12, 0.45)
-	body.mesh = body_mesh
-	var body_material := StandardMaterial3D.new()
-	body_material.albedo_color = Color(0.08, 0.08, 0.1, 1.0)
-	body_material.roughness = 0.34
-	body_material.metallic = 0.52
-	body.mesh = body_mesh
-	body.material_override = body_material
-	_gun_view_root.add_child(body)
-	var handle := MeshInstance3D.new()
-	var handle_mesh := BoxMesh.new()
-	handle_mesh.size = Vector3(0.1, 0.17, 0.09)
-	handle.mesh = handle_mesh
-	handle.material_override = body_material.duplicate()
-	handle.position = Vector3(-0.04, -0.12, 0.08)
-	_gun_view_root.add_child(handle)
-	var barrel := MeshInstance3D.new()
-	var barrel_mesh := CylinderMesh.new()
-	barrel_mesh.top_radius = 0.03
-	barrel_mesh.bottom_radius = 0.03
-	barrel_mesh.height = 0.36
-	barrel.mesh = barrel_mesh
-	var barrel_material := StandardMaterial3D.new()
-	barrel_material.albedo_color = Color(0.64, 0.68, 0.74, 1.0)
-	barrel_material.roughness = 0.18
-	barrel_material.metallic = 0.86
-	barrel.material_override = barrel_material
-	barrel.rotation_degrees = Vector3(0.0, 0.0, 90.0)
-	barrel.position = Vector3(0.18, 0.0, -0.02)
-	_gun_view_root.add_child(barrel)
-	_gun_muzzle = Node3D.new()
-	_gun_muzzle.position = Vector3(0.36, -0.005, -0.02)
-	_gun_view_root.add_child(_gun_muzzle)
-	_gun_view_root.position = Vector3(0.28, -0.25, -0.55)
-	_gun_view_root.rotation_degrees = Vector3(-2.0, -3.5, 0.0)
+	_gun_muzzle = _gun_view_root.get_node_or_null("Muzzle") as Node3D
 	var tracer_shader: Shader = load("res://shaders/bullet_tracer.gdshader") as Shader
 	var impact_shader: Shader = load("res://shaders/bullet_impact.gdshader") as Shader
 	var tracer_material := ShaderMaterial.new()
@@ -676,6 +655,23 @@ func set_cinematic_lock(active: bool) -> void:
 	if active:
 		velocity.x = 0.0
 		velocity.z = 0.0
+
+func set_mobility_lock(active: bool) -> void:
+	mobility_locked = active
+	if active:
+		velocity.x = 0.0
+		velocity.z = 0.0
+
+func apply_knockback(direction: Vector3, horizontal_strength: float, vertical_strength: float) -> void:
+	var launch_direction: Vector3 = direction
+	launch_direction.y = 0.0
+	if launch_direction.length_squared() <= 0.0001:
+		launch_direction = -global_transform.basis.z
+		launch_direction.y = 0.0
+	launch_direction = launch_direction.normalized()
+	velocity.x = launch_direction.x * horizontal_strength
+	velocity.z = launch_direction.z * horizontal_strength
+	velocity.y = maxf(velocity.y, vertical_strength)
 
 func set_cinematic_pose(target_position: Vector3, target_yaw: float, target_pitch: float) -> void:
 	global_position = target_position
