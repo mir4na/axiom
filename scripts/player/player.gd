@@ -18,8 +18,16 @@ extends CharacterBody3D
 @export var lightning_radius: float = 2.4
 @export var lightning_target_max_distance: float = 80.0
 @export var lightning_strike_height: float = 26.0
+@export var lightning_target_move_speed: float = 0.02
+@export var lightning_target_control_radius: float = 22.0
 
 const LIGHTNING_SKILL_ITEM_ID := "LightningSkill"
+const KEY_ITEM_SCENE := preload("res://scenes/objects/key_item.tscn")
+const SHOVEL_ITEM_SCENE := preload("res://scenes/objects/shovel.tscn")
+const AXIOM_ITEM_SCENE := preload("res://scenes/objects/axiom_item.tscn")
+const FLASHLIGHT_ITEM_SCENE := preload("res://scenes/objects/flashlight_item.tscn")
+const GUN_ITEM_SCENE := preload("res://scenes/objects/gun_item.tscn")
+const LIGHTNING_ITEM_SCENE := preload("res://scenes/objects/lightning_skill_item.tscn")
 
 @onready var head: Node3D = $"root/Skeleton3D/BoneAttachment3D/Head"
 @onready var camera: Camera3D = $"root/Skeleton3D/BoneAttachment3D/Head/Camera3D"
@@ -73,6 +81,7 @@ var _lightning_target_valid: bool = false
 var _lightning_target_root: Node3D
 var _lightning_target_ring: MeshInstance3D
 var _lightning_target_core: MeshInstance3D
+var _lightning_target_trace: MeshInstance3D
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -185,6 +194,9 @@ func _input(event: InputEvent) -> void:
 				hud.show_mark_screenshot_effect()
 
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+		if _lightning_targeting:
+			_move_lightning_target_from_mouse(event.relative)
+			return
 		if GameState.time_direction == 1 and GameState.is_scrubbing_past:
 			GameState.prune_timeline()
 		rotate_y(deg_to_rad(-event.relative.x * mouse_sensitivity))
@@ -471,40 +483,39 @@ func _unhandled_input(event: InputEvent) -> void:
 					last_interactable.interact()
 
 func _drop_item() -> void:
-	var item_name = GameState.slots[GameState.selected_slot]
+	var item_name = GameState.get_selected_item()
 	if item_name == "":
 		return
 	GameState.consume_selected()
 	if item_name == "key_1" or item_name.begins_with("key"):
-		var key_scene = load("res://scenes/objects/key_item.tscn")
-		var k = key_scene.instantiate()
-		get_tree().root.add_child(k)
-		k.global_position = head.global_position - head.global_transform.basis.z * 1.5
+		_spawn_drop_item(KEY_ITEM_SCENE, item_name)
 	elif item_name == "Shovel":
-		var shovel_scene = load("res://scenes/objects/shovel.tscn")
-		var s = shovel_scene.instantiate()
-		get_tree().root.add_child(s)
-		s.global_position = head.global_position - head.global_transform.basis.z * 1.5
+		_spawn_drop_item(SHOVEL_ITEM_SCENE)
 	elif item_name == "Axiom":
-		var axiom_scene = load("res://scenes/objects/axiom_item.tscn")
-		var a = axiom_scene.instantiate()
-		get_tree().root.add_child(a)
-		a.global_position = head.global_position - head.global_transform.basis.z * 1.5
+		_spawn_drop_item(AXIOM_ITEM_SCENE)
 	elif item_name == "Flashlight":
-		var flashlight_scene = load("res://scenes/objects/flashlight_item.tscn")
-		var f = flashlight_scene.instantiate()
-		get_tree().root.add_child(f)
-		f.global_position = head.global_position - head.global_transform.basis.z * 1.5
+		_spawn_drop_item(FLASHLIGHT_ITEM_SCENE)
 	elif item_name == "Gun":
-		var gun_scene = load("res://scenes/objects/gun_item.tscn")
-		var g = gun_scene.instantiate()
-		get_tree().root.add_child(g)
-		g.global_position = head.global_position - head.global_transform.basis.z * 1.5
+		_spawn_drop_item(GUN_ITEM_SCENE)
 	elif item_name == LIGHTNING_SKILL_ITEM_ID:
-		var lightning_scene = load("res://scenes/objects/lightning_skill_item.tscn")
-		var l = lightning_scene.instantiate()
-		get_tree().root.add_child(l)
-		l.global_position = head.global_position - head.global_transform.basis.z * 1.5
+		_spawn_drop_item(LIGHTNING_ITEM_SCENE)
+
+func _spawn_drop_item(scene: PackedScene, dropped_item_id: String = "") -> void:
+	if scene == null:
+		return
+	var dropped: Node3D = scene.instantiate() as Node3D
+	if dropped == null:
+		return
+	get_tree().root.add_child(dropped)
+	dropped.global_position = head.global_position - head.global_transform.basis.z * 1.5
+	if dropped_item_id != "" and _node_has_property(dropped, "key_id"):
+		dropped.set("key_id", dropped_item_id)
+
+func _node_has_property(node: Object, property_name: String) -> bool:
+	for prop in node.get_property_list():
+		if String(prop.get("name", "")) == property_name:
+			return true
+	return false
 
 func _can_use_axiom() -> bool:
 	return GameState.has_rewind_access()
@@ -516,10 +527,10 @@ func _has_lightning_skill_selected() -> bool:
 	return GameState.has_selected_item(LIGHTNING_SKILL_ITEM_ID)
 
 func _can_use_gun() -> bool:
-	return _has_gun_selected() and not _lightning_targeting and not cinematic_locked and not GameState.rewind_mode_active and not _gun_reloading and _gun_shot_timer <= 0.0
+	return _has_gun_selected() and not _lightning_targeting and not cinematic_locked and not GameState.is_time_blocked() and not _gun_reloading and _gun_shot_timer <= 0.0
 
 func _can_reload_gun() -> bool:
-	return _has_gun_selected() and not _gun_reloading and _gun_ammo < _gun_clip_size and not cinematic_locked and not GameState.rewind_mode_active
+	return _has_gun_selected() and not _gun_reloading and _gun_ammo < _gun_clip_size and not cinematic_locked and not GameState.is_time_blocked()
 
 func _start_gun_reload() -> void:
 	if not _can_reload_gun():
@@ -606,7 +617,7 @@ func _setup_gun_view_model() -> void:
 func _update_gun_view_model(delta: float) -> void:
 	if _gun_view_root == null:
 		return
-	var active: bool = _has_gun_selected() and not GameState.rewind_mode_active and not cinematic_locked
+	var active: bool = _has_gun_selected() and not GameState.is_time_blocked() and not cinematic_locked
 	_gun_view_root.visible = active
 	if not active:
 		return
@@ -689,10 +700,10 @@ func _setup_lightning_target_indicator() -> void:
 	var ring_mat: StandardMaterial3D = StandardMaterial3D.new()
 	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	ring_mat.albedo_color = Color(0.18, 0.82, 1.0, 0.44)
+	ring_mat.albedo_color = Color(0.02, 0.02, 0.03, 0.72)
 	ring_mat.emission_enabled = true
-	ring_mat.emission = Color(0.28, 0.92, 1.0, 1.0)
-	ring_mat.emission_energy_multiplier = 2.8
+	ring_mat.emission = Color(0.08, 0.08, 0.12, 1.0)
+	ring_mat.emission_energy_multiplier = 3.6
 	_lightning_target_ring.material_override = ring_mat
 	_lightning_target_root.add_child(_lightning_target_ring)
 	_lightning_target_core = MeshInstance3D.new()
@@ -704,18 +715,31 @@ func _setup_lightning_target_indicator() -> void:
 	var core_mat: StandardMaterial3D = StandardMaterial3D.new()
 	core_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	core_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	core_mat.albedo_color = Color(0.9, 0.98, 1.0, 0.88)
+	core_mat.albedo_color = Color(0.04, 0.04, 0.06, 0.92)
 	core_mat.emission_enabled = true
-	core_mat.emission = Color(0.82, 0.97, 1.0, 1.0)
-	core_mat.emission_energy_multiplier = 4.1
+	core_mat.emission = Color(0.1, 0.1, 0.14, 1.0)
+	core_mat.emission_energy_multiplier = 5.0
 	_lightning_target_core.material_override = core_mat
 	_lightning_target_root.add_child(_lightning_target_core)
+	_lightning_target_trace = MeshInstance3D.new()
+	var trace_mesh: BoxMesh = BoxMesh.new()
+	trace_mesh.size = Vector3(0.16, 0.04, 1.0)
+	_lightning_target_trace.mesh = trace_mesh
+	var trace_shader: Shader = load("res://shaders/bullet_tracer.gdshader") as Shader
+	var trace_mat: ShaderMaterial = ShaderMaterial.new()
+	trace_mat.shader = trace_shader
+	trace_mat.set_shader_parameter("tint_color", Color(0.08, 0.08, 0.12, 0.94))
+	trace_mat.set_shader_parameter("glow_strength", 3.9)
+	trace_mat.set_shader_parameter("pulse_speed", 8.8)
+	_lightning_target_trace.material_override = trace_mat
+	_lightning_target_trace.visible = false
+	parent.add_child(_lightning_target_trace)
 	_lightning_target_root.visible = false
 
 func _update_lightning_skill(delta: float) -> void:
 	if _lightning_target_root == null or not is_instance_valid(_lightning_target_root):
 		return
-	var can_target: bool = _has_lightning_skill_selected() and not GameState.rewind_mode_active and not cinematic_locked
+	var can_target: bool = _has_lightning_skill_selected() and not GameState.is_time_blocked() and not cinematic_locked
 	if not can_target:
 		if _lightning_targeting:
 			_set_lightning_targeting(false)
@@ -723,10 +747,11 @@ func _update_lightning_skill(delta: float) -> void:
 	if not _lightning_targeting:
 		_set_lightning_targeting(true)
 	_update_lightning_target_position()
-	_lightning_target_root.rotate_y(delta * 1.8)
+	_lightning_target_ring.rotate_y(delta * 1.8)
 	var pulse: float = 0.9 + sin(Time.get_ticks_msec() * 0.016) * 0.12
 	_lightning_target_ring.scale = Vector3.ONE * pulse
 	_lightning_target_core.scale = Vector3.ONE * (0.8 + sin(Time.get_ticks_msec() * 0.021) * 0.16)
+	_update_lightning_trace_line()
 
 func _set_lightning_targeting(active: bool) -> void:
 	if _lightning_target_root == null or not is_instance_valid(_lightning_target_root):
@@ -735,37 +760,118 @@ func _set_lightning_targeting(active: bool) -> void:
 		return
 	_lightning_targeting = active
 	_lightning_target_root.visible = active
+	if _lightning_target_trace != null and is_instance_valid(_lightning_target_trace):
+		_lightning_target_trace.visible = active and _lightning_target_valid
 	if active:
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		_initialize_lightning_target_position()
 		_update_lightning_target_position()
 	else:
 		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _update_lightning_target_position() -> void:
-	if camera == null:
+	if camera == null or _lightning_target_root == null:
 		_lightning_target_valid = false
 		return
-	var mouse_position: Vector2 = get_viewport().get_mouse_position()
-	var ray_origin: Vector3 = camera.project_ray_origin(mouse_position)
-	var ray_direction: Vector3 = camera.project_ray_normal(mouse_position).normalized()
-	var ray_end: Vector3 = ray_origin + ray_direction * lightning_target_max_distance
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
+	var query_from: Vector3 = _lightning_target_position + Vector3(0.0, 40.0, 0.0)
+	var query_to: Vector3 = _lightning_target_position + Vector3(0.0, -40.0, 0.0)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(query_from, query_to)
 	query.exclude = [get_rid()]
 	query.collide_with_areas = false
 	query.collide_with_bodies = true
 	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty():
 		_lightning_target_valid = false
+		_lightning_target_root.visible = false
+		if _lightning_target_trace != null and is_instance_valid(_lightning_target_trace):
+			_lightning_target_trace.visible = false
 		return
 	var hit_position: Variant = hit.get("position", global_position)
 	if typeof(hit_position) != TYPE_VECTOR3:
 		_lightning_target_valid = false
+		_lightning_target_root.visible = false
+		if _lightning_target_trace != null and is_instance_valid(_lightning_target_trace):
+			_lightning_target_trace.visible = false
 		return
 	_lightning_target_position = hit_position as Vector3
 	_lightning_target_position.y -= 0.02
 	_lightning_target_valid = true
 	_lightning_target_root.global_position = _lightning_target_position
+	_lightning_target_root.visible = _lightning_targeting
+	if _lightning_target_trace != null and is_instance_valid(_lightning_target_trace):
+		_lightning_target_trace.visible = _lightning_targeting
+
+func _initialize_lightning_target_position() -> void:
+	if camera == null:
+		return
+	var ray_origin: Vector3 = camera.global_position
+	var ray_direction: Vector3 = -camera.global_transform.basis.z.normalized()
+	var ray_end: Vector3 = ray_origin + ray_direction * minf(lightning_target_max_distance, lightning_target_control_radius)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
+	query.exclude = [get_rid()]
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		var hit_position: Variant = hit.get("position", global_position + ray_direction * 8.0)
+		if typeof(hit_position) == TYPE_VECTOR3:
+			_lightning_target_position = hit_position as Vector3
+			_clamp_lightning_target_radius()
+			return
+	_lightning_target_position = global_position + ray_direction * 8.0
+	_clamp_lightning_target_radius()
+
+func _move_lightning_target_from_mouse(relative: Vector2) -> void:
+	if camera == null:
+		return
+	var right: Vector3 = camera.global_transform.basis.x.normalized()
+	var forward: Vector3 = -camera.global_transform.basis.z.normalized()
+	right.y = 0.0
+	forward.y = 0.0
+	if right.length_squared() <= 0.0001:
+		right = Vector3.RIGHT
+	else:
+		right = right.normalized()
+	if forward.length_squared() <= 0.0001:
+		forward = Vector3.FORWARD
+	else:
+		forward = forward.normalized()
+	var move: Vector3 = (right * relative.x + forward * -relative.y) * lightning_target_move_speed
+	_lightning_target_position += move
+	_clamp_lightning_target_radius()
+	_update_lightning_target_position()
+
+func _clamp_lightning_target_radius() -> void:
+	var anchor: Vector3 = global_position
+	anchor.y = _lightning_target_position.y
+	var offset: Vector3 = _lightning_target_position - anchor
+	offset.y = 0.0
+	var max_radius: float = minf(lightning_target_max_distance, lightning_target_control_radius)
+	if offset.length() > max_radius:
+		offset = offset.normalized() * max_radius
+	_lightning_target_position.x = anchor.x + offset.x
+	_lightning_target_position.z = anchor.z + offset.z
+
+func _update_lightning_trace_line() -> void:
+	if _lightning_target_trace == null or not is_instance_valid(_lightning_target_trace):
+		return
+	if not _lightning_targeting or not _lightning_target_valid:
+		_lightning_target_trace.visible = false
+		return
+	var start: Vector3 = global_position + Vector3(0.0, 0.06, 0.0)
+	var end: Vector3 = _lightning_target_position + Vector3(0.0, 0.06, 0.0)
+	var dir: Vector3 = end - start
+	dir.y = 0.0
+	var len: float = dir.length()
+	if len <= 0.12:
+		_lightning_target_trace.visible = false
+		return
+	_lightning_target_trace.visible = true
+	var basis: Basis = Basis.looking_at(dir.normalized(), Vector3.UP)
+	_lightning_target_trace.global_transform = Transform3D(basis, start.lerp(end, 0.5))
+	_lightning_target_trace.scale = Vector3(1.0, 1.0, len)
 
 func _cast_lightning_at_target() -> void:
 	if not _lightning_targeting:

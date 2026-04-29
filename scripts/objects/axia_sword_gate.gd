@@ -16,7 +16,7 @@ func _ready() -> void:
 	scale = Vector3(0.01, 0.01, 0.01)
 
 func _physics_process(delta: float) -> void:
-	if GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past:
+	if GameState.is_time_blocked():
 		return
 	_elapsed += delta
 	var ratio: float = clampf(_elapsed / maxf(duration, 0.001), 0.0, 1.0)

@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="3_house"]
 [ext_resource type="Script" uid="uid://boiwq5gf777ux" path="res://scripts/world/level_three_surreal.gd" id="4_surreal"]
 [ext_resource type="Shader" uid="uid://d270balpvvv3t" path="res://shaders/spatial_glitch.gdshader" id="5_glitch"]
+[ext_resource type="PackedScene" path="res://scenes/objects/challenge_platform.tscn" id="6_challenge_platform"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.98, 0.99, 1, 1)
@@ -236,7 +237,7 @@ light_energy = 1.1
 omni_range = 46.0
 
 [node name="PlayerSpawn" type="Marker3D" parent="." unique_id=2073459487]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 26.8, 0)
 
 [node name="World" type="Node3D" parent="." unique_id=70481313]
 script = ExtResource("1_world")
@@ -325,6 +326,31 @@ size = Vector3(12.4, 0.96, 6.9)
 material = SubResource("MatIslandGlow")
 
 [node name="Player" parent="World" unique_id=32608367 instance=ExtResource("2_player")]
+
+[node name="TraversalPlatforms" type="Node3D" parent="World" unique_id=900301111]
+
+[node name="SpawnPlatform" parent="World/TraversalPlatforms" unique_id=900301112 instance=ExtResource("6_challenge_platform")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 26, 0)
+platform_mode = 0
+
+[node name="MovingPlatform" parent="World/TraversalPlatforms" unique_id=900301113 instance=ExtResource("6_challenge_platform")]
+transform = Transform3D(0.9832549, 0, -0.18223552, 0, 1, 0, 0.18223552, 0, 0.9832549, 8, 23, -4)
+platform_mode = 1
+move_axis = Vector3(1, 0, 0)
+move_distance = 6.0
+move_speed = 0.95
+
+[node name="RotatingPlatform" parent="World/TraversalPlatforms" unique_id=900301114 instance=ExtResource("6_challenge_platform")]
+transform = Transform3D(0.997564, 0, 0.0697565, 0, 1, 0, -0.0697565, 0, 0.997564, 18, 20, 3)
+platform_mode = 2
+rotate_axis = Vector3(0, 1, 0)
+rotate_speed_deg = 56.0
+
+[node name="DisappearingPlatform" parent="World/TraversalPlatforms" unique_id=900301115 instance=ExtResource("6_challenge_platform")]
+transform = Transform3D(0.9396926, 0, -0.34202015, 0, 1, 0, 0.34202015, 0, 0.9396926, 28, 17, 0)
+platform_mode = 3
+disappear_delay = 0.3
+reappear_delay = 0.0
 
 [node name="FloatingRealm" type="Node3D" parent="World" unique_id=1892166497]
 

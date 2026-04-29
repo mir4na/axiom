@@ -105,7 +105,10 @@ func cancel_rewind_mode() -> void:
 				_apply_actor_state(actor, snap[path])
 	rewind_mode_active = false
 	is_scrubbing_past = false
+	var direction_changed: bool = time_direction != TIME_FORWARD
 	time_direction = TIME_FORWARD
+	if direction_changed:
+		time_direction_changed.emit(time_direction)
 	rewind_mode_changed.emit(false)
 
 func deactivate_rewind_mode(jump: bool) -> void:
@@ -125,7 +128,10 @@ func deactivate_rewind_mode(jump: bool) -> void:
 
 	rewind_mode_active = false
 	is_scrubbing_past = false
+	var direction_changed: bool = time_direction != TIME_FORWARD
 	time_direction = TIME_FORWARD
+	if direction_changed:
+		time_direction_changed.emit(time_direction)
 	rewind_mode_changed.emit(false)
 
 func add_mark_current() -> void:
@@ -225,11 +231,7 @@ func reset_axiom_recording() -> void:
 	rewind_mode_active = false
 	is_scrubbing_past = false
 	time_direction = TIME_FORWARD
-	rewind_pointer_index = -1
-	world_history.clear()
-	history_index = -1
-	mark_indices.clear()
-	timeline_position = 0.0
+	clear_rewind_timeline(0.0)
 	rewind_mode_changed.emit(false)
 	time_direction_changed.emit(time_direction)
 
@@ -247,11 +249,7 @@ func reset_progression() -> void:
 	axiom_unlocked = false
 	recording_enabled = true
 	rewind_mode_active = false
-	rewind_pointer_index = -1
-	world_history.clear()
-	history_index = -1
-	mark_indices.clear()
-	timeline_position = 100.0
+	clear_rewind_timeline(100.0)
 	inventory_changed.emit()
 	ui_updated.emit()
 
@@ -313,3 +311,44 @@ func consume_selected_item(item_id: String) -> bool:
 	slots[selected_slot] = ""
 	inventory_changed.emit()
 	return true
+
+func get_selected_item() -> String:
+	if selected_slot < 0 or selected_slot >= slots.size():
+		return ""
+	return slots[selected_slot]
+
+func is_time_blocked() -> bool:
+	return is_paused or rewind_mode_active or time_direction != TIME_FORWARD or is_scrubbing_past
+
+func force_time_forward() -> void:
+	if rewind_mode_active:
+		cancel_rewind_mode()
+		return
+	is_scrubbing_past = false
+	if time_direction != TIME_FORWARD:
+		time_direction = TIME_FORWARD
+		time_direction_changed.emit(time_direction)
+
+func add_item_first_free_slot(item_id: String) -> bool:
+	if has_item(item_id):
+		return false
+	for slot_index in range(slots.size()):
+		if slots[slot_index] == "":
+			slots[slot_index] = item_id
+			inventory_changed.emit()
+			return true
+	return false
+
+func select_item(item_id: String) -> bool:
+	for slot_index in range(slots.size()):
+		if slots[slot_index] == item_id:
+			select_slot(slot_index)
+			return true
+	return false
+
+func clear_rewind_timeline(timeline_value: float = 0.0) -> void:
+	rewind_pointer_index = -1
+	world_history.clear()
+	history_index = -1
+	mark_indices.clear()
+	timeline_position = timeline_value

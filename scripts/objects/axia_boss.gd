@@ -37,9 +37,17 @@ const LIGHT_SNARE_SCENE := preload("res://scenes/objects/axia_light_snare.tscn")
 @export var wind_pulse_light_color: Color = Color(0.22, 0.48, 0.28, 1.0)
 @export var wind_charge_duration: float = 2.15
 @export var wind_charge_orb_count: int = 16
+@export var wind_pulse_max_radius: float = 26.0
+@export var wind_pulse_damage_min: float = 12.0
+@export var wind_pulse_damage_max: float = 34.0
+@export var wind_pulse_knockback_min: float = 72.0
+@export var wind_pulse_knockback_max: float = 168.0
+@export var wind_pulse_knockup_min: float = 5.2
+@export var wind_pulse_knockup_max: float = 10.8
 @export var sword_circle_count: int = 20
 @export var sword_projectile_speed: float = 12.8
 @export var sword_projectile_damage: float = 11.0
+@export var facing_yaw_offset: float = PI
 
 @onready var _rose: CharacterBody3D = $Rose
 @onready var _visual_root: Node3D = $VisualRoot
@@ -147,13 +155,19 @@ func _face_player(delta: float) -> void:
 	if _player == null:
 		return
 	var target_position: Vector3 = _player.global_position
+	_face_toward_position(target_position, delta * 2.2)
+
+func face_toward_position(target_position: Vector3) -> void:
+	_face_toward_position(target_position, 1.0)
+
+func _face_toward_position(target_position: Vector3, blend_weight: float) -> void:
 	var flat_target: Vector3 = Vector3(target_position.x, global_position.y, target_position.z)
 	var direction: Vector3 = flat_target - global_position
 	direction.y = 0.0
 	if direction.length_squared() <= 0.0001:
 		return
-	var target_yaw: float = atan2(direction.x, direction.z)
-	rotation.y = lerp_angle(rotation.y, target_yaw, delta * 2.2)
+	var target_yaw: float = atan2(direction.x, direction.z) + facing_yaw_offset
+	rotation.y = lerp_angle(rotation.y, target_yaw, clampf(blend_weight, 0.0, 1.0))
 
 func _start_next_attack() -> void:
 	_attack_running = true
@@ -163,6 +177,9 @@ func _start_next_attack() -> void:
 	call_deferred("_run_attack_sequence", attack_name)
 
 func _run_attack_sequence(attack_name: String) -> void:
+	if _should_abort_skills():
+		_attack_running = false
+		return
 	match attack_name:
 		"wind":
 			await _perform_wind_pulse()
@@ -172,24 +189,35 @@ func _run_attack_sequence(attack_name: String) -> void:
 			await _perform_meteor_rain()
 		"snare":
 			await _perform_light_snare()
+	if _should_abort_skills():
+		_attack_running = false
+		return
 	_attack_running = false
 	_cooldown_left = attack_interval
 
 func _perform_wind_pulse() -> void:
-	if _wind_disc == null:
+	if _wind_disc == null or _should_abort_skills():
 		return
 	var original_light_color: Color = Color(1.0, 0.9, 0.74, 1.0)
 	if _aura_light != null:
 		original_light_color = _aura_light.light_color
 		_aura_light.light_color = wind_pulse_light_color
 	await _play_cast_surge(0.7, 5.4)
+	if _should_abort_skills():
+		if _aura_light != null:
+			_aura_light.light_color = original_light_color
+		return
 	var gather_root: Node3D = Node3D.new()
 	_projectile_root.add_child(gather_root)
 	gather_root.global_position = global_position + Vector3.UP * 1.3
 	var gather_orbs: Array[MeshInstance3D] = _spawn_wind_charge_orbs(gather_root, maxi(wind_charge_orb_count, 8))
 	var elapsed: float = 0.0
+	var aborted: bool = false
 	while elapsed < wind_charge_duration:
-		if GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past:
+		if _should_abort_skills():
+			aborted = true
+			break
+		if _is_time_state_blocked():
 			await get_tree().process_frame
 			continue
 		var delta: float = get_process_delta_time()
@@ -197,6 +225,17 @@ func _perform_wind_pulse() -> void:
 		var ratio: float = clampf(elapsed / maxf(wind_charge_duration, 0.001), 0.0, 1.0)
 		_update_wind_charge_orbs(gather_orbs, ratio, elapsed)
 		await get_tree().process_frame
+	if aborted:
+		for orb in gather_orbs:
+			if is_instance_valid(orb):
+				orb.queue_free()
+		if is_instance_valid(gather_root):
+			gather_root.queue_free()
+		_wind_disc.visible = false
+		_wind_disc.scale = _wind_disc_initial_scale
+		if _aura_light != null:
+			_aura_light.light_color = original_light_color
+		return
 	_wind_disc.visible = true
 	_wind_disc.scale = Vector3(_wind_disc_initial_scale.x * 0.35, _wind_disc_initial_scale.y, _wind_disc_initial_scale.z * 0.35)
 	if _wind_disc.material_override is ShaderMaterial:
@@ -208,6 +247,17 @@ func _perform_wind_pulse() -> void:
 	charge.tween_property(_wind_disc, "scale", Vector3(4.5, 1.0, 4.5), 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	charge.parallel().tween_property(_aura_light, "light_energy", 7.2, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await _await_tween_with_time_control(charge)
+	if _should_abort_skills():
+		for orb in gather_orbs:
+			if is_instance_valid(orb):
+				orb.queue_free()
+		if is_instance_valid(gather_root):
+			gather_root.queue_free()
+		_wind_disc.visible = false
+		_wind_disc.scale = _wind_disc_initial_scale
+		if _aura_light != null:
+			_aura_light.light_color = original_light_color
+		return
 	_apply_wind_damage()
 	var blast: Tween = create_tween().set_parallel(true)
 	blast.tween_property(_wind_disc, "scale", Vector3(58.0, 1.0, 58.0), 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -216,29 +266,37 @@ func _perform_wind_pulse() -> void:
 	for orb in gather_orbs:
 		if is_instance_valid(orb):
 			orb.queue_free()
-	gather_root.queue_free()
+	if is_instance_valid(gather_root):
+		gather_root.queue_free()
 	_wind_disc.visible = false
 	_wind_disc.scale = _wind_disc_initial_scale
 	if _aura_light != null:
 		_aura_light.light_color = original_light_color
 
 func _apply_wind_damage() -> void:
+	if _should_abort_skills():
+		return
 	if _player == null or not is_instance_valid(_player):
 		return
 	var distance: float = global_position.distance_to(_player.global_position)
-	if distance > 26.0:
+	if distance > wind_pulse_max_radius:
 		return
+	var influence: float = 1.0 - clampf(distance / maxf(wind_pulse_max_radius, 0.001), 0.0, 1.0)
+	var damage: float = lerpf(wind_pulse_damage_min, wind_pulse_damage_max, influence)
+	var knockback_force: float = lerpf(wind_pulse_knockback_min, wind_pulse_knockback_max, influence)
+	var knockup_force: float = lerpf(wind_pulse_knockup_min, wind_pulse_knockup_max, influence)
 	if _player.has_method("take_damage"):
-		_player.call("take_damage", 20.0)
+		_player.call("take_damage", damage)
 	if _player.has_method("apply_knockback"):
 		var direction: Vector3 = (_player.global_position - global_position).normalized()
-		_player.call("apply_knockback", direction, 110.0, 8.4)
+		_player.call("apply_knockback", direction, knockback_force, knockup_force)
 
 func _perform_sword_volley() -> void:
-	if _player == null:
+	if _player == null or _should_abort_skills():
 		return
 	await _play_cast_surge(0.62, 5.4)
-	var aim_snapshot: Vector3 = _player.global_position + Vector3(0.0, 1.2, 0.0)
+	if _should_abort_skills():
+		return
 	var sword_points: Array[Vector3] = []
 	var gates: Array[Node3D] = []
 	var preview_swords: Array[Area3D] = []
@@ -263,32 +321,46 @@ func _perform_sword_volley() -> void:
 				gate.call("configure", 1.25)
 			gates.append(gate)
 	for point in sword_points:
+		if _should_abort_skills():
+			break
 		var projectile: Area3D = SWORD_PROJECTILE_SCENE.instantiate() as Area3D
 		if projectile == null:
 			continue
 		_projectile_root.add_child(projectile)
 		projectile.global_position = point
-		var look_dir: Vector3 = (aim_snapshot - point).normalized()
+		var preview_target: Vector3 = _player.global_position + Vector3(0.0, 1.2, 0.0)
+		var look_dir: Vector3 = (preview_target - point).normalized()
 		if look_dir.length_squared() <= 0.0001:
 			look_dir = Vector3.DOWN
 		projectile.look_at(projectile.global_position + look_dir, Vector3.UP, true)
 		preview_swords.append(projectile)
 		await _wait_for_game_time(0.035)
+	if _should_abort_skills():
+		return
 	await _wait_for_game_time(0.8)
+	if _should_abort_skills():
+		return
 	var gate_fade: Tween = create_tween().set_parallel(true)
 	for gate in gates:
 		if gate != null and is_instance_valid(gate):
 			gate_fade.parallel().tween_property(gate, "scale", Vector3.ZERO, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await _await_tween_with_time_control(gate_fade)
+	if _should_abort_skills():
+		return
 	for gate in gates:
 		if gate != null and is_instance_valid(gate):
 			gate.queue_free()
 	await _wait_for_game_time(0.12)
+	if _should_abort_skills():
+		return
 	var fire_speed: float = sword_projectile_speed * 1.75
 	for projectile in preview_swords:
+		if _should_abort_skills():
+			break
 		if projectile == null or not is_instance_valid(projectile):
 			continue
-		var fire_dir: Vector3 = (aim_snapshot - projectile.global_position).normalized()
+		var live_target: Vector3 = _player.global_position + Vector3(0.0, 1.2, 0.0)
+		var fire_dir: Vector3 = (live_target - projectile.global_position).normalized()
 		if fire_dir.length_squared() <= 0.0001:
 			fire_dir = Vector3.DOWN
 		projectile.look_at(projectile.global_position + fire_dir, Vector3.UP, true)
@@ -297,14 +369,18 @@ func _perform_sword_volley() -> void:
 		await _wait_for_game_time(0.055)
 
 func _perform_meteor_rain() -> void:
-	if _player == null:
+	if _player == null or _should_abort_skills():
 		return
 	await _play_cast_surge(0.75, 5.0)
+	if _should_abort_skills():
+		return
 	var rain_duration: float = 8.0
 	var spawn_interval: float = 0.42
 	var elapsed: float = 0.0
 	while elapsed < rain_duration:
-		if GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past:
+		if _should_abort_skills():
+			break
+		if _is_time_state_blocked():
 			await get_tree().process_frame
 			continue
 		for burst_index in range(2):
@@ -323,9 +399,11 @@ func _perform_meteor_rain() -> void:
 		elapsed += wait_time
 
 func _perform_light_snare() -> void:
-	if _player == null:
+	if _player == null or _should_abort_skills():
 		return
 	await _play_cast_surge(0.86, 5.8)
+	if _should_abort_skills():
+		return
 	var snare: Area3D = LIGHT_SNARE_SCENE.instantiate() as Area3D
 	if snare == null:
 		return
@@ -371,13 +449,15 @@ func _update_wind_charge_orbs(orbs: Array[MeshInstance3D], ratio: float, elapsed
 		orb.scale = Vector3.ONE * maxf(0.28, scale_factor)
 
 func _play_cast_surge(duration: float, light_target: float) -> void:
-	if _aura_ring == null or _aura_light == null:
+	if _aura_ring == null or _aura_light == null or _should_abort_skills():
 		return
 	var start_scale: Vector3 = _aura_ring.scale
 	var surge: Tween = create_tween().set_parallel(true)
 	surge.tween_property(_aura_ring, "scale", start_scale * 1.36, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	surge.parallel().tween_property(_aura_light, "light_energy", light_target, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await _await_tween_with_time_control(surge)
+	if _should_abort_skills():
+		return
 	var settle: Tween = create_tween().set_parallel(true)
 	settle.tween_property(_aura_ring, "scale", _aura_ring_initial_scale, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	settle.parallel().tween_property(_aura_light, "light_energy", _aura_light_initial_energy, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -556,12 +636,17 @@ func _distance_point_to_segment(point: Vector3, segment_a: Vector3, segment_b: V
 	return point.distance_to(closest)
 
 func _is_time_state_blocked() -> bool:
-	return GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past
+	return GameState.is_time_blocked()
+
+func _should_abort_skills() -> bool:
+	return _defeated or _death_in_progress or not _encounter_active or not is_inside_tree()
 
 func _wait_for_game_time(duration: float) -> void:
 	var elapsed: float = 0.0
 	while elapsed < duration:
 		await get_tree().process_frame
+		if _should_abort_skills():
+			return
 		if _is_time_state_blocked():
 			continue
 		elapsed += get_process_delta_time()
@@ -570,6 +655,9 @@ func _await_tween_with_time_control(tween: Tween) -> void:
 	if tween == null:
 		return
 	while tween.is_valid():
+		if _should_abort_skills():
+			tween.kill()
+			return
 		if _is_time_state_blocked():
 			tween.pause()
 		else:

@@ -60,7 +60,7 @@ func configure_attack(target_position: Vector3, player_ref: CharacterBody3D, dam
 func _physics_process(delta: float) -> void:
 	if not _active:
 		return
-	if GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past:
+	if GameState.is_time_blocked():
 		return
 	if not _falling:
 		_warning_left -= delta
@@ -116,7 +116,7 @@ func _impact() -> void:
 	queue_free()
 
 func _is_time_state_blocked() -> bool:
-	return GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past
+	return GameState.is_time_blocked()
 
 func _await_tween_with_time_control(tween: Tween) -> void:
 	if tween == null:

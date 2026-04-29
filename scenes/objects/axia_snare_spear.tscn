@@ -1,38 +1,82 @@
-[gd_scene format=3]
+[gd_scene load_steps=10 format=3]
 
-[sub_resource type="StandardMaterial3D" id="SpearBodyMat"]
-albedo_color = Color(0.06, 0.11, 0.09, 0.98)
-metallic = 0.9
-roughness = 0.12
-emission_enabled = true
-emission = Color(0.28, 0.95, 0.42, 1)
-emission_energy_multiplier = 2.8
+[ext_resource type="Shader" path="res://shaders/axia_snare_spear.gdshader" id="1_shader"]
 
-[sub_resource type="StandardMaterial3D" id="SpearTipMat"]
-albedo_color = Color(0.6, 1, 0.72, 0.98)
-metallic = 0.42
-roughness = 0.05
-emission_enabled = true
-emission = Color(0.5, 1, 0.62, 1)
-emission_energy_multiplier = 3.6
+[sub_resource type="ShaderMaterial" id="ShaftMat"]
+shader = ExtResource("1_shader")
+shader_parameter/base_color = Color(0.03, 0.06, 0.05, 1)
+shader_parameter/edge_color = Color(0.22, 0.85, 0.48, 1)
+shader_parameter/glow_color = Color(0.1, 0.56, 0.28, 1)
+shader_parameter/emission_energy = 2.7
+shader_parameter/metallic_value = 0.92
+shader_parameter/roughness_value = 0.18
+shader_parameter/flow_speed = 1.7
+shader_parameter/flow_density = 10.0
+shader_parameter/edge_power = 2.7
 
-[sub_resource type="CylinderMesh" id="SpearBodyMesh"]
-top_radius = 0.13
-bottom_radius = 0.17
-height = 4.6
+[sub_resource type="ShaderMaterial" id="TipMat"]
+shader = ExtResource("1_shader")
+shader_parameter/base_color = Color(0.05, 0.08, 0.07, 1)
+shader_parameter/edge_color = Color(0.46, 1, 0.7, 1)
+shader_parameter/glow_color = Color(0.22, 0.86, 0.5, 1)
+shader_parameter/emission_energy = 4.2
+shader_parameter/metallic_value = 0.7
+shader_parameter/roughness_value = 0.07
+shader_parameter/flow_speed = 2.7
+shader_parameter/flow_density = 20.0
+shader_parameter/edge_power = 1.7
 
-[sub_resource type="PrismMesh" id="SpearTipMesh"]
-left_to_right = 0.22
-size = Vector3(0.42, 1.05, 0.42)
+[sub_resource type="CylinderMesh" id="ShaftMesh"]
+top_radius = 0.06
+bottom_radius = 0.08
+height = 5.8
+
+[sub_resource type="CylinderMesh" id="TipMesh"]
+top_radius = 0.0
+bottom_radius = 0.2
+height = 1.45
+
+[sub_resource type="CylinderMesh" id="CollarMesh"]
+top_radius = 0.18
+bottom_radius = 0.2
+height = 0.25
+
+[sub_resource type="BoxMesh" id="FinMesh"]
+size = Vector3(0.03, 0.5, 0.22)
 
 [node name="AxiaSnareSpear" type="Node3D"]
 
-[node name="Body" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
-material_override = SubResource("SpearBodyMat")
-mesh = SubResource("SpearBodyMesh")
+[node name="Shaft" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.1, 0)
+material_override = SubResource("ShaftMat")
+mesh = SubResource("ShaftMesh")
+
+[node name="Collar" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.92, 0)
+material_override = SubResource("TipMat")
+mesh = SubResource("CollarMesh")
 
 [node name="Tip" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.9, 0)
-material_override = SubResource("SpearTipMat")
-mesh = SubResource("SpearTipMesh")
+transform = Transform3D(0.999998, 0, -0.00174533, 0, 1, 0, 0.00174533, 0, 0.999998, 0, -5.72, 0)
+material_override = SubResource("TipMat")
+mesh = SubResource("TipMesh")
+
+[node name="FinA" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.906308, -0.422618, 0, 0.422618, 0.906308, 0, -5.1, 0)
+material_override = SubResource("TipMat")
+mesh = SubResource("FinMesh")
+
+[node name="FinB" type="MeshInstance3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, -1, -0.422618, 0.906308, 1.84731e-08, 0.906308, 0.422618, -3.96184e-08, 0, -5.1, 0)
+material_override = SubResource("TipMat")
+mesh = SubResource("FinMesh")
+
+[node name="FinC" type="MeshInstance3D" parent="."]
+transform = Transform3D(-1, 0, 8.74228e-08, 3.69365e-08, 0.906308, 0.422618, -7.91817e-08, 0.422618, -0.906308, 0, -5.1, 0)
+material_override = SubResource("TipMat")
+mesh = SubResource("FinMesh")
+
+[node name="FinD" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.19249e-08, 0, 1, 0.422618, 0.906308, -5.04245e-09, -0.906308, 0.422618, 1.08084e-08, 0, -5.1, 0)
+material_override = SubResource("TipMat")
+mesh = SubResource("FinMesh")

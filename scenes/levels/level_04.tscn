@@ -182,7 +182,7 @@ transform = Transform3D(0.99939084, 0, -0.034899496, 0, 1, 0, 0.034899496, 0, 0.
 script = ExtResource("1_world")
 
 [node name="WaterPlane" type="MeshInstance3D" parent="World" unique_id=1167373583]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07538223, -0.08, -0.103364944)
 material_override = SubResource("MatWater")
 mesh = SubResource("WaterMesh")
 
@@ -343,7 +343,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20.5, 2.6)
 [node name="SkyHeadCamera" type="Camera3D" parent="World/CutsceneMarkers" unique_id=182916605]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 2.06, 9.35)
 
-[node name="SkyHeadRevealCamera" type="Camera3D" parent="World/CutsceneMarkers"]
+[node name="SkyHeadRevealCamera" type="Camera3D" parent="World/CutsceneMarkers" unique_id=955078448]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 2.02, 9.55)
 
 [node name="CrystalShotStart" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1099036438]

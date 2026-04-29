@@ -516,11 +516,8 @@ func _create_meteor_nodes() -> void:
 
 func _prepare_world_phase() -> void:
 	GameState.full_reset_inventory()
-	GameState.rewind_mode_active = false
-	GameState.time_direction = GameState.TIME_FORWARD
-	GameState.world_history.clear()
-	GameState.history_index = -1
-	GameState.rewind_pointer_index = -1
+	GameState.force_time_forward()
+	GameState.clear_rewind_timeline(0.0)
 	_completed_dig_spots = 0
 	_objective_state = ""
 	_transition_started = false

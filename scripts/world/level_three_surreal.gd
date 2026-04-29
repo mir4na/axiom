@@ -20,7 +20,7 @@ func _ready() -> void:
 	_collect_nodes()
 
 func _process(delta: float) -> void:
-	if GameState.rewind_mode_active:
+	if GameState.is_time_blocked():
 		return
 	_time += delta
 	_animate_floaters()

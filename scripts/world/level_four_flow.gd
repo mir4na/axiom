@@ -31,6 +31,11 @@ var _axia_follow_offset: Vector3 = Vector3(0.0, 1.35, 4.5)
 var _ending_sequence_running: bool = false
 var _lightning_drop_interval: float = 15.0
 var _lightning_drop_timer: float = 15.0
+var _lightning_drop_min_radius: float = 2.4
+var _lightning_drop_max_radius: float = 10.8
+var _lightning_drop_probe_height: float = 20.0
+var _lightning_drop_floor_min_y: float = -2.0
+var _lightning_drop_fallback_y: float = 0.82
 
 func _init(world_ref) -> void:
 	_world = world_ref
@@ -465,7 +470,10 @@ func _face_boss_to_player() -> void:
 	var to_target: Vector3 = target_position - _boss.global_position
 	if to_target.length_squared() <= 0.0001:
 		return
-	_boss.look_at(target_position, Vector3.UP)
+	if _boss.has_method("face_toward_position"):
+		_boss.call("face_toward_position", target_position)
+	else:
+		_boss.look_at(target_position, Vector3.UP)
 
 func _show_axia_line(text: String, duration: float) -> void:
 	if _boss != null and _boss.has_method("play_idle"):
@@ -478,12 +486,7 @@ func _show_player_line(text: String, duration: float) -> void:
 func _start_boss_encounter() -> void:
 	if _encounter_started or _boss == null or not is_instance_valid(_boss):
 		return
-	if GameState.rewind_mode_active:
-		GameState.cancel_rewind_mode()
-	GameState.time_direction = GameState.TIME_FORWARD
-	GameState.is_scrubbing_past = false
-	GameState.rewind_mode_changed.emit(false)
-	GameState.time_direction_changed.emit(GameState.time_direction)
+	GameState.force_time_forward()
 	_encounter_started = true
 	_lightning_drop_timer = _lightning_drop_interval
 	_world._show_objective(DEFEAT_OBJECTIVE)
@@ -519,7 +522,7 @@ func _set_cinematic_ui(visible: bool) -> void:
 			_hide_hint()
 
 func _update_lightning_skill_drop() -> void:
-	if GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past:
+	if GameState.is_time_blocked():
 		return
 	_lightning_drop_timer -= _world.get_process_delta_time()
 	if _lightning_drop_timer > 0.0:
@@ -539,23 +542,57 @@ func _spawn_lightning_skill_drop() -> void:
 		center = _combat_focus.global_position
 	elif _world.player != null and is_instance_valid(_world.player):
 		center = _world.player.global_position
-	var angle: float = randf_range(0.0, TAU)
-	var radius: float = randf_range(2.4, 10.8)
-	var target_position: Vector3 = center + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
-	target_position.y = 0.08
+	var target_position: Vector3 = _find_valid_lightning_drop_position(center)
 	drop_item.global_position = target_position
+
+func _find_valid_lightning_drop_position(center: Vector3) -> Vector3:
+	var fallback: Vector3 = Vector3(center.x, _lightning_drop_fallback_y, center.z)
+	var attempts: int = 20
+	for attempt in range(attempts):
+		var angle: float = randf_range(0.0, TAU)
+		var radius: float = randf_range(_lightning_drop_min_radius, _lightning_drop_max_radius)
+		if attempt == 0:
+			radius = randf_range(_lightning_drop_min_radius, _lightning_drop_max_radius * 0.56)
+		var sample_origin: Vector3 = center + Vector3(cos(angle) * radius, _lightning_drop_probe_height, sin(angle) * radius)
+		var hit_position: Vector3 = _raycast_drop_surface(sample_origin)
+		if hit_position.y >= _lightning_drop_floor_min_y:
+			hit_position.y += 0.05
+			return hit_position
+	return fallback
+
+func _raycast_drop_surface(origin: Vector3) -> Vector3:
+	if _world == null:
+		return Vector3(origin.x, -1000.0, origin.z)
+	var state: PhysicsDirectSpaceState3D = _world.get_world_3d().direct_space_state
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		origin,
+		origin + Vector3(0.0, -60.0, 0.0)
+	)
+	var exclude: Array[RID] = []
+	if _world.player != null and is_instance_valid(_world.player):
+		exclude.append(_world.player.get_rid())
+	if _boss != null and is_instance_valid(_boss) and _boss is CollisionObject3D:
+		exclude.append((_boss as CollisionObject3D).get_rid())
+	query.exclude = exclude
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	var result: Dictionary = state.intersect_ray(query)
+	if result.is_empty():
+		return Vector3(origin.x, -1000.0, origin.z)
+	var normal_value: Variant = result.get("normal", Vector3.UP)
+	if typeof(normal_value) == TYPE_VECTOR3:
+		var normal: Vector3 = normal_value as Vector3
+		if normal.y < 0.35:
+			return Vector3(origin.x, -1000.0, origin.z)
+	var position_value: Variant = result.get("position", Vector3(origin.x, -1000.0, origin.z))
+	if typeof(position_value) == TYPE_VECTOR3:
+		return position_value as Vector3
+	return Vector3(origin.x, -1000.0, origin.z)
 
 func _ensure_item_in_inventory(item_id: String) -> void:
 	if GameState.has_item(item_id):
 		return
-	for slot_index in range(GameState.slots.size()):
-		if GameState.slots[slot_index] == "":
-			GameState.slots[slot_index] = item_id
-			GameState.inventory_changed.emit()
-			return
+	GameState.add_item_first_free_slot(item_id)
 
 func _select_item(item_id: String) -> void:
-	for slot_index in range(GameState.slots.size()):
-		if GameState.slots[slot_index] == item_id:
-			GameState.select_slot(slot_index)
-			return
+	GameState.select_item(item_id)

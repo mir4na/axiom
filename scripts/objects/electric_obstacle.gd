@@ -42,7 +42,7 @@ func _physics_process(delta: float) -> void:
 	_update_corridor_lights(delta)
 	if not _enabled or _destroyed:
 		return
-	if GameState.rewind_mode_active:
+	if GameState.is_time_blocked():
 		return
 	var player: CharacterBody3D = get_tree().get_first_node_in_group("player") as CharacterBody3D
 	if player == null or not is_instance_valid(player):
@@ -244,7 +244,7 @@ func _update_corridor_lights(delta: float) -> void:
 	if not _enabled or _destroyed:
 		_set_corridor_light_energy(0.0, 0.0, 0.0)
 		return
-	if GameState.rewind_mode_active:
+	if GameState.is_time_blocked():
 		return
 	_corridor_pulse_time = wrapf(_corridor_pulse_time + delta * 2.6, 0.0, TAU)
 	var base: float = 1.1 + (sin(_corridor_pulse_time) * 0.5 + 0.5) * 1.2

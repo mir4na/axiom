@@ -90,7 +90,7 @@ func _physics_process(delta: float) -> void:
 		_process_spawn_animation(delta)
 		_hide_attack_fx()
 		return
-	if GameState.is_paused or GameState.time_direction != 1 or GameState.is_scrubbing_past or GameState.rewind_mode_active:
+	if GameState.is_time_blocked():
 		_hide_attack_fx()
 		return
 	if _player == null or not is_instance_valid(_player):

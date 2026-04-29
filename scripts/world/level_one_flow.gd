@@ -167,12 +167,8 @@ func _cache_nodes() -> void:
 func _prepare_phase() -> void:
 	GameState.full_reset_inventory()
 	GameState.recording_enabled = true
-	GameState.rewind_mode_active = false
-	GameState.world_history.clear()
-	GameState.history_index = -1
-	GameState.rewind_pointer_index = -1
-	GameState.mark_indices.clear()
-	GameState.timeline_position = 0.0
+	GameState.force_time_forward()
+	GameState.clear_rewind_timeline(0.0)
 	_guest_door_revealed = false
 	_front_door_cinematic_played = false
 	_guest_key_spawned = false

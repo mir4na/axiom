@@ -74,7 +74,7 @@ func force_despawn() -> void:
 func _physics_process(delta: float) -> void:
 	if not _active:
 		return
-	if GameState.rewind_mode_active:
+	if GameState.is_time_blocked():
 		return
 	global_position += _velocity * delta
 	_phase = wrapf(_phase + delta * 9.6, 0.0, TAU)

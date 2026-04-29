@@ -1,6 +1,7 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/objects/lightning_skill_item.gd" id="1_item"]
+[ext_resource type="Shader" path="res://shaders/lightning_drop_trace.gdshader" id="2_trace"]
 
 [sub_resource type="SphereShape3D" id="SphereShape_item"]
 radius = 0.48
@@ -20,20 +21,25 @@ height = 2.4
 
 [sub_resource type="StandardMaterial3D" id="CoreMat"]
 transparency = 1
-albedo_color = Color(0.82, 0.97, 1, 0.94)
+albedo_color = Color(0.2, 0.22, 0.28, 0.96)
 metallic = 0.22
 roughness = 0.06
 emission_enabled = true
-emission = Color(0.62, 0.9, 1, 1)
-emission_energy_multiplier = 3.8
-
-[sub_resource type="StandardMaterial3D" id="TrailMat"]
-transparency = 1
-shading_mode = 0
-albedo_color = Color(0.55, 0.88, 1, 0.5)
-emission_enabled = true
-emission = Color(0.42, 0.8, 1, 1)
+emission = Color(0.08, 0.1, 0.14, 1)
 emission_energy_multiplier = 4.2
+
+[sub_resource type="ShaderMaterial" id="TrailMat"]
+shader = ExtResource("2_trace")
+shader_parameter/core_color = Color(0.02, 0.02, 0.02, 0.8)
+shader_parameter/edge_color = Color(0.07, 0.07, 0.11, 0.98)
+shader_parameter/pulse_speed = 6.4
+shader_parameter/pulse_strength = 1.2
+shader_parameter/alpha_boost = 1.0
+
+[sub_resource type="CylinderMesh" id="TraceBeamMesh"]
+top_radius = 0.22
+bottom_radius = 0.36
+height = 24.0
 
 [node name="LightningSkillItem" type="StaticBody3D"]
 script = ExtResource("1_item")
@@ -51,12 +57,18 @@ material_override = SubResource("TrailMat")
 mesh = SubResource("AuraMesh")
 
 [node name="Trail" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.35, 0)
+transform = Transform3D(1.18, 0, 0, 0, 1.28, 0, 0, 0, 1.18, 0, -1.65, 0)
 material_override = SubResource("TrailMat")
 mesh = SubResource("TrailMesh")
 
+[node name="TraceBeam" type="MeshInstance3D" parent="."]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12.0, 0)
+material_override = SubResource("TrailMat")
+mesh = SubResource("TraceBeamMesh")
+
 [node name="GlowLight" type="OmniLight3D" parent="."]
 visible = false
-light_color = Color(0.48, 0.92, 1, 1)
+light_color = Color(0.08, 0.1, 0.14, 1)
 light_energy = 0.0
-omni_range = 6.0
+omni_range = 10.0
