@@ -361,6 +361,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3, 0.7, 2.8)
 [node name="CombatFocus" type="Marker3D" parent="World/CutsceneMarkers" unique_id=760703222]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.78, 2.7)
 
+[node name="ThunderTopDownCamera" type="Camera3D" parent="World" unique_id=1675204411 groups=["thunder_topdown_camera"]]
+transform = Transform3D(1, 0, 0, 0, -0.02854965, 0.99959236, 0, -0.99959236, -0.02854965, 0, 36.984505, 0)
+fov = 65.0
+far = 200.0
+
 [node name="Player" parent="World" unique_id=738808106 instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.224709, 0.9559891, -8.923719)
 

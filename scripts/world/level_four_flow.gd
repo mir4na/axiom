@@ -26,6 +26,7 @@ var _sequence_running: bool = false
 var _encounter_started: bool = false
 var _completed: bool = false
 var _center_reached: bool = false
+var _center_intro_requested: bool = false
 var _follow_axia_camera: bool = false
 var _axia_follow_offset: Vector3 = Vector3(0.0, 1.35, 4.5)
 var _ending_sequence_running: bool = false
@@ -61,12 +62,13 @@ func process_frame() -> void:
 		return
 	if not _encounter_started:
 		_hide_hint()
+		_try_start_intro_from_center()
 
 func play_intro_sequence() -> void:
 	if _sequence_running or _completed:
 		return
 	_sequence_running = true
-	await _wait_for_player_grounded_idle()
+	_center_intro_requested = true
 	_hide_hint()
 	_world._hide_objective()
 	_set_cinematic_ui(false)
@@ -218,7 +220,7 @@ func _on_center_objective_entered(body: Node) -> void:
 		_center_objective.monitoring = false
 	_center_objective.visible = false
 	_hide_hint()
-	_world.call_deferred("_play_level_four_intro_sequence")
+	_try_start_intro_from_center()
 
 func _update_center_hint() -> void:
 	if _center_hint == null:
@@ -512,6 +514,18 @@ func _try_recover_intro_to_encounter() -> void:
 	_sequence_running = false
 	_set_cinematic_ui(true)
 	_start_boss_encounter()
+
+func _try_start_intro_from_center() -> void:
+	if _center_intro_requested:
+		return
+	if _sequence_running or _encounter_started or _completed:
+		return
+	if _world == null or _world.player == null or not is_instance_valid(_world.player):
+		return
+	if not _world.player.is_on_floor():
+		return
+	_center_intro_requested = true
+	_world.call_deferred("_play_level_four_intro_sequence")
 
 func _set_cinematic_ui(visible: bool) -> void:
 	if _world.player_hud != null:
