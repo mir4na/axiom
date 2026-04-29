@@ -262,7 +262,12 @@ func _process(delta: float) -> void:
 		if _level_four_flow != null:
 			_level_four_flow.process_frame()
 		if player_hud != null and player_hud.has_method("set_threat_warning_intensity"):
-			player_hud.call("set_threat_warning_intensity", 0.0)
+			var threat_intensity: float = 0.0
+			if _level_four_flow != null and _level_four_flow.has_method("get_threat_warning_intensity"):
+				var value: Variant = _level_four_flow.call("get_threat_warning_intensity")
+				if typeof(value) == TYPE_FLOAT or typeof(value) == TYPE_INT:
+					threat_intensity = float(value)
+			player_hud.call("set_threat_warning_intensity", threat_intensity)
 		return
 	if player_hud != null and player_hud.has_method("set_threat_warning_intensity"):
 		player_hud.call("set_threat_warning_intensity", 0.0)
@@ -611,7 +616,10 @@ func _set_intro_lock(locked: bool) -> void:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _play_intro_sequence() -> void:
-	await get_tree().process_frame
+	var intro_tree: SceneTree = get_tree()
+	if intro_tree == null:
+		return
+	await intro_tree.process_frame
 	_activate_intro_camera()
 	_blink_overlay.modulate.a = 1.0
 	await _open_eyes(0.26)
@@ -638,7 +646,10 @@ func _play_level_one_arrival() -> void:
 		await _level_one_flow.play_arrival()
 
 func _play_level_two_intro() -> void:
-	await get_tree().process_frame
+	var level_two_tree: SceneTree = get_tree()
+	if level_two_tree == null:
+		return
+	await level_two_tree.process_frame
 	if player != null:
 		player.set_cinematic_lock(true)
 	if player_hud != null:
@@ -818,7 +829,10 @@ func _play_level_two_corridor_trap() -> void:
 	while _is_player_inside_level_two_trap():
 		await get_tree().create_timer(2.0).timeout
 		while GameState.rewind_mode_active:
-			await get_tree().process_frame
+			var trap_tree: SceneTree = get_tree()
+			if trap_tree == null:
+				return
+			await trap_tree.process_frame
 		if not _is_player_inside_level_two_trap():
 			break
 		await _fire_level_two_trap_laser()

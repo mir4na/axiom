@@ -99,4 +99,7 @@ func _await_tween_with_time_control(tween: Tween) -> void:
 			tween.play()
 		if not tween.is_running() and not _is_time_state_blocked():
 			break
-		await get_tree().process_frame
+		var tree: SceneTree = get_tree()
+		if tree == null:
+			return
+		await tree.process_frame

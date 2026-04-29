@@ -26,7 +26,6 @@ const SHOVEL_ITEM_SCENE := preload("res://scenes/objects/shovel.tscn")
 const AXIOM_ITEM_SCENE := preload("res://scenes/objects/axiom_item.tscn")
 const FLASHLIGHT_ITEM_SCENE := preload("res://scenes/objects/flashlight_item.tscn")
 const GUN_ITEM_SCENE := preload("res://scenes/objects/gun_item.tscn")
-const LIGHTNING_ITEM_SCENE := preload("res://scenes/objects/lightning_skill_item.tscn")
 const THUNDER_AIM_RADIUS_SHADER := preload("res://shaders/thunder_aim_radius.gdshader")
 const SWORD_SKILL_SCENE := preload("res://scenes/objects/sword_skill.tscn")
 
@@ -84,6 +83,7 @@ var _lightning_target_ring: MeshInstance3D
 var _lightning_target_core: MeshInstance3D
 var _lightning_target_trace: MeshInstance3D
 var _lightning_target_camera: Camera3D
+var _time_stop_active: bool = false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -491,6 +491,9 @@ func _drop_item() -> void:
 	var item_name = GameState.get_selected_item()
 	if item_name == "":
 		return
+	if item_name == LIGHTNING_SKILL_ITEM_ID:
+		_show_cannot_drop_skill_message()
+		return
 	GameState.consume_selected()
 	if item_name == "key_1" or item_name.begins_with("key"):
 		_spawn_drop_item(KEY_ITEM_SCENE, item_name)
@@ -502,8 +505,14 @@ func _drop_item() -> void:
 		_spawn_drop_item(FLASHLIGHT_ITEM_SCENE)
 	elif item_name == "Gun":
 		_spawn_drop_item(GUN_ITEM_SCENE)
-	elif item_name == LIGHTNING_SKILL_ITEM_ID:
-		_spawn_drop_item(LIGHTNING_ITEM_SCENE)
+
+func _show_cannot_drop_skill_message() -> void:
+	var world: Node = get_parent()
+	if world != null and world.has_method("_show_subtitle"):
+		world.call_deferred("_show_subtitle", "sword skill cannot be dropped.", 1.6, "")
+		return
+	if hud != null and hud.has_method("show_prompt"):
+		hud.call("show_prompt", "sword skill cannot be dropped.")
 
 func _spawn_drop_item(scene: PackedScene, dropped_item_id: String = "") -> void:
 	if scene == null:
@@ -534,7 +543,7 @@ func _has_lightning_skill_selected() -> bool:
 func _can_activate_lightning_target() -> bool:
 	if _lightning_target_camera == null or not is_instance_valid(_lightning_target_camera):
 		_resolve_lightning_target_camera()
-	return _has_lightning_skill_selected() and not _lightning_targeting and not cinematic_locked and not GameState.is_time_blocked() and _lightning_target_camera != null and is_instance_valid(_lightning_target_camera)
+	return _has_lightning_skill_selected() and not _lightning_targeting and not _time_stop_active and not cinematic_locked and not GameState.is_time_blocked() and _lightning_target_camera != null and is_instance_valid(_lightning_target_camera)
 
 func _can_use_gun() -> bool:
 	return _has_gun_selected() and not _lightning_targeting and not cinematic_locked and not GameState.is_time_blocked() and not _gun_reloading and _gun_shot_timer <= 0.0
@@ -761,7 +770,7 @@ func _resolve_lightning_target_camera() -> void:
 func _update_lightning_skill(delta: float) -> void:
 	if _lightning_target_root == null or not is_instance_valid(_lightning_target_root):
 		return
-	var can_target: bool = _has_lightning_skill_selected() and not GameState.is_time_blocked() and not cinematic_locked
+	var can_target: bool = _has_lightning_skill_selected() and not _time_stop_active and not GameState.is_time_blocked() and not cinematic_locked
 	if not can_target:
 		if _lightning_targeting:
 			_set_lightning_targeting(false)
@@ -791,6 +800,8 @@ func _set_lightning_targeting(active: bool) -> void:
 	if _lightning_target_root == null or not is_instance_valid(_lightning_target_root):
 		return
 	if _lightning_targeting == active:
+		return
+	if active and _time_stop_active:
 		return
 	if active and (_lightning_target_camera == null or not is_instance_valid(_lightning_target_camera)):
 		_resolve_lightning_target_camera()
@@ -924,7 +935,12 @@ func _cast_lightning_at_target() -> void:
 	cast_point = _snap_lightning_point_to_ground(cast_point)
 	GameState.consume_selected_item(LIGHTNING_SKILL_ITEM_ID)
 	_set_lightning_targeting(false)
-	await get_tree().create_timer(0.5).timeout
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	await tree.create_timer(0.5).timeout
+	if not is_inside_tree():
+		return
 	_spawn_lightning_strike_effect(cast_point)
 	_apply_lightning_strike_damage(cast_point)
 
@@ -1004,6 +1020,15 @@ func set_mobility_lock(active: bool) -> void:
 	if active:
 		velocity.x = 0.0
 		velocity.z = 0.0
+
+func set_time_stop_active(active: bool, world_origin: Vector3 = Vector3.ZERO, expand_duration: float = 1.0) -> void:
+	_time_stop_active = active
+	if active and _lightning_targeting:
+		_set_lightning_targeting(false)
+	if hud == null:
+		return
+	if hud.has_method("set_time_stop_active"):
+		hud.call("set_time_stop_active", active, world_origin, expand_duration)
 
 func apply_knockback(direction: Vector3, horizontal_strength: float, vertical_strength: float) -> void:
 	var launch_direction: Vector3 = direction

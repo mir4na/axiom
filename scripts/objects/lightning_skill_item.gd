@@ -5,6 +5,9 @@ var _highlight_enabled: bool = false
 var _persistent_highlight: bool = true
 var _landing_ready: bool = false
 var _pulse_time: float = 0.0
+var _decay_started: bool = false
+
+@export var despawn_after_seconds: float = 15.0
 
 @onready var _collision: CollisionShape3D = $CollisionShape3D
 @onready var _core: MeshInstance3D = $Core
@@ -14,7 +17,7 @@ var _pulse_time: float = 0.0
 @onready var _light: OmniLight3D = $GlowLight
 
 func _ready() -> void:
-	prompt_text = "Press E to pick up Lightning Skill"
+	prompt_text = "Press E to pick up Sword Skill"
 	_setup_aura_materials()
 	set_highlight_enabled(true)
 	set_highlight_strength(1.0)
@@ -149,6 +152,7 @@ func _play_starfall_arrival() -> void:
 	if _collision != null:
 		_collision.disabled = false
 	_landing_ready = true
+	_start_decay_timer()
 
 func _play_pickup_feedback() -> void:
 	var players: Array = get_tree().get_nodes_in_group("player")
@@ -185,3 +189,30 @@ func _spawn_dark_impact_pulse(position: Vector3) -> void:
 	pulse_tween.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await pulse_tween.finished
 	pulse.queue_free()
+
+func _start_decay_timer() -> void:
+	if _decay_started:
+		return
+	_decay_started = true
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	await tree.create_timer(maxf(0.1, despawn_after_seconds)).timeout
+	if not is_inside_tree():
+		return
+	if _picked_up:
+		return
+	_expire_drop()
+
+func _expire_drop() -> void:
+	_persistent_highlight = false
+	set_highlight_enabled(false)
+	if _collision != null:
+		_collision.disabled = true
+	var fade: Tween = create_tween().set_parallel(true)
+	fade.tween_property(self, "scale", Vector3.ZERO, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	if _light != null:
+		fade.parallel().tween_property(_light, "light_energy", 0.0, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await fade.finished
+	if is_inside_tree():
+		queue_free()

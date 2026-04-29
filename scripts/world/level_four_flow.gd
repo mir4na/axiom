@@ -37,12 +37,29 @@ var _lightning_drop_max_radius: float = 10.8
 var _lightning_drop_probe_height: float = 20.0
 var _lightning_drop_floor_min_y: float = -2.0
 var _lightning_drop_fallback_y: float = 0.82
+var _level_root: Node3D
+var _world_environment: WorldEnvironment
+var _holy_sun: DirectionalLight3D
+var _sky_fill: DirectionalLight3D
+var _bloom_core: OmniLight3D
+var _base_ambient_color: Color = Color(1, 1, 1, 1)
+var _base_ambient_energy: float = 0.9
+var _base_fog_albedo: Color = Color(0.93, 0.9, 1, 1)
+var _base_sun_color: Color = Color(1, 0.965, 0.9, 1)
+var _base_sun_energy: float = 1.9
+var _base_fill_color: Color = Color(1, 0.82, 0.9, 1)
+var _base_fill_energy: float = 0.65
+var _base_bloom_color: Color = Color(1, 0.96, 0.86, 1)
+var _base_bloom_energy: float = 3.0
+var _enrage_visual_active: bool = false
+var _enrage_warning_intensity: float = 0.0
 
 func _init(world_ref) -> void:
 	_world = world_ref
 
 func initialize() -> void:
 	_cache_nodes()
+	_cache_visual_nodes()
 	_prepare_state()
 	_connect_signals()
 
@@ -107,14 +124,17 @@ func play_intro_sequence() -> void:
 	_sequence_running = false
 
 func on_boss_health_changed(current: float, maximum: float) -> void:
+	var ratio: float = current / maxf(maximum, 1.0)
 	if _world.player_hud != null and _world.player_hud.has_method("set_boss_bar_ratio"):
-		_world.player_hud.call("set_boss_bar_ratio", current / maxf(maximum, 1.0))
+		_world.player_hud.call("set_boss_bar_ratio", ratio)
+	_set_enrage_visual_active(ratio <= 0.5)
 
 func on_boss_defeated() -> void:
 	if _completed:
 		return
 	_completed = true
 	_encounter_started = false
+	_set_enrage_visual_active(false)
 	_hide_hint()
 	if _world.player_hud != null and _world.player_hud.has_method("hide_boss_bar"):
 		_world.player_hud.call("hide_boss_bar")
@@ -182,6 +202,30 @@ func _cache_nodes() -> void:
 	_crystal_shot_start = _world.get_node_or_null("CutsceneMarkers/CrystalShotStart") as Node3D
 	_crystal_shot_end = _world.get_node_or_null("CutsceneMarkers/CrystalShotEnd") as Node3D
 
+func _cache_visual_nodes() -> void:
+	if _world == null:
+		return
+	_level_root = _world.get_parent() as Node3D
+	if _level_root == null:
+		return
+	_world_environment = _level_root.get_node_or_null("WorldEnvironment") as WorldEnvironment
+	_holy_sun = _level_root.get_node_or_null("HolySun") as DirectionalLight3D
+	_sky_fill = _level_root.get_node_or_null("SkyFill") as DirectionalLight3D
+	_bloom_core = _level_root.get_node_or_null("BloomCore") as OmniLight3D
+	if _world_environment != null and _world_environment.environment != null:
+		_base_ambient_color = _world_environment.environment.ambient_light_color
+		_base_ambient_energy = _world_environment.environment.ambient_light_energy
+		_base_fog_albedo = _world_environment.environment.volumetric_fog_albedo
+	if _holy_sun != null:
+		_base_sun_color = _holy_sun.light_color
+		_base_sun_energy = _holy_sun.light_energy
+	if _sky_fill != null:
+		_base_fill_color = _sky_fill.light_color
+		_base_fill_energy = _sky_fill.light_energy
+	if _bloom_core != null:
+		_base_bloom_color = _bloom_core.light_color
+		_base_bloom_energy = _bloom_core.light_energy
+
 func _prepare_state() -> void:
 	GameState.current_level_index = 3
 	GameState.axiom_unlocked = true
@@ -198,6 +242,7 @@ func _prepare_state() -> void:
 			_boss.call("set_manifested", false)
 		else:
 			_boss.visible = false
+	_set_enrage_visual_active(false, true)
 
 func _connect_signals() -> void:
 	if _boss != null:
@@ -490,6 +535,7 @@ func _start_boss_encounter() -> void:
 		return
 	GameState.force_time_forward()
 	_encounter_started = true
+	_set_enrage_visual_active(false, true)
 	_lightning_drop_timer = _lightning_drop_interval
 	_world._show_objective(DEFEAT_OBJECTIVE)
 	if _world.player_hud != null and _world.player_hud.has_method("show_boss_bar"):
@@ -610,3 +656,77 @@ func _ensure_item_in_inventory(item_id: String) -> void:
 
 func _select_item(item_id: String) -> void:
 	GameState.select_item(item_id)
+
+func get_threat_warning_intensity() -> float:
+	return _enrage_warning_intensity
+
+func _set_enrage_visual_active(active: bool, immediate: bool = false) -> void:
+	if _enrage_visual_active == active and not immediate:
+		return
+	_enrage_visual_active = active
+	_enrage_warning_intensity = 0.0
+	_apply_enrage_environment(active, immediate)
+
+func _apply_enrage_environment(active: bool, immediate: bool) -> void:
+	var target_ambient_color: Color = _base_ambient_color
+	var target_ambient_energy: float = _base_ambient_energy
+	var target_fog_albedo: Color = _base_fog_albedo
+	var target_sun_color: Color = _base_sun_color
+	var target_sun_energy: float = _base_sun_energy
+	var target_fill_color: Color = _base_fill_color
+	var target_fill_energy: float = _base_fill_energy
+	var target_bloom_color: Color = _base_bloom_color
+	var target_bloom_energy: float = _base_bloom_energy
+	if active:
+		target_ambient_color = Color(1.0, 0.62, 0.62, 1.0)
+		target_ambient_energy = maxf(_base_ambient_energy, 1.02)
+		target_fog_albedo = Color(0.86, 0.45, 0.45, 1.0)
+		target_sun_color = Color(1.0, 0.62, 0.56, 1.0)
+		target_sun_energy = maxf(_base_sun_energy, 2.05)
+		target_fill_color = Color(0.98, 0.46, 0.48, 1.0)
+		target_fill_energy = maxf(_base_fill_energy, 0.9)
+		target_bloom_color = Color(1.0, 0.54, 0.52, 1.0)
+		target_bloom_energy = maxf(_base_bloom_energy, 3.25)
+	if immediate:
+		_apply_environment_values(target_ambient_color, target_ambient_energy, target_fog_albedo, target_sun_color, target_sun_energy, target_fill_color, target_fill_energy, target_bloom_color, target_bloom_energy)
+		return
+	var duration: float = 0.55
+	var tween: Tween = _world.create_tween().set_parallel(true)
+	if _world_environment != null and _world_environment.environment != null:
+		tween.tween_property(_world_environment.environment, "ambient_light_color", target_ambient_color, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.parallel().tween_property(_world_environment.environment, "ambient_light_energy", target_ambient_energy, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.parallel().tween_property(_world_environment.environment, "volumetric_fog_albedo", target_fog_albedo, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if _holy_sun != null:
+		tween.parallel().tween_property(_holy_sun, "light_color", target_sun_color, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.parallel().tween_property(_holy_sun, "light_energy", target_sun_energy, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if _sky_fill != null:
+		tween.parallel().tween_property(_sky_fill, "light_color", target_fill_color, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.parallel().tween_property(_sky_fill, "light_energy", target_fill_energy, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if _bloom_core != null:
+		tween.parallel().tween_property(_bloom_core, "light_color", target_bloom_color, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.parallel().tween_property(_bloom_core, "light_energy", target_bloom_energy, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _apply_environment_values(
+	ambient_color: Color,
+	ambient_energy: float,
+	fog_albedo: Color,
+	sun_color: Color,
+	sun_energy: float,
+	fill_color: Color,
+	fill_energy: float,
+	bloom_color: Color,
+	bloom_energy: float
+) -> void:
+	if _world_environment != null and _world_environment.environment != null:
+		_world_environment.environment.ambient_light_color = ambient_color
+		_world_environment.environment.ambient_light_energy = ambient_energy
+		_world_environment.environment.volumetric_fog_albedo = fog_albedo
+	if _holy_sun != null:
+		_holy_sun.light_color = sun_color
+		_holy_sun.light_energy = sun_energy
+	if _sky_fill != null:
+		_sky_fill.light_color = fill_color
+		_sky_fill.light_energy = fill_energy
+	if _bloom_core != null:
+		_bloom_core.light_color = bloom_color
+		_bloom_core.light_energy = bloom_energy

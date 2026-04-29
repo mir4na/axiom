@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const TIME_STOP_OVERLAY_SHADER := preload("res://shaders/time_stop_overlay.gdshader")
+
 @onready var prompt_label: Label = $PromptLabel
 @onready var crosshair: Label = $Crosshair
 @onready var slot_1: Control = $InventoryBar/Slot1
@@ -48,6 +50,11 @@ var _reload_fill: ColorRect
 var _threat_warning_overlay: ColorRect
 var _threat_warning_intensity: float = 0.0
 var _boss_ratio: float = 1.0
+var _rewind_visual_active: bool = false
+var _time_stop_visual_active: bool = false
+var _time_stop_overlay: ColorRect
+var _time_stop_overlay_material: ShaderMaterial
+var _time_stop_expand_tween: Tween
 
 func set_dig_progress(val: float, is_vis: bool) -> void:
 	dig_progress_bar.set_progress(val, is_vis)
@@ -119,6 +126,7 @@ func _ready() -> void:
 	prompt_label.visible = false
 	_setup_weapon_hud()
 	_setup_threat_warning()
+	_setup_time_stop_overlay()
 
 	GameState.inventory_changed.connect(_update_inventory_ui)
 	GameState.time_direction_changed.connect(_on_time_direction_changed)
@@ -219,7 +227,7 @@ func place_or_remove_mark() -> void:
 		GameState.mark_indices.append(idx)
 
 func _on_time_direction_changed(dir: int) -> void:
-	if GameState.rewind_mode_active:
+	if _rewind_visual_active or _time_stop_visual_active:
 		return
 	var target = 0.8 if dir != 1 else 0.0
 	if _glitch_tween:
@@ -229,22 +237,9 @@ func _on_time_direction_changed(dir: int) -> void:
 		_get_shader_param("glitch_intensity"), target, 0.2)
 
 func _on_rewind_mode_changed(active: bool) -> void:
-	if _invert_tween:
-		_invert_tween.kill()
-	if _glitch_tween:
-		_glitch_tween.kill()
-
-	_invert_tween = create_tween().set_parallel(true)
-
+	_rewind_visual_active = active
+	_animate_screen_fx(0.35 if active else 0.5)
 	if active:
-		_invert_tween.tween_method(func(v): _set_shader_param("invert_amount", v),
-			_get_shader_param("invert_amount"), 1.0, 0.4)
-		_invert_tween.tween_method(func(v): _set_shader_param("vignette_strength", v),
-			_get_shader_param("vignette_strength"), 0.8, 0.4)
-		_glitch_tween = create_tween()
-		_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
-			_get_shader_param("glitch_intensity"), 0.3, 0.3)
-
 		var tween_ui = create_tween().set_parallel(true)
 		tween_ui.tween_property(inventory_bar, "modulate:a", 0.0, 0.25)
 		tween_ui.tween_property(crosshair, "modulate:a", 0.0, 0.25)
@@ -253,14 +248,6 @@ func _on_rewind_mode_changed(active: bool) -> void:
 		tween_ui.tween_property(timeline_bar_container, "scale", Vector2(1.0, 1.0), 0.3).set_trans(Tween.TRANS_BACK)
 		tween_ui.tween_property(timeline_bar_container, "modulate:a", 1.0, 0.3)
 	else:
-		_invert_tween.tween_method(func(v): _set_shader_param("invert_amount", v),
-			_get_shader_param("invert_amount"), 0.0, 0.5)
-		_invert_tween.tween_method(func(v): _set_shader_param("vignette_strength", v),
-			_get_shader_param("vignette_strength"), 0.0, 0.5)
-		_glitch_tween = create_tween()
-		_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
-			_get_shader_param("glitch_intensity"), 0.0, 0.5)
-
 		var tween_ui = create_tween().set_parallel(true)
 		tween_ui.tween_property(inventory_bar, "modulate:a", 1.0, 0.3)
 		tween_ui.tween_property(crosshair, "modulate:a", 1.0, 0.3)
@@ -272,6 +259,88 @@ func _on_rewind_mode_changed(active: bool) -> void:
 		for key in _mark_nodes.keys():
 			_mark_nodes[key].queue_free()
 		_mark_nodes.clear()
+
+func set_time_stop_active(active: bool, world_origin: Vector3 = Vector3.ZERO, expand_duration: float = 1.0) -> void:
+	_time_stop_visual_active = active
+	if active:
+		_activate_time_stop_overlay(world_origin, expand_duration)
+	else:
+		_deactivate_time_stop_overlay()
+	_animate_screen_fx(0.26 if active else 0.34)
+
+func _animate_screen_fx(duration: float) -> void:
+	if _invert_tween:
+		_invert_tween.kill()
+	if _glitch_tween:
+		_glitch_tween.kill()
+	var invert_target: float = 0.0
+	var vignette_target: float = 0.0
+	var glitch_target: float = 0.0
+	if _rewind_visual_active:
+		invert_target = 1.0
+		vignette_target = 0.8
+		glitch_target = 0.3
+	elif _time_stop_visual_active:
+		invert_target = 0.0
+		vignette_target = 0.46
+		glitch_target = 0.1
+	_invert_tween = create_tween().set_parallel(true)
+	_invert_tween.tween_method(func(v): _set_shader_param("invert_amount", v), _get_shader_param("invert_amount"), invert_target, duration)
+	_invert_tween.tween_method(func(v): _set_shader_param("vignette_strength", v), _get_shader_param("vignette_strength"), vignette_target, duration)
+	_glitch_tween = create_tween()
+	_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v), _get_shader_param("glitch_intensity"), glitch_target, duration)
+
+func _setup_time_stop_overlay() -> void:
+	_time_stop_overlay = ColorRect.new()
+	_time_stop_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_time_stop_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_time_stop_overlay.visible = false
+	_time_stop_overlay_material = ShaderMaterial.new()
+	_time_stop_overlay_material.shader = TIME_STOP_OVERLAY_SHADER
+	_time_stop_overlay_material.set_shader_parameter("center_uv", Vector2(0.5, 0.5))
+	_time_stop_overlay_material.set_shader_parameter("radius", 0.0)
+	_time_stop_overlay_material.set_shader_parameter("edge_softness", 0.12)
+	_time_stop_overlay_material.set_shader_parameter("intensity", 0.0)
+	_time_stop_overlay.material = _time_stop_overlay_material
+	add_child(_time_stop_overlay)
+
+func _activate_time_stop_overlay(world_origin: Vector3, expand_duration: float) -> void:
+	if _time_stop_overlay == null or _time_stop_overlay_material == null:
+		return
+	_time_stop_overlay.visible = true
+	var center_uv: Vector2 = _world_to_screen_uv(world_origin)
+	_time_stop_overlay_material.set_shader_parameter("center_uv", center_uv)
+	_time_stop_overlay_material.set_shader_parameter("radius", 0.0)
+	_time_stop_overlay_material.set_shader_parameter("intensity", 1.0)
+	if _time_stop_expand_tween != null:
+		_time_stop_expand_tween.kill()
+	_time_stop_expand_tween = create_tween()
+	_time_stop_expand_tween.tween_method(func(v): _time_stop_overlay_material.set_shader_parameter("radius", v), 0.0, 1.65, maxf(0.08, expand_duration)).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+func _deactivate_time_stop_overlay() -> void:
+	if _time_stop_overlay == null or _time_stop_overlay_material == null:
+		return
+	if _time_stop_expand_tween != null:
+		_time_stop_expand_tween.kill()
+	var fade: Tween = create_tween()
+	fade.tween_method(func(v): _time_stop_overlay_material.set_shader_parameter("intensity", v), 1.0, 0.0, 0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await fade.finished
+	if _time_stop_overlay != null:
+		_time_stop_overlay.visible = false
+	_time_stop_overlay_material.set_shader_parameter("radius", 0.0)
+
+func _world_to_screen_uv(world_origin: Vector3) -> Vector2:
+	var viewport: Viewport = get_viewport()
+	if viewport == null:
+		return Vector2(0.5, 0.5)
+	var cam: Camera3D = viewport.get_camera_3d()
+	if cam == null:
+		return Vector2(0.5, 0.5)
+	var screen_pos: Vector2 = cam.unproject_position(world_origin)
+	var size: Vector2 = viewport.get_visible_rect().size
+	if size.x <= 0.0 or size.y <= 0.0:
+		return Vector2(0.5, 0.5)
+	return Vector2(clampf(screen_pos.x / size.x, 0.0, 1.0), clampf(screen_pos.y / size.y, 0.0, 1.0))
 
 func trigger_pointer_glitch() -> void:
 	if _glitch_tween:
@@ -320,7 +389,7 @@ func _format_slot_name(item_id: String) -> String:
 	if item_id == "Gun":
 		return "GUN"
 	if item_id == "LightningSkill":
-		return "THUNDER"
+		return "SWORD"
 	if item_id == "key_1" or item_id == "key_2":
 		return "KEYCARD"
 	return item_id.replace("_", " ").to_upper()

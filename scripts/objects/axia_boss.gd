@@ -7,9 +7,11 @@ const SWORD_PROJECTILE_SCENE := preload("res://scenes/objects/axia_sword_project
 const SWORD_GATE_SCENE := preload("res://scenes/objects/axia_sword_gate.tscn")
 const FALL_ATTACK_SCENE := preload("res://scenes/objects/axia_fall_attack.tscn")
 const LIGHT_SNARE_SCENE := preload("res://scenes/objects/axia_light_snare.tscn")
+const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 
 @export var max_health: float = 300.0
 @export var attack_interval: float = 8.0
+@export var enraged_attack_interval: float = 10.0
 @export var encounter_start_cooldown: float = 2.6
 @export var gravity_strength: float = 21.0
 @export var ground_height: float = 0.0
@@ -48,6 +50,12 @@ const LIGHT_SNARE_SCENE := preload("res://scenes/objects/axia_light_snare.tscn")
 @export var sword_projectile_speed: float = 12.8
 @export var sword_projectile_damage: float = 11.0
 @export var facing_yaw_offset: float = PI
+@export var first_wave_attack_order: Array[String] = ["wind", "swords", "meteor", "snare"]
+@export var wave_teleport_min_radius: float = 4.0
+@export var wave_teleport_edge_margin: float = 1.8
+@export var wave_teleport_player_clearance: float = 4.8
+@export var wave_teleport_glitch_duration: float = 0.34
+@export var wave_teleport_fade_duration: float = 0.12
 
 @onready var _rose: CharacterBody3D = $Rose
 @onready var _visual_root: Node3D = $VisualRoot
@@ -65,7 +73,8 @@ var _health: float = 0.0
 var _encounter_active: bool = false
 var _attack_running: bool = false
 var _cooldown_left: float = 0.0
-var _attack_cycle_index: int = 0
+var _attack_wave_index: int = 0
+var _attack_wave_queue: Array[String] = []
 var _defeated: bool = false
 var _vertical_velocity: float = 0.0
 var _death_in_progress: bool = false
@@ -78,6 +87,8 @@ var _aura_ring_initial_scale: Vector3 = Vector3.ONE
 var _wind_disc_initial_scale: Vector3 = Vector3.ONE
 var _aura_light_initial_energy: float = 0.0
 var _self_initial_scale: Vector3 = Vector3.ONE
+var _glitch_meshes: Array[MeshInstance3D] = []
+var _glitch_overrides: Dictionary = {}
 
 func _ready() -> void:
 	_health = max_health
@@ -96,6 +107,7 @@ func _ready() -> void:
 		_wind_disc_initial_scale = _wind_disc.scale
 	if _aura_light != null:
 		_aura_light_initial_energy = _aura_light.light_energy
+	_collect_glitch_meshes(self)
 	if _rose != null and _rose.has_method("play_idle"):
 		_rose.call("play_idle")
 	if _ash_effect != null:
@@ -107,7 +119,9 @@ func begin_encounter(player_ref: CharacterBody3D) -> void:
 	_encounter_active = true
 	_cooldown_left = encounter_start_cooldown
 	_attack_running = false
-	_attack_cycle_index = 0
+	_attack_wave_index = 0
+	_attack_wave_queue.clear()
+	_refill_attack_wave()
 
 func take_damage(amount: float) -> void:
 	if _defeated or _death_in_progress:
@@ -136,6 +150,9 @@ func _physics_process(delta: float) -> void:
 	_face_player(delta)
 	if _attack_running:
 		return
+	var current_interval: float = _get_current_attack_interval()
+	if _cooldown_left > current_interval:
+		_cooldown_left = current_interval
 	_cooldown_left = maxf(0.0, _cooldown_left - delta)
 	if _cooldown_left > 0.0:
 		return
@@ -171,9 +188,7 @@ func _face_toward_position(target_position: Vector3, blend_weight: float) -> voi
 
 func _start_next_attack() -> void:
 	_attack_running = true
-	var attack_names: Array[String] = ["wind", "swords", "meteor", "snare"]
-	var attack_name: String = attack_names[_attack_cycle_index % attack_names.size()]
-	_attack_cycle_index += 1
+	var attack_name: String = _next_attack_name()
 	call_deferred("_run_attack_sequence", attack_name)
 
 func _run_attack_sequence(attack_name: String) -> void:
@@ -192,8 +207,136 @@ func _run_attack_sequence(attack_name: String) -> void:
 	if _should_abort_skills():
 		_attack_running = false
 		return
+	if _attack_wave_queue.is_empty():
+		await _perform_wave_teleport()
+	if _should_abort_skills():
+		_attack_running = false
+		return
 	_attack_running = false
-	_cooldown_left = attack_interval
+	_cooldown_left = _get_current_attack_interval()
+
+func _get_current_attack_interval() -> float:
+	if _health <= max_health * 0.5:
+		return maxf(0.1, enraged_attack_interval)
+	return maxf(0.1, attack_interval)
+
+func _next_attack_name() -> String:
+	if _attack_wave_queue.is_empty():
+		_refill_attack_wave()
+	if _attack_wave_queue.is_empty():
+		return "wind"
+	var attack_name: String = _attack_wave_queue[0]
+	_attack_wave_queue.remove_at(0)
+	return attack_name
+
+func _refill_attack_wave() -> void:
+	var wave: Array[String] = _build_wave_order()
+	if _attack_wave_index >= 1:
+		wave.shuffle()
+	_attack_wave_queue = wave
+	_attack_wave_index += 1
+
+func _build_wave_order() -> Array[String]:
+	var canonical: Array[String] = ["wind", "swords", "meteor", "snare"]
+	var ordered: Array[String] = []
+	for attack_name in first_wave_attack_order:
+		if canonical.has(attack_name) and not ordered.has(attack_name):
+			ordered.append(attack_name)
+	for attack_name in canonical:
+		if not ordered.has(attack_name):
+			ordered.append(attack_name)
+	return ordered
+
+func _perform_wave_teleport() -> void:
+	if _should_abort_skills():
+		return
+	var destination: Vector3 = _choose_wave_teleport_position()
+	await _play_wave_teleport_glitch_out()
+	if _should_abort_skills():
+		_apply_glitch_overlay(false)
+		return
+	global_position = destination
+	_vertical_velocity = 0.0
+	await _play_wave_teleport_glitch_in()
+	if _player != null and is_instance_valid(_player):
+		_face_toward_position(_player.global_position, 1.0)
+
+func _choose_wave_teleport_position() -> Vector3:
+	var center: Vector3 = global_position
+	var max_radius: float = maxf(wave_teleport_min_radius + 0.5, 14.0)
+	var shape_node: CollisionShape3D = get_node_or_null("../MainPlatformBody/CollisionShape3D") as CollisionShape3D
+	if shape_node != null and shape_node.shape is CylinderShape3D:
+		var cyl: CylinderShape3D = shape_node.shape as CylinderShape3D
+		var scale_radius: float = maxf(shape_node.global_transform.basis.x.length(), shape_node.global_transform.basis.z.length())
+		center = shape_node.global_position
+		max_radius = maxf(wave_teleport_min_radius + 0.5, cyl.radius * scale_radius - wave_teleport_edge_margin)
+	center.y = ground_height
+	var min_radius: float = clampf(wave_teleport_min_radius, 0.0, maxf(max_radius - 0.5, 0.0))
+	for _attempt in range(36):
+		var angle: float = randf_range(0.0, TAU)
+		var radius: float = randf_range(min_radius, max_radius)
+		var candidate: Vector3 = center + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+		candidate.y = ground_height
+		if _player != null and is_instance_valid(_player):
+			if candidate.distance_to(_player.global_position) < wave_teleport_player_clearance:
+				continue
+		return candidate
+	return center + Vector3(max_radius * 0.5, 0.0, 0.0)
+
+func _play_wave_teleport_glitch_out() -> void:
+	_apply_glitch_overlay(true)
+	var fade: Tween = create_tween().set_parallel(true)
+	fade.tween_method(_set_visual_transparency, 0.0, 1.0, wave_teleport_fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	if _aura_light != null and is_instance_valid(_aura_light):
+		fade.parallel().tween_property(_aura_light, "light_energy", _aura_light_initial_energy * 2.1, wave_teleport_fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await _await_tween_with_time_control(fade)
+	await _wait_for_game_time(maxf(0.01, wave_teleport_glitch_duration))
+
+func _play_wave_teleport_glitch_in() -> void:
+	_apply_glitch_overlay(true)
+	_set_visual_transparency(1.0)
+	var settle: Tween = create_tween().set_parallel(true)
+	settle.tween_method(_set_visual_transparency, 1.0, 0.0, wave_teleport_fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if _aura_light != null and is_instance_valid(_aura_light):
+		settle.parallel().tween_property(_aura_light, "light_energy", _aura_light_initial_energy, wave_teleport_fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await _await_tween_with_time_control(settle)
+	_apply_glitch_overlay(false)
+
+func _collect_glitch_meshes(node: Node) -> void:
+	if node is MeshInstance3D:
+		_glitch_meshes.append(node as MeshInstance3D)
+	for child in node.get_children():
+		_collect_glitch_meshes(child)
+
+func _apply_glitch_overlay(active: bool) -> void:
+	if active:
+		for mesh in _glitch_meshes:
+			if mesh == null or not is_instance_valid(mesh):
+				continue
+			var mesh_id: int = mesh.get_instance_id()
+			if not _glitch_overrides.has(mesh_id):
+				_glitch_overrides[mesh_id] = mesh.material_overlay
+			var glitch_material: ShaderMaterial = ShaderMaterial.new()
+			glitch_material.shader = SPATIAL_GLITCH_SHADER
+			glitch_material.set_shader_parameter("glitch_speed", 8.2)
+			glitch_material.set_shader_parameter("glitch_intensity", 2.6)
+			glitch_material.set_shader_parameter("base_color", Vector3(0.18, 0.95, 1.0))
+			glitch_material.set_shader_parameter("emission_energy", 3.7)
+			glitch_material.set_shader_parameter("rim_strength", 3.2)
+			glitch_material.set_shader_parameter("pulse_strength", 1.9)
+			glitch_material.set_shader_parameter("stripe_density", 72.0)
+			glitch_material.set_shader_parameter("alpha_flicker", 0.35)
+			mesh.material_overlay = glitch_material
+		return
+	for mesh in _glitch_meshes:
+		if mesh == null or not is_instance_valid(mesh):
+			continue
+		var mesh_id: int = mesh.get_instance_id()
+		if _glitch_overrides.has(mesh_id):
+			mesh.material_overlay = _glitch_overrides[mesh_id] as Material
+		else:
+			mesh.material_overlay = null
+	_glitch_overrides.clear()
 
 func _perform_wind_pulse() -> void:
 	if _wind_disc == null or _should_abort_skills():
@@ -218,13 +361,21 @@ func _perform_wind_pulse() -> void:
 			aborted = true
 			break
 		if _is_time_state_blocked():
-			await get_tree().process_frame
+			var blocked_tree: SceneTree = get_tree()
+			if blocked_tree == null:
+				aborted = true
+				break
+			await blocked_tree.process_frame
 			continue
 		var delta: float = get_process_delta_time()
 		elapsed += delta
 		var ratio: float = clampf(elapsed / maxf(wind_charge_duration, 0.001), 0.0, 1.0)
 		_update_wind_charge_orbs(gather_orbs, ratio, elapsed)
-		await get_tree().process_frame
+		var wind_tree: SceneTree = get_tree()
+		if wind_tree == null:
+			aborted = true
+			break
+		await wind_tree.process_frame
 	if aborted:
 		for orb in gather_orbs:
 			if is_instance_valid(orb):
@@ -381,7 +532,10 @@ func _perform_meteor_rain() -> void:
 		if _should_abort_skills():
 			break
 		if _is_time_state_blocked():
-			await get_tree().process_frame
+			var meteor_tree: SceneTree = get_tree()
+			if meteor_tree == null:
+				break
+			await meteor_tree.process_frame
 			continue
 		for burst_index in range(2):
 			var attack: Node3D = FALL_ATTACK_SCENE.instantiate() as Node3D
@@ -408,9 +562,9 @@ func _perform_light_snare() -> void:
 	if snare == null:
 		return
 	_snare_root.add_child(snare)
-	snare.global_position = Vector3(_player.global_position.x, 0.08, _player.global_position.z)
-	snare.call("configure", _player, 3.0, 50.0, 2.2, self)
-	await _wait_for_game_time(3.6)
+	snare.global_position = Vector3(global_position.x, 0.08, global_position.z)
+	snare.call("configure", _player, 5.0, 50.0, 4.2, self)
+	await _wait_for_game_time(5.4)
 
 func _spawn_wind_charge_orbs(root: Node3D, count: int) -> Array[MeshInstance3D]:
 	var orbs: Array[MeshInstance3D] = []
@@ -474,6 +628,7 @@ func _defeat() -> void:
 		child.queue_free()
 	for child in _snare_root.get_children():
 		child.queue_free()
+	_apply_glitch_overlay(false)
 	if _player != null and is_instance_valid(_player) and _player.has_method("set_mobility_lock"):
 		_player.call("set_mobility_lock", false)
 	await _play_death_sequence()
@@ -502,6 +657,7 @@ func set_manifested(active: bool) -> void:
 		_wind_disc.scale = _wind_disc_initial_scale
 		_wind_disc.visible = false
 	scale = _self_initial_scale
+	_apply_glitch_overlay(false)
 	_set_visual_transparency(0.0)
 	if _aura_light != null:
 		_aura_light.light_energy = _aura_light_initial_energy
@@ -644,7 +800,10 @@ func _should_abort_skills() -> bool:
 func _wait_for_game_time(duration: float) -> void:
 	var elapsed: float = 0.0
 	while elapsed < duration:
-		await get_tree().process_frame
+		var tree: SceneTree = get_tree()
+		if tree == null:
+			return
+		await tree.process_frame
 		if _should_abort_skills():
 			return
 		if _is_time_state_blocked():
@@ -664,4 +823,7 @@ func _await_tween_with_time_control(tween: Tween) -> void:
 			tween.play()
 		if not tween.is_running() and not _is_time_state_blocked():
 			break
-		await get_tree().process_frame
+		var tree: SceneTree = get_tree()
+		if tree == null:
+			return
+		await tree.process_frame
