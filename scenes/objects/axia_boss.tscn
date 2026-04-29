@@ -34,7 +34,7 @@ height = 0.05
 
 [sub_resource type="Gradient" id="AshGradient"]
 offsets = PackedFloat32Array(0, 0.12, 0.68, 1)
-colors = PackedColorArray(0.58, 0.6, 0.63, 0, 0.65, 0.66, 0.68, 0.86, 0.32, 0.34, 0.38, 0.46, 0.18, 0.19, 0.22, 0)
+colors = PackedColorArray(0.05, 0.05, 0.05, 0, 0.09, 0.09, 0.09, 0.92, 0.04, 0.04, 0.04, 0.58, 0.01, 0.01, 0.01, 0)
 
 [sub_resource type="GradientTexture1D" id="AshGradientTex"]
 gradient = SubResource("AshGradient")
@@ -49,7 +49,7 @@ scale_min = 0.08
 scale_max = 0.24
 angular_velocity_min = -6.2
 angular_velocity_max = 6.2
-color = Color(0.42, 0.44, 0.48, 0.92)
+color = Color(0.08, 0.08, 0.08, 0.94)
 color_ramp = SubResource("AshGradientTex")
 
 [sub_resource type="QuadMesh" id="AshQuadMesh"]
@@ -85,6 +85,11 @@ aura_light_base_energy = 1.5
 aura_light_pulse_amplitude = 0.3
 aura_light_pulse_speed = 0.002
 wind_pulse_light_color = Color(0.22, 0.48, 0.28, 1)
+wind_charge_duration = 2.15
+wind_charge_orb_count = 16
+sword_circle_count = 20
+sword_projectile_speed = 12.8
+sword_projectile_damage = 11.0
 
 [node name="Rose" parent="." instance=ExtResource("2_rose")]
 transform = Transform3D(-0.6156615, 0, -0.7880107, 0, 1, 0, 0.7880107, 0, -0.6156615, 0, 0.7, 0)

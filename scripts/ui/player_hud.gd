@@ -319,6 +319,8 @@ func _format_slot_name(item_id: String) -> String:
 		return "EMPTY"
 	if item_id == "Gun":
 		return "GUN"
+	if item_id == "LightningSkill":
+		return "THUNDER"
 	if item_id == "key_1" or item_id == "key_2":
 		return "KEYCARD"
 	return item_id.replace("_", " ").to_upper()

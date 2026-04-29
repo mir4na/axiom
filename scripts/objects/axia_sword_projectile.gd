@@ -29,9 +29,11 @@ func configure(direction: Vector3, speed_value: float, damage_value: float, play
 	speed = speed_value
 	damage = damage_value
 	_player = player_ref
+	_life_left = lifetime
 	_active = true
-	look_at(global_position + _direction, Vector3.UP)
-	rotate_y(PI)
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_physics_process(true)
+	look_at(global_position + _direction, Vector3.UP, true)
 
 func _physics_process(delta: float) -> void:
 	if not _active:
@@ -76,10 +78,25 @@ func _play_impact() -> void:
 	burst.tween_property(_visual_root, "scale", Vector3.ONE * 1.7, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	if _light != null:
 		burst.tween_property(_light, "light_energy", 5.8, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	await burst.finished
+	await _await_tween_with_time_control(burst)
 	var fade: Tween = create_tween().set_parallel(true)
 	fade.tween_property(_visual_root, "scale", Vector3.ZERO, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	if _light != null:
 		fade.tween_property(_light, "light_energy", 0.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	await fade.finished
+	await _await_tween_with_time_control(fade)
 	queue_free()
+
+func _is_time_state_blocked() -> bool:
+	return GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past
+
+func _await_tween_with_time_control(tween: Tween) -> void:
+	if tween == null:
+		return
+	while tween.is_valid():
+		if _is_time_state_blocked():
+			tween.pause()
+		else:
+			tween.play()
+		if not tween.is_running() and not _is_time_state_blocked():
+			break
+		await get_tree().process_frame

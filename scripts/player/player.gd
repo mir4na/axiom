@@ -14,6 +14,12 @@ extends CharacterBody3D
 @export var stamina_drain_rate: float = 26.0
 @export var stamina_recover_rate: float = 18.0
 @export var stamina_recover_delay: float = 0.7
+@export var lightning_damage: float = 25.0
+@export var lightning_radius: float = 2.4
+@export var lightning_target_max_distance: float = 80.0
+@export var lightning_strike_height: float = 26.0
+
+const LIGHTNING_SKILL_ITEM_ID := "LightningSkill"
 
 @onready var head: Node3D = $"root/Skeleton3D/BoneAttachment3D/Head"
 @onready var camera: Camera3D = $"root/Skeleton3D/BoneAttachment3D/Head/Camera3D"
@@ -61,6 +67,12 @@ var _gun_damage: float = 30.0
 var _gun_range: float = 52.0
 var _gun_recoil: float = 0.0
 var mobility_locked: bool = false
+var _lightning_targeting: bool = false
+var _lightning_target_position: Vector3 = Vector3.ZERO
+var _lightning_target_valid: bool = false
+var _lightning_target_root: Node3D
+var _lightning_target_ring: MeshInstance3D
+var _lightning_target_core: MeshInstance3D
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -81,6 +93,7 @@ func _ready() -> void:
 	_self_melee_exclude = [get_rid()]
 	_setup_flashlight()
 	_setup_gun_view_model()
+	_setup_lightning_target_indicator()
 	_update_hud_status()
 	
 	_hitbox_pairs.clear()
@@ -142,8 +155,13 @@ func _sync_hitboxes(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if cinematic_locked:
+		if _lightning_targeting:
+			_set_lightning_targeting(false)
 		return
 	if Input.is_action_just_pressed("ui_cancel"):
+		if _lightning_targeting:
+			_set_lightning_targeting(false)
+			return
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 	if GameState.rewind_mode_active:
@@ -181,8 +199,12 @@ func _input(event: InputEvent) -> void:
 		elif event.keycode == KEY_3:
 			GameState.select_slot(2)
 	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT and _can_use_gun():
-			_fire_gun()
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if _lightning_targeting:
+				_cast_lightning_at_target()
+				return
+			if _can_use_gun():
+				_fire_gun()
 
 func _physics_process(delta: float) -> void:
 	if health > 0.0 and health < max_health:
@@ -195,6 +217,7 @@ func _physics_process(delta: float) -> void:
 		_health_regen_timer = 0.0
 	_update_flashlight_state()
 	_update_gun_state(delta)
+	_update_lightning_skill(delta)
 	if _attack_timer > 0.0:
 		_attack_timer = maxf(0.0, _attack_timer - delta)
 		if _attack_timer <= 0.0:
@@ -477,6 +500,11 @@ func _drop_item() -> void:
 		var g = gun_scene.instantiate()
 		get_tree().root.add_child(g)
 		g.global_position = head.global_position - head.global_transform.basis.z * 1.5
+	elif item_name == LIGHTNING_SKILL_ITEM_ID:
+		var lightning_scene = load("res://scenes/objects/lightning_skill_item.tscn")
+		var l = lightning_scene.instantiate()
+		get_tree().root.add_child(l)
+		l.global_position = head.global_position - head.global_transform.basis.z * 1.5
 
 func _can_use_axiom() -> bool:
 	return GameState.has_rewind_access()
@@ -484,8 +512,11 @@ func _can_use_axiom() -> bool:
 func _has_gun_selected() -> bool:
 	return GameState.has_selected_item("Gun")
 
+func _has_lightning_skill_selected() -> bool:
+	return GameState.has_selected_item(LIGHTNING_SKILL_ITEM_ID)
+
 func _can_use_gun() -> bool:
-	return _has_gun_selected() and not cinematic_locked and not GameState.rewind_mode_active and not _gun_reloading and _gun_shot_timer <= 0.0
+	return _has_gun_selected() and not _lightning_targeting and not cinematic_locked and not GameState.rewind_mode_active and not _gun_reloading and _gun_shot_timer <= 0.0
 
 func _can_reload_gun() -> bool:
 	return _has_gun_selected() and not _gun_reloading and _gun_ammo < _gun_clip_size and not cinematic_locked and not GameState.rewind_mode_active
@@ -639,6 +670,192 @@ func _spawn_bullet_impact(position: Vector3, normal: Vector3, hit_enemy: bool) -
 	flash_tween.tween_property(flash, "scale", Vector3(1.8, 1.8, 1.8), 0.06).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	flash_tween.chain().tween_property(flash, "scale", Vector3.ZERO, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	flash_tween.finished.connect(flash.queue_free, CONNECT_ONE_SHOT)
+
+func _setup_lightning_target_indicator() -> void:
+	_lightning_target_root = Node3D.new()
+	_lightning_target_root.name = "LightningTarget"
+	var parent: Node = get_tree().current_scene
+	if parent == null:
+		parent = get_parent()
+	if parent == null:
+		return
+	parent.add_child(_lightning_target_root)
+	_lightning_target_ring = MeshInstance3D.new()
+	var ring_mesh: CylinderMesh = CylinderMesh.new()
+	ring_mesh.top_radius = 1.2
+	ring_mesh.bottom_radius = 1.2
+	ring_mesh.height = 0.05
+	_lightning_target_ring.mesh = ring_mesh
+	var ring_mat: StandardMaterial3D = StandardMaterial3D.new()
+	ring_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring_mat.albedo_color = Color(0.18, 0.82, 1.0, 0.44)
+	ring_mat.emission_enabled = true
+	ring_mat.emission = Color(0.28, 0.92, 1.0, 1.0)
+	ring_mat.emission_energy_multiplier = 2.8
+	_lightning_target_ring.material_override = ring_mat
+	_lightning_target_root.add_child(_lightning_target_ring)
+	_lightning_target_core = MeshInstance3D.new()
+	var core_mesh: CylinderMesh = CylinderMesh.new()
+	core_mesh.top_radius = 0.2
+	core_mesh.bottom_radius = 0.2
+	core_mesh.height = 0.04
+	_lightning_target_core.mesh = core_mesh
+	var core_mat: StandardMaterial3D = StandardMaterial3D.new()
+	core_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	core_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	core_mat.albedo_color = Color(0.9, 0.98, 1.0, 0.88)
+	core_mat.emission_enabled = true
+	core_mat.emission = Color(0.82, 0.97, 1.0, 1.0)
+	core_mat.emission_energy_multiplier = 4.1
+	_lightning_target_core.material_override = core_mat
+	_lightning_target_root.add_child(_lightning_target_core)
+	_lightning_target_root.visible = false
+
+func _update_lightning_skill(delta: float) -> void:
+	if _lightning_target_root == null or not is_instance_valid(_lightning_target_root):
+		return
+	var can_target: bool = _has_lightning_skill_selected() and not GameState.rewind_mode_active and not cinematic_locked
+	if not can_target:
+		if _lightning_targeting:
+			_set_lightning_targeting(false)
+		return
+	if not _lightning_targeting:
+		_set_lightning_targeting(true)
+	_update_lightning_target_position()
+	_lightning_target_root.rotate_y(delta * 1.8)
+	var pulse: float = 0.9 + sin(Time.get_ticks_msec() * 0.016) * 0.12
+	_lightning_target_ring.scale = Vector3.ONE * pulse
+	_lightning_target_core.scale = Vector3.ONE * (0.8 + sin(Time.get_ticks_msec() * 0.021) * 0.16)
+
+func _set_lightning_targeting(active: bool) -> void:
+	if _lightning_target_root == null or not is_instance_valid(_lightning_target_root):
+		return
+	if _lightning_targeting == active:
+		return
+	_lightning_targeting = active
+	_lightning_target_root.visible = active
+	if active:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		_update_lightning_target_position()
+	else:
+		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func _update_lightning_target_position() -> void:
+	if camera == null:
+		_lightning_target_valid = false
+		return
+	var mouse_position: Vector2 = get_viewport().get_mouse_position()
+	var ray_origin: Vector3 = camera.project_ray_origin(mouse_position)
+	var ray_direction: Vector3 = camera.project_ray_normal(mouse_position).normalized()
+	var ray_end: Vector3 = ray_origin + ray_direction * lightning_target_max_distance
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
+	query.exclude = [get_rid()]
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		_lightning_target_valid = false
+		return
+	var hit_position: Variant = hit.get("position", global_position)
+	if typeof(hit_position) != TYPE_VECTOR3:
+		_lightning_target_valid = false
+		return
+	_lightning_target_position = hit_position as Vector3
+	_lightning_target_position.y -= 0.02
+	_lightning_target_valid = true
+	_lightning_target_root.global_position = _lightning_target_position
+
+func _cast_lightning_at_target() -> void:
+	if not _lightning_targeting:
+		return
+	if not _lightning_target_valid:
+		return
+	if not _has_lightning_skill_selected():
+		return
+	var cast_point: Vector3 = _lightning_target_position
+	_spawn_lightning_strike_effect(cast_point)
+	_apply_lightning_strike_damage(cast_point)
+	GameState.consume_selected_item(LIGHTNING_SKILL_ITEM_ID)
+	_set_lightning_targeting(false)
+
+func _spawn_lightning_strike_effect(position: Vector3) -> void:
+	var parent: Node = get_tree().current_scene
+	if parent == null:
+		parent = get_parent()
+	if parent == null:
+		return
+	var root: Node3D = Node3D.new()
+	parent.add_child(root)
+	root.global_position = position
+	var beam: MeshInstance3D = MeshInstance3D.new()
+	var beam_mesh: CylinderMesh = CylinderMesh.new()
+	beam_mesh.top_radius = 0.15
+	beam_mesh.bottom_radius = 0.34
+	beam_mesh.height = lightning_strike_height
+	beam.mesh = beam_mesh
+	beam.position = Vector3(0.0, lightning_strike_height * 0.5, 0.0)
+	var beam_mat: StandardMaterial3D = StandardMaterial3D.new()
+	beam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	beam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	beam_mat.albedo_color = Color(0.86, 0.96, 1.0, 0.9)
+	beam_mat.emission_enabled = true
+	beam_mat.emission = Color(0.78, 0.95, 1.0, 1.0)
+	beam_mat.emission_energy_multiplier = 9.5
+	beam.material_override = beam_mat
+	root.add_child(beam)
+	var flash: OmniLight3D = OmniLight3D.new()
+	flash.light_color = Color(0.8, 0.94, 1.0, 1.0)
+	flash.light_energy = 17.0
+	flash.omni_range = 16.0
+	flash.position = Vector3(0.0, 1.3, 0.0)
+	root.add_child(flash)
+	var ground_flash: MeshInstance3D = MeshInstance3D.new()
+	var flash_mesh: CylinderMesh = CylinderMesh.new()
+	flash_mesh.top_radius = lightning_radius * 0.72
+	flash_mesh.bottom_radius = lightning_radius * 0.72
+	flash_mesh.height = 0.04
+	ground_flash.mesh = flash_mesh
+	ground_flash.position = Vector3(0.0, 0.03, 0.0)
+	var ground_mat: StandardMaterial3D = StandardMaterial3D.new()
+	ground_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ground_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ground_mat.albedo_color = Color(0.72, 0.9, 1.0, 0.72)
+	ground_mat.emission_enabled = true
+	ground_mat.emission = Color(0.78, 0.95, 1.0, 1.0)
+	ground_mat.emission_energy_multiplier = 6.2
+	ground_flash.material_override = ground_mat
+	root.add_child(ground_flash)
+	var burst: Tween = create_tween().set_parallel(true)
+	burst.tween_property(beam_mat, "albedo_color:a", 0.0, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	burst.parallel().tween_property(ground_mat, "albedo_color:a", 0.0, 0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	burst.parallel().tween_property(flash, "light_energy", 0.0, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	burst.parallel().tween_property(beam, "scale", Vector3(2.1, 1.0, 2.1), 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	await burst.finished
+	root.queue_free()
+
+func _apply_lightning_strike_damage(position: Vector3) -> void:
+	var shape: SphereShape3D = SphereShape3D.new()
+	shape.radius = lightning_radius
+	var query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.transform = Transform3D(Basis(), position + Vector3(0.0, 0.65, 0.0))
+	query.exclude = [get_rid()]
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	var hits: Array[Dictionary] = get_world_3d().direct_space_state.intersect_shape(query, 32)
+	var damaged: Dictionary = {}
+	for hit in hits:
+		var collider: Node = hit.get("collider") as Node
+		var target: Node3D = _resolve_damage_target(collider)
+		if target == null:
+			continue
+		var key: int = target.get_instance_id()
+		if damaged.has(key):
+			continue
+		damaged[key] = true
+		target.call("take_damage", lightning_damage)
 
 func _resolve_damage_target(start: Node) -> Node3D:
 	var target: Node = start

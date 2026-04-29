@@ -5,18 +5,18 @@
 
 [sub_resource type="ShaderMaterial" id="RingMat"]
 shader = ExtResource("2_shader")
-shader_parameter/base_color = Color(0.07, 0.16, 0.3, 0.34)
-shader_parameter/accent_color = Color(0.32, 0.1, 0.52, 0.78)
-shader_parameter/emission_energy = 3.9
+shader_parameter/base_color = Color(0.03, 0.14, 0.08, 0.36)
+shader_parameter/accent_color = Color(0.22, 0.9, 0.36, 0.88)
+shader_parameter/emission_energy = 4.4
 shader_parameter/pulse_speed = 2.0
 shader_parameter/flow_strength = 0.28
 shader_parameter/edge_softness = 1.1
 
 [sub_resource type="ShaderMaterial" id="ColumnMat"]
 shader = ExtResource("2_shader")
-shader_parameter/base_color = Color(0.05, 0.12, 0.26, 0.28)
-shader_parameter/accent_color = Color(0.28, 0.08, 0.44, 0.58)
-shader_parameter/emission_energy = 3.2
+shader_parameter/base_color = Color(0.02, 0.12, 0.06, 0.32)
+shader_parameter/accent_color = Color(0.18, 0.78, 0.34, 0.72)
+shader_parameter/emission_energy = 3.8
 shader_parameter/pulse_speed = 1.8
 shader_parameter/flow_strength = 0.3
 shader_parameter/edge_softness = 1.08
@@ -39,6 +39,12 @@ height = 2.2
 script = ExtResource("1_script")
 collision_layer = 0
 collision_mask = 1
+indicator_height = 2.9
+spear_height = 8.2
+spear_track_lerp = 4.8
+spear_strike_duration = 0.22
+spear_fade_duration = 0.25
+spear_release_delay = 0.95
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
@@ -56,6 +62,6 @@ mesh = SubResource("ColumnMesh")
 
 [node name="Light" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
-light_color = Color(0.4, 0.14, 0.42, 1)
+light_color = Color(0.34, 1, 0.44, 1)
 light_energy = 4.0
 omni_range = 6.0

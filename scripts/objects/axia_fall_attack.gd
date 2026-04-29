@@ -107,10 +107,25 @@ func _impact() -> void:
 	tween.tween_property(_meteor_root, "scale", Vector3.ONE * meteor_scale * 3.8, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	if _light != null:
 		tween.tween_property(_light, "light_energy", 10.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	await tween.finished
+	await _await_tween_with_time_control(tween)
 	var fade: Tween = create_tween().set_parallel(true)
 	fade.tween_property(_meteor_root, "scale", Vector3.ZERO, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	if _light != null:
 		fade.tween_property(_light, "light_energy", 0.0, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	await fade.finished
+	await _await_tween_with_time_control(fade)
 	queue_free()
+
+func _is_time_state_blocked() -> bool:
+	return GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past
+
+func _await_tween_with_time_control(tween: Tween) -> void:
+	if tween == null:
+		return
+	while tween.is_valid():
+		if _is_time_state_blocked():
+			tween.pause()
+		else:
+			tween.play()
+		if not tween.is_running() and not _is_time_state_blocked():
+			break
+		await get_tree().process_frame

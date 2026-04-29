@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="BarBackMat"]
+shading_mode = 0
+albedo_color = Color(0.04, 0.09, 0.05, 0.9)
+emission_enabled = true
+emission = Color(0.08, 0.28, 0.12, 1)
+emission_energy_multiplier = 1.5
+
+[sub_resource type="StandardMaterial3D" id="BarFillMat"]
+shading_mode = 0
+albedo_color = Color(0.35, 0.95, 0.42, 0.98)
+emission_enabled = true
+emission = Color(0.46, 1, 0.52, 1)
+emission_energy_multiplier = 2.2
+
+[sub_resource type="BoxMesh" id="BarBackMesh"]
+size = Vector3(1.95, 0.08, 0.08)
+
+[sub_resource type="BoxMesh" id="BarFillMesh"]
+size = Vector3(1.8, 0.05, 0.06)
+
+[node name="AxiaSnareIndicator" type="Node3D"]
+
+[node name="BarBack" type="MeshInstance3D" parent="."]
+material_override = SubResource("BarBackMat")
+mesh = SubResource("BarBackMesh")
+
+[node name="BarFill" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.075, 0, 0)
+material_override = SubResource("BarFillMat")
+mesh = SubResource("BarFillMesh")

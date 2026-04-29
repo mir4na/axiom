@@ -1,0 +1,38 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="SpearBodyMat"]
+albedo_color = Color(0.06, 0.11, 0.09, 0.98)
+metallic = 0.9
+roughness = 0.12
+emission_enabled = true
+emission = Color(0.28, 0.95, 0.42, 1)
+emission_energy_multiplier = 2.8
+
+[sub_resource type="StandardMaterial3D" id="SpearTipMat"]
+albedo_color = Color(0.6, 1, 0.72, 0.98)
+metallic = 0.42
+roughness = 0.05
+emission_enabled = true
+emission = Color(0.5, 1, 0.62, 1)
+emission_energy_multiplier = 3.6
+
+[sub_resource type="CylinderMesh" id="SpearBodyMesh"]
+top_radius = 0.13
+bottom_radius = 0.17
+height = 4.6
+
+[sub_resource type="PrismMesh" id="SpearTipMesh"]
+left_to_right = 0.22
+size = Vector3(0.42, 1.05, 0.42)
+
+[node name="AxiaSnareSpear" type="Node3D"]
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, 0)
+material_override = SubResource("SpearBodyMat")
+mesh = SubResource("SpearBodyMesh")
+
+[node name="Tip" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.9, 0)
+material_override = SubResource("SpearTipMat")
+mesh = SubResource("SpearTipMesh")

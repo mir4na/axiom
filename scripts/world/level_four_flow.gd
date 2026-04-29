@@ -4,6 +4,7 @@ const CENTER_OBJECTIVE := "Go to the center"
 const DEFEAT_OBJECTIVE := "Defeat Axia"
 const WORLD_SCENE_PATH := "res://scenes/world/world.tscn"
 const LEVEL_FOUR_RETURN_WAKE_META := "level_four_return_wake"
+const LIGHTNING_SKILL_ITEM_SCENE := preload("res://scenes/objects/lightning_skill_item.tscn")
 
 var _world
 var _boss: Node3D
@@ -28,6 +29,8 @@ var _center_reached: bool = false
 var _follow_axia_camera: bool = false
 var _axia_follow_offset: Vector3 = Vector3(0.0, 1.35, 4.5)
 var _ending_sequence_running: bool = false
+var _lightning_drop_interval: float = 15.0
+var _lightning_drop_timer: float = 15.0
 
 func _init(world_ref) -> void:
 	_world = world_ref
@@ -39,9 +42,13 @@ func initialize() -> void:
 
 func process_frame() -> void:
 	if _sequence_running:
+		_try_recover_intro_to_encounter()
 		if _follow_axia_camera:
 			_update_axia_camera_follow()
 		return
+	_try_recover_intro_to_encounter()
+	if _encounter_started and not _completed:
+		_update_lightning_skill_drop()
 	if _completed:
 		return
 	if not _center_reached:
@@ -77,18 +84,16 @@ func play_intro_sequence() -> void:
 	await _play_crystal_push_shot(2.35)
 	await _show_axia_line("Look at that... everything here bends to your will.", 2.5)
 	await _world._fade_black(1.0, 0.32)
-	_align_intro_camera_to_marker(_down_look)
+	_prepare_player_look_down_pose()
 	await _show_player_line("No. I am not staying here.", 2.0)
 	await _show_player_line("The real world is hard... but that is where things actually mean something.", 2.8)
-	var final_focus: Node3D = _axia_focus if _axia_focus != null else _combat_focus
+	var final_focus: Node3D = _boss if _boss != null and is_instance_valid(_boss) else (_axia_focus if _axia_focus != null else _combat_focus)
 	await _show_player_line("I still want to go back. I still want to keep moving.", 2.5)
 	await _show_axia_line("Then prove it.", 2.1)
-	await _reveal_from_down_to_marker(final_focus, 1.15, 0.52)
+	await _reveal_player_view_to_marker(final_focus, 1.15, 0.52)
 	await _world._set_cinematic_bars(false, 0.3)
 	if _world.player != null and is_instance_valid(_world.player):
 		_world.player.visible = true
-	if _world.player_camera != null:
-		_world.player_camera.make_current()
 	_world._set_intro_lock(false)
 	_set_cinematic_ui(true)
 	_start_boss_encounter()
@@ -107,6 +112,13 @@ func on_boss_defeated() -> void:
 	if _world.player_hud != null and _world.player_hud.has_method("hide_boss_bar"):
 		_world.player_hud.call("hide_boss_bar")
 	_world._hide_objective()
+	call_deferred("_run_boss_defeat_transition")
+
+func _run_boss_defeat_transition() -> void:
+	await _world.get_tree().create_timer(1.4).timeout
+	await _world._fade_black(1.0, 0.35)
+	await _world.get_tree().create_timer(2.0).timeout
+	await _world._fade_black(0.0, 0.45)
 	_world.call_deferred("_play_level_four_victory_subtitle")
 
 func play_victory_subtitle() -> void:
@@ -131,12 +143,16 @@ func play_victory_subtitle() -> void:
 		_world._glitch_overlay.visible = false
 	_world.call("_set_arrival_glitch_strength", 0.0)
 	var crack_phase_one: Tween = _world.create_tween()
-	crack_phase_one.tween_method(_world._set_sky_crack_intensity, 0.0, 0.46, 2.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	crack_phase_one.tween_method(_world._set_sky_crack_intensity, 0.0, 0.24, 2.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await crack_phase_one.finished
-	await _world.get_tree().create_timer(0.6).timeout
+	await _world.get_tree().create_timer(0.45).timeout
 	var crack_phase_two: Tween = _world.create_tween()
-	crack_phase_two.tween_method(_world._set_sky_crack_intensity, 0.46, 1.0, 1.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	crack_phase_two.tween_method(_world._set_sky_crack_intensity, 0.24, 0.68, 2.15).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await crack_phase_two.finished
+	await _world.get_tree().create_timer(0.32).timeout
+	var crack_phase_three: Tween = _world.create_tween()
+	crack_phase_three.tween_method(_world._set_sky_crack_intensity, 0.68, 1.0, 0.95).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	await crack_phase_three.finished
 	await _world._fade_white(1.0, 0.12)
 	await _world.get_tree().create_timer(1.2).timeout
 	GameState.set_meta(LEVEL_FOUR_RETURN_WAKE_META, true)
@@ -217,22 +233,63 @@ func _look_to_marker(marker: Node3D, duration: float) -> void:
 	var end_transform: Transform3D = _world._make_look_transform(start_transform.origin, marker.global_position)
 	await _world._play_camera_shot(start_transform, end_transform, duration)
 
-func _reveal_from_down_to_marker(marker: Node3D, duration: float, fade_duration: float) -> void:
-	if _world._intro_camera == null:
+func _reveal_player_view_to_marker(marker: Node3D, duration: float, fade_duration: float) -> void:
+	if _world.player == null or not is_instance_valid(_world.player):
 		await _world._fade_black(0.0, fade_duration)
 		return
-	var start_transform: Transform3D = _world._intro_camera.global_transform
+	if _world.player_camera == null:
+		await _world._fade_black(0.0, fade_duration)
+		return
+	var camera_origin: Vector3 = _world.player_camera.global_position
+	var look_down_target: Vector3 = camera_origin + Vector3(0.0, -1.0, 1.0)
 	if _down_look != null:
-		start_transform = _world._make_look_transform(start_transform.origin, _down_look.global_position)
-	var target_position: Vector3 = marker.global_position if marker != null else (_axia_focus.global_position if _axia_focus != null else start_transform.origin + Vector3(0.0, 0.0, -3.0))
-	var end_transform: Transform3D = _world._make_look_transform(start_transform.origin, target_position)
-	_world._intro_camera.global_transform = start_transform
-	_world._intro_camera.make_current()
+		look_down_target = _down_look.global_position
+	var to_down: Vector3 = look_down_target - camera_origin
+	if to_down.length_squared() <= 0.0001:
+		to_down = Vector3(0.0, -0.5, 1.0)
+	var start_dir: Vector3 = to_down.normalized()
+	var target_position: Vector3 = marker.global_position if marker != null else (_axia_focus.global_position if _axia_focus != null else camera_origin + Vector3(0.0, 0.0, -3.0))
+	if marker != null and marker == _boss:
+		target_position += Vector3(0.0, 1.35, 0.0)
+	var to_target: Vector3 = target_position - camera_origin
+	if to_target.length_squared() <= 0.0001:
+		to_target = Vector3(0.0, 0.0, -1.0)
+	var end_dir: Vector3 = to_target.normalized()
+	var start_yaw: float = atan2(-start_dir.x, -start_dir.z)
+	var start_pitch: float = -rad_to_deg(asin(clampf(start_dir.y, -1.0, 1.0)))
+	_world.player.call("set_cinematic_pose", _world.player.global_position, start_yaw, start_pitch)
+	_world.player_camera.make_current()
 	var reveal: Tween = _world.create_tween().set_parallel(true)
 	if _world._fade_overlay != null:
 		reveal.tween_property(_world._fade_overlay, "modulate:a", 0.0, fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	reveal.parallel().tween_method(_world._blend_intro_camera.bind(start_transform, end_transform), 0.0, 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	reveal.parallel().tween_method(_set_player_view_transition.bind(start_dir, end_dir), 0.0, 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await reveal.finished
+
+func _prepare_player_look_down_pose() -> void:
+	if _world.player == null or not is_instance_valid(_world.player):
+		return
+	if _world.player_camera == null:
+		return
+	var camera_origin: Vector3 = _world.player_camera.global_position
+	var look_target: Vector3 = camera_origin + Vector3(0.0, -1.0, 1.0)
+	if _down_look != null:
+		look_target = _down_look.global_position
+	var direction: Vector3 = look_target - camera_origin
+	if direction.length_squared() <= 0.0001:
+		direction = Vector3(0.0, -0.6, 1.0)
+	direction = direction.normalized()
+	var yaw: float = atan2(-direction.x, -direction.z)
+	var pitch: float = -rad_to_deg(asin(clampf(direction.y, -1.0, 1.0)))
+	_world.player.call("set_cinematic_pose", _world.player.global_position, yaw, pitch)
+	_world.player_camera.make_current()
+
+func _set_player_view_transition(weight: float, start_dir: Vector3, end_dir: Vector3) -> void:
+	if _world.player == null or not is_instance_valid(_world.player):
+		return
+	var blended_dir: Vector3 = start_dir.slerp(end_dir, clampf(weight, 0.0, 1.0)).normalized()
+	var blended_yaw: float = atan2(-blended_dir.x, -blended_dir.z)
+	var blended_pitch: float = -rad_to_deg(asin(clampf(blended_dir.y, -1.0, 1.0)))
+	_world.player.call("set_cinematic_pose", _world.player.global_position, blended_yaw, blended_pitch)
 
 func _align_intro_camera_to_marker(marker: Node3D) -> void:
 	if marker == null or _world._intro_camera == null:
@@ -421,12 +478,37 @@ func _show_player_line(text: String, duration: float) -> void:
 func _start_boss_encounter() -> void:
 	if _encounter_started or _boss == null or not is_instance_valid(_boss):
 		return
+	if GameState.rewind_mode_active:
+		GameState.cancel_rewind_mode()
+	GameState.time_direction = GameState.TIME_FORWARD
+	GameState.is_scrubbing_past = false
+	GameState.rewind_mode_changed.emit(false)
+	GameState.time_direction_changed.emit(GameState.time_direction)
 	_encounter_started = true
+	_lightning_drop_timer = _lightning_drop_interval
 	_world._show_objective(DEFEAT_OBJECTIVE)
 	if _world.player_hud != null and _world.player_hud.has_method("show_boss_bar"):
 		_world.player_hud.call("show_boss_bar", "AXIA", 1.0)
 	if _boss.has_method("begin_encounter"):
 		_boss.call("begin_encounter", _world.player)
+
+func _try_recover_intro_to_encounter() -> void:
+	if _encounter_started or _completed:
+		return
+	if _boss == null or not is_instance_valid(_boss):
+		return
+	if not _boss.visible:
+		return
+	if _world == null:
+		return
+	if _world.player == null or not is_instance_valid(_world.player):
+		return
+	if not _world.player.visible:
+		return
+	_world._set_intro_lock(false)
+	_sequence_running = false
+	_set_cinematic_ui(true)
+	_start_boss_encounter()
 
 func _set_cinematic_ui(visible: bool) -> void:
 	if _world.player_hud != null:
@@ -434,7 +516,34 @@ func _set_cinematic_ui(visible: bool) -> void:
 	if not visible:
 		if _world._objective_panel != null:
 			_world._objective_panel.visible = false
-		_hide_hint()
+			_hide_hint()
+
+func _update_lightning_skill_drop() -> void:
+	if GameState.is_paused or GameState.rewind_mode_active or GameState.time_direction != 1 or GameState.is_scrubbing_past:
+		return
+	_lightning_drop_timer -= _world.get_process_delta_time()
+	if _lightning_drop_timer > 0.0:
+		return
+	_lightning_drop_timer = _lightning_drop_interval
+	_spawn_lightning_skill_drop()
+
+func _spawn_lightning_skill_drop() -> void:
+	if LIGHTNING_SKILL_ITEM_SCENE == null:
+		return
+	var drop_item: Node3D = LIGHTNING_SKILL_ITEM_SCENE.instantiate() as Node3D
+	if drop_item == null:
+		return
+	_world.add_child(drop_item)
+	var center: Vector3 = Vector3.ZERO
+	if _combat_focus != null:
+		center = _combat_focus.global_position
+	elif _world.player != null and is_instance_valid(_world.player):
+		center = _world.player.global_position
+	var angle: float = randf_range(0.0, TAU)
+	var radius: float = randf_range(2.4, 10.8)
+	var target_position: Vector3 = center + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+	target_position.y = 0.08
+	drop_item.global_position = target_position
 
 func _ensure_item_in_inventory(item_id: String) -> void:
 	if GameState.has_item(item_id):

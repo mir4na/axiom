@@ -1916,6 +1916,7 @@ func _play_level_four_return_wake_sequence() -> void:
 	await _fade_white(0.0, 2.25)
 	await _tween_wake_overlay(0.0, 1.35)
 	await get_tree().create_timer(0.28).timeout
+	await _show_subtitle("Am I dreaming?", 1.8, "")
 	if player != null:
 		player.visible = true
 	await _return_intro_camera_to_player(0.9)
