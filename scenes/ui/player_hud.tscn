@@ -129,7 +129,7 @@ offset_bottom = 140.0
 
 [node name="StaminaBarBase" type="ColorRect" parent="StatusPanel/StaminaBarTrack" unique_id=178944578]
 layout_mode = 0
-offset_right = 229.32985
+offset_right = 225.05559
 offset_bottom = 10.0
 rotation = -0.0174533
 color = Color(0.1, 0.1, 0.12, 0.95)
@@ -158,63 +158,6 @@ offset_bottom = -48.0
 grow_horizontal = 2
 grow_vertical = 0
 scale = Vector2(1, 0.3)
-
-[node name="BossBar" type="Control" parent="." unique_id=132242774]
-visible = false
-layout_mode = 3
-anchors_preset = 10
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -250.0
-offset_top = 24.0
-offset_right = 250.0
-offset_bottom = 108.0
-grow_horizontal = 2
-
-[node name="Back" type="ColorRect" parent="BossBar" unique_id=641826251]
-layout_mode = 0
-offset_left = 10.0
-offset_top = 24.0
-offset_right = 490.0
-offset_bottom = 76.0
-rotation = -0.0174533
-color = Color(0.04, 0.04, 0.06, 0.92)
-
-[node name="Name" type="Label" parent="BossBar" unique_id=1383995731]
-layout_mode = 0
-offset_left = 12.0
-offset_top = 0.0
-offset_right = 490.0
-offset_bottom = 28.0
-theme_override_colors/font_color = Color(1, 0.9, 0.74, 1)
-theme_override_colors/font_outline_color = Color(0.01, 0.01, 0.01, 0.9)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 20
-text = "AXIA"
-horizontal_alignment = 1
-
-[node name="BarTrack" type="Control" parent="BossBar" unique_id=791446558]
-layout_mode = 0
-offset_left = 28.0
-offset_top = 40.0
-offset_right = 472.0
-offset_bottom = 68.0
-
-[node name="BarBase" type="ColorRect" parent="BossBar/BarTrack" unique_id=81359090]
-layout_mode = 0
-offset_right = 436.0
-offset_bottom = 22.0
-rotation = -0.0174533
-color = Color(0.12, 0.06, 0.08, 0.95)
-
-[node name="BarFill" type="ColorRect" parent="BossBar/BarTrack" unique_id=895064551]
-layout_mode = 0
-offset_left = 6.0
-offset_top = 4.0
-offset_right = 430.0
-offset_bottom = 18.0
-rotation = -0.0174533
-color = Color(0.95, 0.24, 0.34, 0.98)
 
 [node name="RewindHint" type="Label" parent="TimelineBarContainer" unique_id=682546585]
 layout_mode = 1
@@ -275,6 +218,104 @@ offset_bottom = 20.0
 theme_override_colors/font_color = Color(1, 0.95, 0.5, 1)
 theme_override_font_sizes/font_size = 10
 text = "NOW"
+
+[node name="BossBar" type="Control" parent="." unique_id=132242774]
+visible = false
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 24.0
+offset_right = 250.0
+offset_bottom = 108.0
+grow_horizontal = 2
+
+[node name="Back" type="ColorRect" parent="BossBar" unique_id=641826251]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 24.0
+offset_right = 490.0
+offset_bottom = 76.0
+rotation = -0.0174533
+color = Color(0.04, 0.04, 0.06, 0.92)
+
+[node name="Name" type="Label" parent="BossBar" unique_id=1383995731]
+layout_mode = 0
+offset_left = 12.0
+offset_right = 490.0
+offset_bottom = 28.0
+theme_override_colors/font_color = Color(1, 0.9, 0.74, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.01, 0.01, 0.9)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 20
+text = "AXIA"
+horizontal_alignment = 1
+
+[node name="BarTrack" type="Control" parent="BossBar" unique_id=791446558]
+anchors_preset = 0
+offset_left = 28.0
+offset_top = 40.0
+offset_right = 472.0
+offset_bottom = 68.0
+
+[node name="BarBase" type="ColorRect" parent="BossBar/BarTrack" unique_id=81359090]
+layout_mode = 0
+offset_right = 436.0
+offset_bottom = 22.0
+rotation = -0.0174533
+color = Color(0.12, 0.06, 0.08, 0.95)
+
+[node name="BarFill" type="ColorRect" parent="BossBar/BarTrack" unique_id=895064551]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 4.0
+offset_right = 430.0
+offset_bottom = 18.0
+rotation = -0.0174533
+color = Color(0.95, 0.24, 0.34, 0.98)
+
+[node name="RewindStunContainer" type="Control" parent="." unique_id=973274956]
+visible = false
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -212.0
+offset_top = 136.0
+offset_right = 212.0
+offset_bottom = 188.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Track" type="ColorRect" parent="RewindStunContainer" unique_id=995691369]
+layout_mode = 0
+offset_top = 22.0
+offset_right = 424.0
+offset_bottom = 52.0
+color = Color(0.03, 0.03, 0.05, 0.9)
+
+[node name="Fill" type="ColorRect" parent="RewindStunContainer/Track" unique_id=54173377]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 420.0
+offset_bottom = 26.0
+color = Color(0.88, 0.26, 0.2, 0.95)
+
+[node name="Label" type="Label" parent="RewindStunContainer" unique_id=475033373]
+layout_mode = 0
+offset_right = 424.0
+offset_bottom = 20.0
+theme_override_colors/font_color = Color(1, 0.9, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.9)
+theme_override_constants/outline_size = 7
+theme_override_font_sizes/font_size = 16
+text = "SYSTEM OVERLOAD"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="PromptLabel" type="Label" parent="." unique_id=1344094755]
 anchors_preset = 8

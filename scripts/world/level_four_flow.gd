@@ -53,6 +53,7 @@ var _base_bloom_color: Color = Color(1, 0.96, 0.86, 1)
 var _base_bloom_energy: float = 3.0
 var _enrage_visual_active: bool = false
 var _enrage_warning_intensity: float = 0.0
+var _first_rewind_taunt_played: bool = false
 
 func _init(world_ref) -> void:
 	_world = world_ref
@@ -106,7 +107,7 @@ func play_intro_sequence() -> void:
 	await _show_axia_line("The sky, the light, this world... it can be the place where your exhaustion finally ends.", 3.2)
 	await _world.get_tree().create_timer(0.7).timeout
 	await _play_crystal_push_shot(2.35)
-	await _show_axia_line("Look at that... I can grant anything you want, as long as you stay in this world.", 2.5)
+	await _show_axia_line("I can grant anything you want, as long as you stay in this world.", 2.5)
 	await _world._fade_black(1.0, 0.32)
 	_prepare_player_look_down_pose()
 	await _show_player_line("No. I am not staying here.", 2.0)
@@ -134,6 +135,7 @@ func on_boss_defeated() -> void:
 		return
 	_completed = true
 	_encounter_started = false
+	GameState.set_rewind_disabled(true)
 	_set_enrage_visual_active(false)
 	_hide_hint()
 	if _world.player_hud != null and _world.player_hud.has_method("hide_boss_bar"):
@@ -231,6 +233,7 @@ func _prepare_state() -> void:
 	GameState.axiom_unlocked = true
 	GameState.axiom_equipped = true
 	GameState.recording_enabled = true
+	GameState.set_rewind_disabled(false)
 	_ensure_item_in_inventory("Gun")
 	_select_item("Gun")
 	if _world.player_hud != null and _world.player_hud.has_method("hide_boss_bar"):
@@ -242,6 +245,7 @@ func _prepare_state() -> void:
 			_boss.call("set_manifested", false)
 		else:
 			_boss.visible = false
+	_first_rewind_taunt_played = false
 	_set_enrage_visual_active(false, true)
 
 func _connect_signals() -> void:
@@ -256,6 +260,27 @@ func _connect_signals() -> void:
 		var center_callable: Callable = Callable(self, "_on_center_objective_entered")
 		if not _center_objective.is_connected("body_entered", center_callable):
 			_center_objective.connect("body_entered", center_callable)
+	var rewind_callable: Callable = Callable(self, "_on_rewind_mode_changed")
+	if not GameState.is_connected("rewind_mode_changed", rewind_callable):
+		GameState.rewind_mode_changed.connect(rewind_callable)
+
+func _on_rewind_mode_changed(active: bool) -> void:
+	if not active:
+		return
+	if _first_rewind_taunt_played:
+		return
+	if not _encounter_started or _completed:
+		return
+	_first_rewind_taunt_played = true
+	call_deferred("_play_first_rewind_taunt")
+
+func _play_first_rewind_taunt() -> void:
+	if _world == null:
+		return
+	await _world._show_subtitle("Axia: Rewind cannot stop me.", 2.1, "axia")
+	if _world == null:
+		return
+	await _world._show_subtitle("Axia: This world moves under my authority.", 2.4, "axia")
 
 func _on_center_objective_entered(body: Node) -> void:
 	if _center_reached or body != _world.player:

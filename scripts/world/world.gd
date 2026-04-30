@@ -17,11 +17,49 @@ const LEVEL_FOUR_SCENE_PATH := "res://scenes/levels/level_04.tscn"
 const MAIN_MENU_SCENE_PATH := "res://scenes/ui/main_menu.tscn"
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const LEVEL_FOUR_RETURN_WAKE_META := "level_four_return_wake"
+const ENDING_BOARD_LINE_1 := "Congratulations."
+const ENDING_BOARD_LINE_2 := "Thank you for playing this game."
+const ENDING_BOARD_LINE_3 := "Hope your day is wonderful."
+const ENDING_BOARD_FOOTER_TEXT := "Game Development Individual Assignment\nMuhammad Afwan Hafizh\n2306208855"
+const ENDING_BOARD_CAMERA_SHOT_DURATION := 0.9
+const ENDING_BOARD_TYPE_INTERVAL := 0.04
+const ENDING_BOARD_LINE_PAUSE := 0.26
+const ENDING_BOARD_FOOTER_PAUSE := 0.36
+const ENDING_BOARD_HOLD_DURATION := 5.0
+const ENDING_BOARD_FADE_DURATION := 2.6
 const LEVEL_ONE_FLOW := preload("res://scripts/world/level_one_flow.gd")
 const LEVEL_FOUR_FLOW := preload("res://scripts/world/level_four_flow.gd")
 const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
-const ENDING_BOARD_SCENE := preload("res://scenes/objects/ending_board.tscn")
+const ENDING_BOARD_TEXT_OVERLAY_SCENE := preload("res://scenes/ui/ending_board_text_overlay.tscn")
 const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
+const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa071de8bc191c3b4bef00edda/AllSkyFree/AllSkyFree_Skyboxes/AllSky_Space_AnotherPlanet Equirect.png"
+
+@export_group("Audio Placeholder BGM")
+@export var bgm_world_intro: AudioStream
+@export var bgm_level_one: AudioStream
+@export var bgm_level_two: AudioStream
+@export var bgm_level_three: AudioStream
+@export var bgm_level_four: AudioStream
+@export var bgm_ending_credits: AudioStream
+
+@export_group("Audio Placeholder SFX Global")
+@export var sfx_fade_black: AudioStream
+@export var sfx_fade_white: AudioStream
+@export var sfx_glitch_overlay: AudioStream
+@export var sfx_subtitle_popup: AudioStream
+@export var sfx_objective_show: AudioStream
+@export var sfx_objective_hide: AudioStream
+
+@export_group("Audio Placeholder SFX Cinematic")
+@export var sfx_sky_crack_start: AudioStream
+@export var sfx_sky_crack_grow: AudioStream
+@export var sfx_sky_crack_break: AudioStream
+@export var sfx_board_activate: AudioStream
+@export var sfx_credits_start: AudioStream
+@export var sfx_ending_return_wake: AudioStream
+
+@export_group("Ending Sky")
+@export_file("*.png", "*.jpg", "*.jpeg", "*.webp", "*.hdr", "*.exr") var ending_world_sky_path: String = ENDING_WORLD_SKY_PATH
 
 @onready var player: CharacterBody3D = get_node_or_null("Player") as CharacterBody3D
 @onready var player_camera: Camera3D = get_node_or_null("Player/root/Skeleton3D/BoneAttachment3D/Head/Camera3D") as Camera3D
@@ -68,6 +106,7 @@ var _top_bar: ColorRect
 var _bottom_bar: ColorRect
 var _objective_tween: Tween
 var _objective_transition_serial: int = 0
+var _ending_board_text_overlay: Control
 var _sofa_aura: MeshInstance3D
 var _sofa_light: OmniLight3D
 var _meteor: MeshInstance3D
@@ -107,8 +146,12 @@ var _level_two_room3_sequence_played: bool = false
 var _ending_mode_active: bool = false
 var _ending_cinematic_running: bool = false
 var _ending_credits_running: bool = false
-var _ending_board: Node3D
-var _ending_board_spawned: bool = false
+var _ending_board
+var _ending_board_camera: Camera3D
+var _bgm_player: AudioStreamPlayer
+var _sfx_player_2d: AudioStreamPlayer2D
+var _sky_crack_stage: int = 0
+var _arrival_glitch_audio_active: bool = false
 
 func _screen_fx() -> CanvasLayer:
 	return get_node_or_null("/root/ScreenFX") as CanvasLayer
@@ -120,8 +163,10 @@ func _ready() -> void:
 	var screen_fx := _screen_fx()
 	if screen_fx != null:
 		screen_fx.set_gameplay_filter_enabled(true)
+	_setup_audio_players()
 	_apply_player_spawn()
 	if _is_level_one_scene():
+		_play_bgm_stream(bgm_level_one)
 		_create_intro_ui()
 		_create_intro_camera()
 		_level_one_flow = LEVEL_ONE_FLOW.new(self)
@@ -133,6 +178,7 @@ func _ready() -> void:
 			call_deferred("_play_level_one_arrival")
 		return
 	if _is_level_two_scene():
+		_play_bgm_stream(bgm_level_two)
 		_create_intro_ui()
 		_create_intro_camera()
 		_cache_level_two_targets()
@@ -141,7 +187,16 @@ func _ready() -> void:
 		_objective_state = "level2_key"
 		call_deferred("_play_level_two_intro")
 		return
+	if _is_level_three_scene():
+		_play_bgm_stream(bgm_level_three)
+		_create_intro_ui()
+		_create_intro_camera()
+		_reset_intro_view_state()
+		if player_hud != null:
+			player_hud.visible = true
+		return
 	if _is_level_four_scene():
+		_play_bgm_stream(bgm_level_four)
 		_create_intro_ui()
 		_create_intro_camera()
 		_reset_intro_view_state()
@@ -152,11 +207,14 @@ func _ready() -> void:
 		return
 	if not _is_world_intro_scene():
 		return
+	_play_bgm_stream(bgm_world_intro)
 	_configure_world_house()
 	_cache_world_targets()
 	_collect_dig_spots()
 	_total_dig_spots = _dig_spots.size()
 	GameState.reset_world_state()
+	_cache_ending_board_node()
+	_set_ending_board_active(false, false)
 	_create_intro_ui()
 	_create_intro_camera()
 	_create_sofa_interactable()
@@ -169,6 +227,41 @@ func _ready() -> void:
 	_prepare_world_phase()
 	_set_intro_lock(true)
 	call_deferred("_play_intro_sequence")
+
+func _setup_audio_players() -> void:
+	_bgm_player = AudioStreamPlayer.new()
+	_bgm_player.name = "BGMPlayer"
+	_bgm_player.bus = "Master"
+	_bgm_player.autoplay = false
+	add_child(_bgm_player)
+	_sfx_player_2d = AudioStreamPlayer2D.new()
+	_sfx_player_2d.name = "SFXPlayer2D"
+	_sfx_player_2d.bus = "Master"
+	_sfx_player_2d.autoplay = false
+	add_child(_sfx_player_2d)
+
+func _play_bgm_stream(stream: AudioStream) -> void:
+	if stream == null:
+		return
+	if _bgm_player == null or not is_instance_valid(_bgm_player):
+		return
+	if _bgm_player.stream == stream and _bgm_player.playing:
+		return
+	_bgm_player.stream = stream
+	_bgm_player.play()
+
+func _stop_bgm_stream() -> void:
+	if _bgm_player == null or not is_instance_valid(_bgm_player):
+		return
+	_bgm_player.stop()
+
+func _play_sfx_stream(stream: AudioStream) -> void:
+	if stream == null:
+		return
+	if _sfx_player_2d == null or not is_instance_valid(_sfx_player_2d):
+		return
+	_sfx_player_2d.stream = stream
+	_sfx_player_2d.play()
 
 func _process(delta: float) -> void:
 	var current: float = scale.x
@@ -445,6 +538,17 @@ func _create_intro_ui() -> void:
 	_loading_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
 	_loading_label.visible = false
 	_intro_ui.add_child(_loading_label)
+	_create_ending_board_text_overlay()
+
+func _create_ending_board_text_overlay() -> void:
+	if _intro_ui == null or ENDING_BOARD_TEXT_OVERLAY_SCENE == null:
+		return
+	var overlay_instance: Control = ENDING_BOARD_TEXT_OVERLAY_SCENE.instantiate() as Control
+	if overlay_instance == null:
+		return
+	overlay_instance.visible = false
+	_intro_ui.add_child(overlay_instance)
+	_ending_board_text_overlay = overlay_instance
 
 func _create_intro_camera() -> void:
 	_intro_camera = Camera3D.new()
@@ -526,6 +630,7 @@ func _prepare_world_phase() -> void:
 	_completed_dig_spots = 0
 	_objective_state = ""
 	_transition_started = false
+	_set_ending_board_active(false, false)
 	if player != null:
 		player.global_position = _player_spawn_position
 		player.rotation.y = _player_spawn_rotation_y
@@ -804,6 +909,7 @@ func _reset_intro_view_state() -> void:
 		_sky_crack_overlay.visible = false
 		if _sky_crack_overlay.material is ShaderMaterial:
 			_sky_crack_overlay.material.set_shader_parameter("crack_intensity", 0.0)
+	_sky_crack_stage = 0
 	if player_camera != null:
 		player_camera.make_current()
 	if player_hud != null:
@@ -1472,6 +1578,7 @@ func _get_wake_desaturate_strength() -> float:
 func _show_subtitle(text: String, duration: float, speaker: String = "") -> void:
 	if _subtitle_label == null:
 		return
+	_play_sfx_stream(sfx_subtitle_popup)
 	_set_subtitle_speaker_palette(speaker)
 	_subtitle_label.text = text
 	_subtitle_label.modulate = Color(1, 1, 1, 0)
@@ -1497,6 +1604,7 @@ func _set_subtitle_speaker_palette(speaker: String) -> void:
 func _show_objective(text: String) -> void:
 	if _objective_panel == null or _objective_label == null:
 		return
+	_play_sfx_stream(sfx_objective_show)
 	_objective_transition_serial += 1
 	var transition_serial: int = _objective_transition_serial
 	if _objective_tween != null:
@@ -1519,6 +1627,7 @@ func _show_objective(text: String) -> void:
 func _hide_objective(animated: bool = true) -> void:
 	if _objective_panel == null:
 		return
+	_play_sfx_stream(sfx_objective_hide)
 	_objective_transition_serial += 1
 	if _objective_tween != null:
 		_objective_tween.kill()
@@ -1751,6 +1860,8 @@ func _fade_black(target_alpha: float, duration: float) -> void:
 	if _fade_overlay == null:
 		return
 	if target_alpha > 0.001:
+		_play_sfx_stream(sfx_fade_black)
+	if target_alpha > 0.001:
 		_fade_overlay.visible = true
 	var tween := create_tween()
 	tween.tween_property(_fade_overlay, "modulate:a", target_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -1761,11 +1872,18 @@ func _fade_black(target_alpha: float, duration: float) -> void:
 func _fade_white(target_alpha: float, duration: float) -> void:
 	if _white_overlay == null:
 		return
+	if target_alpha > 0.001:
+		_play_sfx_stream(sfx_fade_white)
 	var tween := create_tween()
 	tween.tween_property(_white_overlay, "modulate:a", target_alpha, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await tween.finished
 
 func _set_arrival_glitch_strength(value: float) -> void:
+	if value > 0.001 and not _arrival_glitch_audio_active:
+		_play_sfx_stream(sfx_glitch_overlay)
+		_arrival_glitch_audio_active = true
+	elif value <= 0.001:
+		_arrival_glitch_audio_active = false
 	if _glitch_overlay != null and _glitch_overlay.material is ShaderMaterial:
 		_glitch_overlay.material.set_shader_parameter("glitch_strength", value)
 
@@ -1784,6 +1902,37 @@ func _set_world_night_state() -> void:
 	if sun != null:
 		sun.light_color = Color(0.34, 0.42, 0.62, 1.0)
 		sun.light_energy = 0.18
+
+func _apply_ending_world_sky() -> void:
+	if ending_world_sky_path.is_empty():
+		return
+	var world_environment := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if world_environment == null or world_environment.environment == null:
+		return
+	var ending_texture: Texture2D = null
+	var image: Image = Image.load_from_file(ending_world_sky_path)
+	if image != null and not image.is_empty():
+		ending_texture = ImageTexture.create_from_image(image)
+	else:
+		var loaded_texture: Variant = load(ending_world_sky_path)
+		if loaded_texture is Texture2D:
+			ending_texture = loaded_texture as Texture2D
+	if ending_texture == null:
+		return
+	world_environment.environment = world_environment.environment.duplicate(true)
+	var panorama_material := PanoramaSkyMaterial.new()
+	panorama_material.panorama = ending_texture
+	var sky := Sky.new()
+	sky.sky_material = panorama_material
+	world_environment.environment.background_mode = Environment.BG_SKY
+	world_environment.environment.sky = sky
+	world_environment.environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	world_environment.environment.ambient_light_energy = 0.6
+	world_environment.environment.ambient_light_color = Color(0.62, 0.68, 0.78, 1.0)
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	if sun != null:
+		sun.light_color = Color(0.66, 0.72, 0.86, 1.0)
+		sun.light_energy = 0.28
 
 func _set_cinematic_bars(visible: bool, duration: float) -> void:
 	if _top_bar == null or _bottom_bar == null:
@@ -1831,6 +1980,10 @@ func _is_level_two_scene() -> bool:
 	var current_scene := get_tree().current_scene
 	return current_scene != null and current_scene.scene_file_path == LEVEL_TWO_SCENE_PATH
 
+func _is_level_three_scene() -> bool:
+	var current_scene := get_tree().current_scene
+	return current_scene != null and current_scene.scene_file_path == LEVEL_THREE_SCENE_PATH
+
 func _is_level_four_scene() -> bool:
 	var current_scene := get_tree().current_scene
 	return current_scene != null and current_scene.scene_file_path == LEVEL_FOUR_SCENE_PATH
@@ -1865,8 +2018,8 @@ func _prepare_level_four_return_phase() -> void:
 	_ending_mode_active = true
 	_ending_cinematic_running = true
 	_ending_credits_running = false
-	_ending_board_spawned = false
-	_ending_board = null
+	_apply_ending_world_sky()
+	_set_ending_board_active(false, false)
 	_hide_objective(false)
 	_clear_target_highlights()
 	if _hint_marker != null:
@@ -1906,7 +2059,7 @@ func _play_level_four_return_wake_sequence() -> void:
 	if _intro_camera == null:
 		_ending_cinematic_running = false
 		_set_intro_lock(false)
-		_spawn_ending_board()
+		_show_ending_board()
 		return
 	var wake_eye: Vector3 = _player_spawn_position + Vector3(0.0, 1.02, 0.04)
 	var wake_focus: Vector3 = wake_eye + Vector3(0.0, 2.85, 0.1)
@@ -1923,6 +2076,7 @@ func _play_level_four_return_wake_sequence() -> void:
 	if _white_overlay != null:
 		_white_overlay.visible = true
 		_white_overlay.modulate.a = 1.0
+	_play_sfx_stream(sfx_ending_return_wake)
 	await get_tree().create_timer(0.36).timeout
 	await _fade_white(0.0, 2.25)
 	await _tween_wake_overlay(0.0, 1.35)
@@ -1933,56 +2087,32 @@ func _play_level_four_return_wake_sequence() -> void:
 	await _return_intro_camera_to_player(0.9)
 	_set_intro_lock(false)
 	_ending_cinematic_running = false
-	_spawn_ending_board()
+	_show_ending_board()
 
-func _spawn_ending_board() -> void:
-	if _ending_board_spawned:
+func _cache_ending_board_node() -> void:
+	if _ending_board == null or not is_instance_valid(_ending_board):
+		_ending_board = get_node_or_null("EndingBoard")
+	if _ending_board_camera == null or not is_instance_valid(_ending_board_camera):
+		_ending_board_camera = get_node_or_null("EndingBoardCamera") as Camera3D
+
+func _set_ending_board_active(visible: bool, interactable: bool) -> void:
+	_cache_ending_board_node()
+	if _ending_board == null or not is_instance_valid(_ending_board):
 		return
-	_ending_board_spawned = true
-	if ENDING_BOARD_SCENE == null:
-		return
-	var board_instance: Node3D = ENDING_BOARD_SCENE.instantiate() as Node3D
-	if board_instance == null:
-		return
-	add_child(board_instance)
-	var board_position: Vector3 = _player_spawn_position + Vector3(1.85, 0.0, 2.2)
-	var face_target: Vector3 = _player_spawn_position + Vector3(0.0, 1.1, 0.0)
-	var front_door: Node3D = null
-	if house != null and is_instance_valid(house):
-		front_door = house.get_node_or_null("FrontDoor") as Node3D
-	if front_door != null and is_instance_valid(front_door):
-		var outward: Vector3 = front_door.global_position - house.global_position
-		outward.y = 0.0
-		if outward.length_squared() <= 0.0001:
-			outward = house.global_transform.basis.z
-			outward.y = 0.0
-		if outward.length_squared() <= 0.0001:
-			outward = Vector3.FORWARD
-		else:
-			outward = outward.normalized()
-		board_position = front_door.global_position + outward * 1.9
-		face_target = front_door.global_position + Vector3(0.0, 1.1, 0.0)
-	elif _sofa_target != null and is_instance_valid(_sofa_target):
-		board_position = _sofa_target.to_global(Vector3(0.0, 0.0, 2.4))
-	if player != null and is_instance_valid(player):
-		face_target = player.global_position + Vector3(0.0, 1.15, 0.0)
-	if front_door != null and is_instance_valid(front_door):
-		face_target = front_door.global_position + Vector3(0.0, 1.1, 0.0)
-	board_position = _ground_position(board_position)
-	board_position.y -= 0.08
-	board_instance.global_position = board_position
-	board_instance.look_at(face_target, Vector3.UP)
-	_ending_board = board_instance
-	if _ending_board.has_method("set_board_text"):
-		_ending_board.call("set_board_text", "congratulations\nthank you for playing this game :D")
-	if _ending_board.has_method("set_message_visible"):
-		_ending_board.call("set_message_visible", false)
-	if _ending_board.has_method("set_interactable_enabled"):
-		_ending_board.call("set_interactable_enabled", true)
-	if _ending_board.has_signal("board_activated"):
-		var activated_callable: Callable = Callable(self, "_on_ending_board_activated")
-		if not _ending_board.is_connected("board_activated", activated_callable):
-			_ending_board.connect("board_activated", activated_callable)
+	if _ending_board_text_overlay != null and is_instance_valid(_ending_board_text_overlay):
+		_ending_board_text_overlay.visible = false
+	_ending_board.visible = visible
+	_ending_board.set_board_text("")
+	_ending_board.set_message_visible(false)
+	_ending_board.set_footer_text("")
+	_ending_board.set_footer_visible(false)
+	_ending_board.set_interactable_enabled(interactable)
+	var activated_callable: Callable = Callable(self, "_on_ending_board_activated")
+	if not _ending_board.is_connected("board_activated", activated_callable):
+		_ending_board.connect("board_activated", activated_callable)
+
+func _show_ending_board() -> void:
+	_set_ending_board_active(true, true)
 	_show_objective("Inspect the board")
 
 func _update_ending_board_hint() -> void:
@@ -1998,11 +2128,13 @@ func _update_ending_board_hint() -> void:
 		if _hint_label != null:
 			_hint_label.visible = false
 		return
-	_update_hint_marker(_ending_board.global_position + Vector3(0.0, 1.45, 0.0), "BOARD", _ending_board.global_position)
+	var hint_target: Vector3 = _ending_board.get_focus_position()
+	_update_hint_marker(hint_target, "BOARD", _ending_board.global_position)
 
 func _on_ending_board_activated() -> void:
 	if _ending_cinematic_running or _ending_credits_running:
 		return
+	_play_sfx_stream(sfx_board_activate)
 	call_deferred("_play_ending_board_cinematic")
 
 func _play_ending_board_cinematic() -> void:
@@ -2025,34 +2157,72 @@ func _play_ending_board_cinematic() -> void:
 	if _intro_camera == null:
 		await _return_to_main_menu_after_credits()
 		return
+	if _ending_board_text_overlay == null or not is_instance_valid(_ending_board_text_overlay):
+		_create_ending_board_text_overlay()
+	if _ending_board_text_overlay != null and is_instance_valid(_ending_board_text_overlay):
+		_ending_board_text_overlay.visible = false
+		if _ending_board_text_overlay.has_method("set_content"):
+			_ending_board_text_overlay.call("set_content", ENDING_BOARD_LINE_1, ENDING_BOARD_LINE_2, ENDING_BOARD_LINE_3, ENDING_BOARD_FOOTER_TEXT)
+		if _ending_board_text_overlay.has_method("reset_content"):
+			_ending_board_text_overlay.call("reset_content")
 	var start_transform: Transform3D = player_camera.global_transform if player_camera != null else _intro_camera.global_transform
-	var focus_target: Vector3 = _ending_board.global_position + Vector3(0.0, 1.45, 0.0)
-	var board_center: Vector3 = _ending_board.global_position + Vector3(0.0, 1.45, 0.0)
+	var start_fov: float = player_camera.fov if player_camera != null else _intro_camera.fov
+	var end_transform: Transform3D = _resolve_ending_board_camera_transform(start_transform)
+	var end_fov: float = _resolve_ending_board_camera_fov(start_fov)
+	_intro_camera.global_transform = start_transform
+	_intro_camera.make_current()
+	_intro_camera.fov = start_fov
+	await _set_cinematic_bars(true, 0.35)
+	var camera_tween := create_tween().set_parallel(true)
+	camera_tween.tween_method(_blend_intro_camera.bind(start_transform, end_transform), 0.0, 1.0, ENDING_BOARD_CAMERA_SHOT_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	camera_tween.tween_property(_intro_camera, "fov", end_fov, ENDING_BOARD_CAMERA_SHOT_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await camera_tween.finished
+	_ending_board.set_message_visible(false)
+	_ending_board.set_footer_visible(false)
+	await _play_ending_board_overlay_text()
+	await get_tree().create_timer(ENDING_BOARD_HOLD_DURATION).timeout
+	await _fade_black(1.0, ENDING_BOARD_FADE_DURATION)
+	await _show_ending_credits_roll()
+	await _return_to_main_menu_after_credits()
+
+func _get_ending_board_cinematic_focus() -> Vector3:
+	if _ending_board == null or not is_instance_valid(_ending_board):
+		return Vector3.ZERO
+	var fallback_focus: Vector3 = _ending_board.global_position + Vector3(0.0, 1.28, 0.0)
 	if _ending_board.has_method("get_focus_position"):
 		var focus_value: Variant = _ending_board.call("get_focus_position")
 		if typeof(focus_value) == TYPE_VECTOR3:
-			focus_target = focus_value
-	var camera_dir: Vector3 = focus_target - board_center
-	if camera_dir.length_squared() <= 0.0001:
-		camera_dir = _ending_board.global_transform.basis.z
-	camera_dir = camera_dir.normalized()
-	var side_offset: Vector3 = _ending_board.global_transform.basis.x.normalized() * 0.06
-	var end_origin: Vector3 = focus_target + camera_dir * 0.95 + side_offset + Vector3(0.0, 0.02, 0.0)
-	var end_transform: Transform3D = _make_look_transform(end_origin, focus_target)
-	_intro_camera.global_transform = start_transform
-	_intro_camera.make_current()
-	_intro_camera.fov = 46.0
-	await _set_cinematic_bars(true, 0.35)
-	await _play_camera_shot(start_transform, end_transform, 1.35)
-	if _ending_board.has_method("set_message_visible"):
-		_ending_board.call("set_message_visible", true)
-	await _fade_black(1.0, 5.0)
-	await _show_ending_credits_roll()
-	await _return_to_main_menu_after_credits()
+			var focus: Vector3 = focus_value as Vector3
+			if focus.distance_to(_ending_board.global_position) <= 2.0:
+				return focus
+	return fallback_focus
+
+func _resolve_ending_board_camera_transform(fallback_start: Transform3D) -> Transform3D:
+	if _ending_board_camera != null and is_instance_valid(_ending_board_camera):
+		return _ending_board_camera.global_transform
+	var fallback_focus: Vector3 = _get_ending_board_cinematic_focus()
+	var fallback_dir: Vector3 = fallback_start.origin - fallback_focus
+	if fallback_dir.length_squared() <= 0.0001:
+		fallback_dir = Vector3.BACK
+	fallback_dir = fallback_dir.normalized()
+	return _make_look_transform(fallback_focus + fallback_dir * 0.62, fallback_focus)
+
+func _resolve_ending_board_camera_fov(fallback_fov: float) -> float:
+	if _ending_board_camera != null and is_instance_valid(_ending_board_camera):
+		return _ending_board_camera.fov
+	return fallback_fov
+
+func _play_ending_board_overlay_text() -> void:
+	if _ending_board_text_overlay == null or not is_instance_valid(_ending_board_text_overlay):
+		return
+	if _ending_board_text_overlay.has_method("play_typewriter"):
+		await _ending_board_text_overlay.call("play_typewriter", ENDING_BOARD_TYPE_INTERVAL, ENDING_BOARD_LINE_PAUSE, ENDING_BOARD_FOOTER_PAUSE)
 
 func _show_ending_credits_roll() -> void:
 	if _intro_ui == null:
 		return
+	_play_bgm_stream(bgm_ending_credits)
+	_play_sfx_stream(sfx_credits_start)
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	var credits_root := Control.new()
 	credits_root.name = "EndingCredits"
@@ -2088,25 +2258,24 @@ func _return_to_main_menu_after_credits() -> void:
 	var screen_fx := _screen_fx()
 	if screen_fx != null and screen_fx.has_method("set_gameplay_filter_enabled"):
 		screen_fx.set_gameplay_filter_enabled(false)
+	_stop_bgm_stream()
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
-
-func _ground_position(position: Vector3) -> Vector3:
-	var result: Vector3 = position
-	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(position + Vector3(0.0, 4.5, 0.0), position + Vector3(0.0, -10.0, 0.0))
-	query.collide_with_areas = false
-	query.collide_with_bodies = true
-	var hit: Dictionary = space_state.intersect_ray(query)
-	if not hit.is_empty():
-		var hit_position: Variant = hit.get("position", position)
-		if typeof(hit_position) == TYPE_VECTOR3:
-			result.y = (hit_position as Vector3).y
-	return result
 
 func _set_sky_crack_intensity(value: float) -> void:
 	if _sky_crack_overlay == null:
 		return
 	var intensity: float = clampf(value, 0.0, 1.0)
+	if intensity < 0.06:
+		_sky_crack_stage = 0
+	elif intensity >= 0.06 and intensity < 0.42 and _sky_crack_stage < 1:
+		_sky_crack_stage = 1
+		_play_sfx_stream(sfx_sky_crack_start)
+	elif intensity >= 0.42 and intensity < 0.86 and _sky_crack_stage < 2:
+		_sky_crack_stage = 2
+		_play_sfx_stream(sfx_sky_crack_grow)
+	elif intensity >= 0.86 and _sky_crack_stage < 3:
+		_sky_crack_stage = 3
+		_play_sfx_stream(sfx_sky_crack_break)
 	if _sky_crack_overlay.material is ShaderMaterial:
 		_sky_crack_overlay.material.set_shader_parameter("crack_intensity", intensity)
 	_sky_crack_overlay.modulate.a = intensity
@@ -2116,13 +2285,14 @@ func restart_current_level() -> void:
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
 		return
+	GameState.force_time_forward()
+	GameState.reset_axiom_recording()
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
 	GameState.set_meta(LEVEL_FOUR_RETURN_WAKE_META, false)
 	if _is_level_one_scene():
 		GameState.reset_progression()
 	else:
 		GameState.full_reset_inventory()
-		GameState.reset_axiom_recording()
 	var screen_fx := _screen_fx()
 	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
 		await screen_fx.reboot_to_scene(current_scene.scene_file_path, true)

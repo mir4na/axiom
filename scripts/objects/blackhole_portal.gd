@@ -16,8 +16,6 @@ func _ready() -> void:
 	_set_open_amount(0.0)
 	if glow != null:
 		glow.light_energy = 0.0
-	if trigger != null:
-		trigger.body_entered.connect(_on_trigger_body_entered)
 
 func _process(delta: float) -> void:
 	if not visible:

@@ -1,6 +1,8 @@
 extends Interactable
 
 @export var key_id: String = "key_1"
+@export var use_any_free_slot: bool = false
+@export var auto_select_after_pickup: bool = false
 
 @onready var _collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 @onready var _card_aura: MeshInstance3D = get_node_or_null("CardAura") as MeshInstance3D
@@ -77,7 +79,11 @@ func interact() -> void:
 	if _collecting:
 		return
 	var collected = GameState.add_item(key_id)
+	if not collected and use_any_free_slot:
+		collected = GameState.add_item_first_free_slot(key_id)
 	if collected:
+		if auto_select_after_pickup:
+			GameState.select_item(key_id)
 		_collecting = true
 		prompt_text = ""
 		if _collision_shape != null:

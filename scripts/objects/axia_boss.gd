@@ -56,6 +56,17 @@ const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 @export var wave_teleport_player_clearance: float = 4.8
 @export var wave_teleport_glitch_duration: float = 0.34
 @export var wave_teleport_fade_duration: float = 0.12
+@export_group("Audio Placeholder")
+@export var sfx_manifest: AudioStream
+@export var sfx_teleport: AudioStream
+@export var sfx_hurt: AudioStream
+@export var sfx_defeat: AudioStream
+@export var sfx_wind_charge: AudioStream
+@export var sfx_wind_blast: AudioStream
+@export var sfx_sword_summon: AudioStream
+@export var sfx_sword_fire: AudioStream
+@export var sfx_meteor_cast: AudioStream
+@export var sfx_snare_cast: AudioStream
 
 @onready var _rose: CharacterBody3D = $Rose
 @onready var _visual_root: Node3D = $VisualRoot
@@ -89,6 +100,7 @@ var _aura_light_initial_energy: float = 0.0
 var _self_initial_scale: Vector3 = Vector3.ONE
 var _glitch_meshes: Array[MeshInstance3D] = []
 var _glitch_overrides: Dictionary = {}
+var _sfx_player: AudioStreamPlayer
 
 func _ready() -> void:
 	_health = max_health
@@ -112,7 +124,23 @@ func _ready() -> void:
 		_rose.call("play_idle")
 	if _ash_effect != null:
 		_ash_effect.emitting = false
+	_setup_audio_player()
 	_set_visual_transparency(0.0)
+
+func _setup_audio_player() -> void:
+	_sfx_player = AudioStreamPlayer.new()
+	_sfx_player.name = "BossSFX"
+	_sfx_player.bus = "Master"
+	_sfx_player.autoplay = false
+	add_child(_sfx_player)
+
+func _play_sfx(stream: AudioStream) -> void:
+	if stream == null:
+		return
+	if _sfx_player == null or not is_instance_valid(_sfx_player):
+		return
+	_sfx_player.stream = stream
+	_sfx_player.play()
 
 func begin_encounter(player_ref: CharacterBody3D) -> void:
 	_player = player_ref
@@ -127,6 +155,7 @@ func take_damage(amount: float) -> void:
 	if _defeated or _death_in_progress:
 		return
 	_health = maxf(0.0, _health - amount)
+	_play_sfx(sfx_hurt)
 	_emit_health()
 	if _health <= 0.0:
 		_defeat()
@@ -250,6 +279,7 @@ func _build_wave_order() -> Array[String]:
 func _perform_wave_teleport() -> void:
 	if _should_abort_skills():
 		return
+	_play_sfx(sfx_teleport)
 	var destination: Vector3 = _choose_wave_teleport_position()
 	await _play_wave_teleport_glitch_out()
 	if _should_abort_skills():
@@ -341,6 +371,7 @@ func _apply_glitch_overlay(active: bool) -> void:
 func _perform_wind_pulse() -> void:
 	if _wind_disc == null or _should_abort_skills():
 		return
+	_play_sfx(sfx_wind_charge)
 	var original_light_color: Color = Color(1.0, 0.9, 0.74, 1.0)
 	if _aura_light != null:
 		original_light_color = _aura_light.light_color
@@ -410,6 +441,7 @@ func _perform_wind_pulse() -> void:
 			_aura_light.light_color = original_light_color
 		return
 	_apply_wind_damage()
+	_play_sfx(sfx_wind_blast)
 	var blast: Tween = create_tween().set_parallel(true)
 	blast.tween_property(_wind_disc, "scale", Vector3(58.0, 1.0, 58.0), 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	blast.parallel().tween_property(_aura_light, "light_energy", 2.2, 0.72).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -445,6 +477,7 @@ func _apply_wind_damage() -> void:
 func _perform_sword_volley() -> void:
 	if _player == null or _should_abort_skills():
 		return
+	_play_sfx(sfx_sword_summon)
 	await _play_cast_surge(0.62, 5.4)
 	if _should_abort_skills():
 		return
@@ -505,6 +538,7 @@ func _perform_sword_volley() -> void:
 	if _should_abort_skills():
 		return
 	var fire_speed: float = sword_projectile_speed * 1.75
+	_play_sfx(sfx_sword_fire)
 	for projectile in preview_swords:
 		if _should_abort_skills():
 			break
@@ -522,6 +556,7 @@ func _perform_sword_volley() -> void:
 func _perform_meteor_rain() -> void:
 	if _player == null or _should_abort_skills():
 		return
+	_play_sfx(sfx_meteor_cast)
 	await _play_cast_surge(0.75, 5.0)
 	if _should_abort_skills():
 		return
@@ -555,6 +590,7 @@ func _perform_meteor_rain() -> void:
 func _perform_light_snare() -> void:
 	if _player == null or _should_abort_skills():
 		return
+	_play_sfx(sfx_snare_cast)
 	await _play_cast_surge(0.86, 5.8)
 	if _should_abort_skills():
 		return
@@ -620,6 +656,7 @@ func _play_cast_surge(duration: float, light_target: float) -> void:
 func _defeat() -> void:
 	if _death_in_progress:
 		return
+	_play_sfx(sfx_defeat)
 	_death_in_progress = true
 	_defeated = true
 	_encounter_active = false
@@ -642,6 +679,7 @@ func set_manifested(active: bool) -> void:
 	visible = active
 	if not active:
 		return
+	_play_sfx(sfx_manifest)
 	_vertical_velocity = 0.0
 	_death_fall_velocity = 0.0
 	_death_falling = false
@@ -792,7 +830,7 @@ func _distance_point_to_segment(point: Vector3, segment_a: Vector3, segment_b: V
 	return point.distance_to(closest)
 
 func _is_time_state_blocked() -> bool:
-	return GameState.is_time_blocked()
+	return GameState.is_paused or GameState.time_direction != GameState.TIME_FORWARD or GameState.is_scrubbing_past
 
 func _should_abort_skills() -> bool:
 	return _defeated or _death_in_progress or not _encounter_active or not is_inside_tree()

@@ -47,6 +47,7 @@ var recording_enabled: bool = true
 
 var rewind_mode_active: bool = false
 var rewind_pointer_index: int = -1
+var rewind_disabled: bool = false
 
 func _physics_process(_delta: float) -> void:
 	if is_paused:
@@ -89,6 +90,8 @@ func _physics_process(_delta: float) -> void:
 			is_scrubbing_past = false
 
 func activate_rewind_mode() -> void:
+	if rewind_disabled:
+		return
 	rewind_mode_active = true
 	rewind_pointer_index = history_index
 	if rewind_pointer_index < 0:
@@ -229,6 +232,7 @@ func reset_world_state() -> void:
 func reset_axiom_recording() -> void:
 	recording_enabled = true
 	rewind_mode_active = false
+	rewind_disabled = false
 	is_scrubbing_past = false
 	time_direction = TIME_FORWARD
 	clear_rewind_timeline(0.0)
@@ -249,6 +253,7 @@ func reset_progression() -> void:
 	axiom_unlocked = false
 	recording_enabled = true
 	rewind_mode_active = false
+	rewind_disabled = false
 	clear_rewind_timeline(100.0)
 	inventory_changed.emit()
 	ui_updated.emit()
@@ -296,6 +301,8 @@ func has_selected_item(item_id: String) -> bool:
 	return slots[selected_slot] == item_id
 
 func has_rewind_access() -> bool:
+	if rewind_disabled:
+		return false
 	if axiom_equipped or current_level_index >= 1:
 		return true
 	var current_scene := get_tree().current_scene
@@ -328,6 +335,11 @@ func force_time_forward() -> void:
 	if time_direction != TIME_FORWARD:
 		time_direction = TIME_FORWARD
 		time_direction_changed.emit(time_direction)
+
+func set_rewind_disabled(disabled: bool) -> void:
+	rewind_disabled = disabled
+	if rewind_disabled and rewind_mode_active:
+		cancel_rewind_mode()
 
 func add_item_first_free_slot(item_id: String) -> bool:
 	if has_item(item_id):

@@ -63,7 +63,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not _active:
 		return
-	if GameState.is_time_blocked():
+	if _is_time_state_blocked():
 		return
 	global_position = _anchor_position
 	_timer = maxf(_timer - delta, 0.0)
@@ -225,7 +225,7 @@ func _orient_spear_toward(target_position: Vector3) -> void:
 	_spear_root.rotate_object_local(Vector3.RIGHT, -PI * 0.5)
 
 func _is_time_state_blocked() -> bool:
-	return GameState.is_time_blocked()
+	return GameState.is_paused or GameState.time_direction != GameState.TIME_FORWARD or GameState.is_scrubbing_past
 
 func _await_tween_with_time_control(tween: Tween) -> void:
 	if tween == null:

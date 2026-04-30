@@ -1,10 +1,11 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dvnk7u6u4eknw"]
 
-[ext_resource type="Script" path="res://scripts/objects/axia_boss.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://scenes/characters/rose.tscn" id="2_rose"]
-[ext_resource type="Shader" path="res://shaders/axia_energy.gdshader" id="3_shader"]
+[ext_resource type="Script" uid="uid://pvhvhhsn13je" path="res://scripts/objects/axia_boss.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://df7x8h205lam1" path="res://scenes/characters/rose.tscn" id="2_rose"]
+[ext_resource type="Shader" uid="uid://dmufwu1undyf7" path="res://shaders/axia_energy.gdshader" id="3_shader"]
 
 [sub_resource type="ShaderMaterial" id="AuraMat"]
+render_priority = 0
 shader = ExtResource("3_shader")
 shader_parameter/base_color = Color(0.07, 0.16, 0.28, 0.34)
 shader_parameter/accent_color = Color(0.34, 0.1, 0.48, 0.7)
@@ -13,7 +14,13 @@ shader_parameter/pulse_speed = 2.0
 shader_parameter/flow_strength = 0.22
 shader_parameter/edge_softness = 1.15
 
+[sub_resource type="CylinderMesh" id="AuraRingMesh"]
+top_radius = 2.1
+bottom_radius = 2.1
+height = 0.08
+
 [sub_resource type="ShaderMaterial" id="WindMat"]
+render_priority = 0
 shader = ExtResource("3_shader")
 shader_parameter/base_color = Color(0.06, 0.2, 0.12, 0.38)
 shader_parameter/accent_color = Color(0.18, 0.5, 0.3, 0.72)
@@ -21,11 +28,6 @@ shader_parameter/emission_energy = 4.7
 shader_parameter/pulse_speed = 3.2
 shader_parameter/flow_strength = 0.44
 shader_parameter/edge_softness = 1.22
-
-[sub_resource type="CylinderMesh" id="AuraRingMesh"]
-top_radius = 2.1
-bottom_radius = 2.1
-height = 0.08
 
 [sub_resource type="CylinderMesh" id="WindDiscMesh"]
 top_radius = 1.3
@@ -44,114 +46,80 @@ direction = Vector3(0, 1, 0)
 spread = 50.0
 initial_velocity_min = 0.7
 initial_velocity_max = 2.2
+angular_velocity_min = -6.2
+angular_velocity_max = 6.2
 gravity = Vector3(0, -0.35, 0)
 scale_min = 0.08
 scale_max = 0.24
-angular_velocity_min = -6.2
-angular_velocity_max = 6.2
 color = Color(0.08, 0.08, 0.08, 0.94)
 color_ramp = SubResource("AshGradientTex")
 
 [sub_resource type="QuadMesh" id="AshQuadMesh"]
 size = Vector2(0.11, 0.11)
 
-[node name="AxiaBoss" type="Node3D"]
-visible = false
+[node name="AxiaBoss" type="Node3D" unique_id=2130690417]
 script = ExtResource("1_script")
-max_health = 300.0
-attack_interval = 8.0
-encounter_start_cooldown = 2.6
-gravity_strength = 21.0
-ground_height = 0.0
-death_fall_target_local_y = -0.08
-death_fall_gravity_multiplier = 1.45
-death_dim_duration_cap = 0.8
-death_dim_duration_ratio = 0.55
-death_visual_scale_multiplier = 0.94
-death_dissolve_duration = 2.2
-death_dissolve_self_scale_multiplier = 0.82
-death_dissolve_visual_scale_multiplier = 0.64
-death_ash_cleanup_delay = 0.3
-min_die_animation_duration = 0.9
-ash_spawn_height_offset = 1.0
-idle_hover_base = 0.2
-idle_hover_amplitude = 0.08
-idle_hover_speed = 0.0018
-aura_ring_base_scale = 0.95
-aura_ring_pulse_amplitude = 0.06
-aura_ring_pulse_speed = 0.0022
-aura_ring_rotation_speed = 0.7
-aura_light_base_energy = 1.5
-aura_light_pulse_amplitude = 0.3
-aura_light_pulse_speed = 0.002
-wind_pulse_light_color = Color(0.22, 0.48, 0.28, 1)
-wind_charge_duration = 2.15
-wind_charge_orb_count = 16
-sword_circle_count = 20
-sword_projectile_speed = 12.8
-sword_projectile_damage = 11.0
 
-[node name="Rose" parent="." instance=ExtResource("2_rose")]
+[node name="Rose" parent="." unique_id=686949611 instance=ExtResource("2_rose")]
 transform = Transform3D(-0.6156615, 0, -0.7880107, 0, 1, 0, 0.7880107, 0, -0.6156615, 0, 0.7, 0)
 
-[node name="VisualRoot" type="Node3D" parent="."]
+[node name="VisualRoot" type="Node3D" parent="." unique_id=2047256612]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
 
-[node name="AuraRing" type="MeshInstance3D" parent="VisualRoot"]
+[node name="AuraRing" type="MeshInstance3D" parent="VisualRoot" unique_id=1397644605]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)
 material_override = SubResource("AuraMat")
 mesh = SubResource("AuraRingMesh")
 
-[node name="WindDisc" type="MeshInstance3D" parent="VisualRoot"]
+[node name="WindDisc" type="MeshInstance3D" parent="VisualRoot" unique_id=1294844267]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
 material_override = SubResource("WindMat")
 mesh = SubResource("WindDiscMesh")
 
-[node name="AuraLight" type="OmniLight3D" parent="VisualRoot"]
+[node name="AuraLight" type="OmniLight3D" parent="VisualRoot" unique_id=696628475]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 light_color = Color(0.46, 0.34, 0.28, 1)
 light_energy = 1.8
 omni_range = 12.0
 
-[node name="ProjectileRoot" type="Node3D" parent="."]
+[node name="ProjectileRoot" type="Node3D" parent="." unique_id=1722466762]
 
-[node name="SnareRoot" type="Node3D" parent="."]
+[node name="SnareRoot" type="Node3D" parent="." unique_id=1644738774]
 
-[node name="AshEffectAnchor" type="Marker3D" parent="."]
+[node name="AshEffectAnchor" type="Marker3D" parent="." unique_id=1005426909]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
 
-[node name="AshEffect" type="GPUParticles3D" parent="."]
+[node name="AshEffect" type="GPUParticles3D" parent="." unique_id=1731618404]
+emitting = false
 amount = 220
 lifetime = 2.2
 one_shot = true
 preprocess = 0.1
-local_coords = false
-draw_passes = 1
 process_material = SubResource("AshParticlesMat")
 draw_pass_1 = SubResource("AshQuadMesh")
 
-[node name="Launchers" type="Node3D" parent="."]
+[node name="Launchers" type="Node3D" parent="." unique_id=1440145110]
 
-[node name="North" type="Marker3D" parent="Launchers"]
+[node name="North" type="Marker3D" parent="Launchers" unique_id=165547884]
 transform = Transform3D(1, 0, 0, 0, 0.9659258, -0.25881904, 0, 0.25881904, 0.9659258, 0, 7.8, -7.8)
 
-[node name="NorthEast" type="Marker3D" parent="Launchers"]
+[node name="NorthEast" type="Marker3D" parent="Launchers" unique_id=125570423]
 transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202015, 0, 0.34202015, 0.9396926, 5.8, 8.2, -5.8)
 
-[node name="East" type="Marker3D" parent="Launchers"]
+[node name="East" type="Marker3D" parent="Launchers" unique_id=932205582]
 transform = Transform3D(1, 0, 0, 0, 0.9659258, -0.25881904, 0, 0.25881904, 0.9659258, 7.8, 7.8, 0)
 
-[node name="SouthEast" type="Marker3D" parent="Launchers"]
+[node name="SouthEast" type="Marker3D" parent="Launchers" unique_id=1066000757]
 transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202015, 0, 0.34202015, 0.9396926, 5.8, 8.2, 5.8)
 
-[node name="South" type="Marker3D" parent="Launchers"]
+[node name="South" type="Marker3D" parent="Launchers" unique_id=13331465]
 transform = Transform3D(1, 0, 0, 0, 0.9659258, -0.25881904, 0, 0.25881904, 0.9659258, 0, 7.8, 7.8)
 
-[node name="SouthWest" type="Marker3D" parent="Launchers"]
+[node name="SouthWest" type="Marker3D" parent="Launchers" unique_id=1624911920]
 transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202015, 0, 0.34202015, 0.9396926, -5.8, 8.2, 5.8)
 
-[node name="West" type="Marker3D" parent="Launchers"]
+[node name="West" type="Marker3D" parent="Launchers" unique_id=1139616879]
 transform = Transform3D(1, 0, 0, 0, 0.9659258, -0.25881904, 0, 0.25881904, 0.9659258, -7.8, 7.8, 0)
 
-[node name="NorthWest" type="Marker3D" parent="Launchers"]
+[node name="NorthWest" type="Marker3D" parent="Launchers" unique_id=1739012880]
 transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202015, 0, 0.34202015, 0.9396926, -5.8, 8.2, -5.8)

@@ -16,7 +16,7 @@ func _ready() -> void:
 	scale = Vector3(0.01, 0.01, 0.01)
 
 func _physics_process(delta: float) -> void:
-	if GameState.is_time_blocked():
+	if _is_time_state_blocked():
 		return
 	_elapsed += delta
 	var ratio: float = clampf(_elapsed / maxf(duration, 0.001), 0.0, 1.0)
@@ -35,3 +35,6 @@ func _physics_process(delta: float) -> void:
 		_disc.scale = Vector3(1.0 + envelope * 0.28, 1.0, 1.0 + envelope * 0.28)
 	if ratio >= 1.0:
 		queue_free()
+
+func _is_time_state_blocked() -> bool:
+	return GameState.is_paused or GameState.time_direction != GameState.TIME_FORWARD or GameState.is_scrubbing_past

@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://cp8n1f0xys6sq"]
 
-[ext_resource type="Script" path="res://scripts/objects/blackhole_portal.gd" id="1_qs1m8"]
-[ext_resource type="Shader" path="res://shaders/blackhole_portal.gdshader" id="2_4l1iu"]
+[ext_resource type="Script" uid="uid://biwbyqwtwqf5u" path="res://scripts/objects/blackhole_portal.gd" id="1_qs1m8"]
+[ext_resource type="Shader" uid="uid://clte4w4gm3xxg" path="res://shaders/blackhole_portal.gdshader" id="2_4l1iu"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_core"]
+render_priority = 0
 shader = ExtResource("2_4l1iu")
 shader_parameter/open_amount = 0.0
 shader_parameter/outer_color = Color(0.4, 0.88, 1, 1)
@@ -13,7 +14,11 @@ shader_parameter/swirl_speed = 3.8
 shader_parameter/ring_width = 0.24
 shader_parameter/glow_strength = 7.8
 
+[sub_resource type="PlaneMesh" id="PlaneMesh_core"]
+size = Vector2(4.8, 4.8)
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ring"]
+render_priority = 0
 shader = ExtResource("2_4l1iu")
 shader_parameter/open_amount = 0.0
 shader_parameter/outer_color = Color(0.55, 0.96, 1, 1)
@@ -23,9 +28,6 @@ shader_parameter/swirl_speed = 5.0
 shader_parameter/ring_width = 0.14
 shader_parameter/glow_strength = 10.5
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_core"]
-size = Vector2(4.8, 4.8)
-
 [sub_resource type="PlaneMesh" id="PlaneMesh_ring"]
 size = Vector2(6, 6)
 
@@ -33,28 +35,29 @@ size = Vector2(6, 6)
 height = 5.2
 radius = 2.45
 
-[node name="BlackholePortal" type="Node3D"]
+[node name="BlackholePortal" type="Node3D" unique_id=817925658]
 script = ExtResource("1_qs1m8")
 
-[node name="Pivot" type="Node3D" parent="."]
+[node name="Pivot" type="Node3D" parent="." unique_id=1940494676]
 
-[node name="Core" type="MeshInstance3D" parent="Pivot"]
+[node name="Core" type="MeshInstance3D" parent="Pivot" unique_id=955333142]
 material_override = SubResource("ShaderMaterial_core")
 mesh = SubResource("PlaneMesh_core")
 
-[node name="Ring" type="MeshInstance3D" parent="Pivot"]
-position = Vector3(0, 0, 0.04)
+[node name="Ring" type="MeshInstance3D" parent="Pivot" unique_id=1656926525]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.04)
 material_override = SubResource("ShaderMaterial_ring")
 mesh = SubResource("PlaneMesh_ring")
 
-[node name="Glow" type="OmniLight3D" parent="."]
+[node name="Glow" type="OmniLight3D" parent="." unique_id=2050941238]
 light_color = Color(0.45, 0.92, 1, 1)
 light_energy = 0.0
 omni_range = 10.0
 
-[node name="Trigger" type="Area3D" parent="."]
+[node name="Trigger" type="Area3D" parent="." unique_id=1343277947]
 collision_layer = 0
-collision_mask = 1
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Trigger"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Trigger" unique_id=109034434]
 shape = SubResource("CylinderShape3D_trigger")
+
+[connection signal="body_entered" from="Trigger" to="." method="_on_trigger_body_entered"]

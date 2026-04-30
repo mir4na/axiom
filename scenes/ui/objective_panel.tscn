@@ -4,30 +4,24 @@
 layout_mode = 3
 anchors_preset = 0
 offset_left = -472.0
-offset_top = 28.0
+offset_top = 55.0
 offset_right = -28.0
-offset_bottom = 126.0
+offset_bottom = 153.0
 
 [node name="Back" type="ColorRect" parent="." unique_id=1274698830]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
 offset_right = 444.0
 offset_bottom = 98.0
 color = Color(0.04, 0.05, 0.07, 0.92)
 
 [node name="Accent" type="ColorRect" parent="." unique_id=814008283]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
 offset_right = 6.0
 offset_bottom = 98.0
 color = Color(0.98, 0.82, 0.24, 1)
 
 [node name="BorderTop" type="ColorRect" parent="." unique_id=1660162778]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
 offset_right = 444.0
 offset_bottom = 2.0
 color = Color(0.24, 0.82, 1, 0.65)

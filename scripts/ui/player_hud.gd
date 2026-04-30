@@ -34,6 +34,10 @@ const TIME_STOP_OVERLAY_SHADER := preload("res://shaders/time_stop_overlay.gdsha
 @onready var boss_fill: ColorRect = $BossBar/BarTrack/BarFill
 @onready var inventory_bar: HBoxContainer = $InventoryBar
 @onready var dig_progress_bar: Control = $DigProgress
+@onready var _rewind_stun_container: Control = $RewindStunContainer
+@onready var _rewind_stun_track: ColorRect = $RewindStunContainer/Track
+@onready var _rewind_stun_fill: ColorRect = $RewindStunContainer/Track/Fill
+@onready var _rewind_stun_label: Label = $RewindStunContainer/Label
 
 var _mark_nodes: Dictionary = {}
 var _invert_tween: Tween
@@ -52,6 +56,7 @@ var _threat_warning_intensity: float = 0.0
 var _boss_ratio: float = 1.0
 var _rewind_visual_active: bool = false
 var _time_stop_visual_active: bool = false
+var _rewind_stun_visual_active: bool = false
 var _time_stop_overlay: ColorRect
 var _time_stop_overlay_material: ShaderMaterial
 var _time_stop_expand_tween: Tween
@@ -127,6 +132,7 @@ func _ready() -> void:
 	_setup_weapon_hud()
 	_setup_threat_warning()
 	_setup_time_stop_overlay()
+	set_rewind_stun_state(false, 0.0)
 
 	GameState.inventory_changed.connect(_update_inventory_ui)
 	GameState.time_direction_changed.connect(_on_time_direction_changed)
@@ -142,6 +148,18 @@ func _ready() -> void:
 	hide_boss_bar()
 	call_deferred("_update_status_bars")
 	_slot_effect_tweens.resize(3)
+
+func set_rewind_stun_state(active: bool, ratio: float = 0.0) -> void:
+	_rewind_stun_visual_active = active
+	if _rewind_stun_container != null:
+		_rewind_stun_container.visible = active
+	if _rewind_stun_fill != null and _rewind_stun_track != null:
+		var clamped_ratio: float = clampf(ratio, 0.0, 1.0)
+		var width: float = maxf(_rewind_stun_track.size.x - 8.0, 0.0)
+		_rewind_stun_fill.size.x = width * clamped_ratio
+	if _rewind_stun_label != null:
+		_rewind_stun_label.visible = active
+	_animate_screen_fx(0.18 if active else 0.3)
 
 func _set_shader_param(param: String, value: float) -> void:
 	if glitch_overlay.material is ShaderMaterial:
@@ -276,7 +294,11 @@ func _animate_screen_fx(duration: float) -> void:
 	var invert_target: float = 0.0
 	var vignette_target: float = 0.0
 	var glitch_target: float = 0.0
-	if _rewind_visual_active:
+	if _rewind_stun_visual_active:
+		invert_target = 0.0
+		vignette_target = 0.38
+		glitch_target = 0.38
+	elif _rewind_visual_active:
 		invert_target = 1.0
 		vignette_target = 0.8
 		glitch_target = 0.3

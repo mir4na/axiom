@@ -1,8 +1,109 @@
 [gd_scene format=3 uid="uid://bq2is5w8qqy4o"]
 
 [ext_resource type="Script" uid="uid://bgpm1ajyifylf" path="res://scripts/ui/main_menu.gd" id="1_mm"]
+[ext_resource type="Shader" uid="uid://baamcfes1ge5g" path="res://shaders/main_menu_bg.gdshader" id="2_bg"]
+[ext_resource type="Shader" uid="uid://blrulhyxn0nbq" path="res://shaders/main_menu_button_marker.gdshader" id="3_marker"]
+[ext_resource type="Shader" uid="uid://55a0qoe50hp5" path="res://shaders/main_menu_title_ink.gdshader" id="4_title_fx"]
+[ext_resource type="FontFile" uid="uid://bvkra0a1gyuc6" path="res://assets/fonts/PatrickHand-Regular.ttf" id="5_hand_font"]
 
-[node name="MainMenu" type="Control" unique_id=971112489]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
+shader = ExtResource("2_bg")
+shader_parameter/time_scale = 1.0
+shader_parameter/vignette_strength = 1.0
+shader_parameter/grain_strength = 0.08
+shader_parameter/glitch_strength = 0.42
+shader_parameter/crack_strength = 0.46
+shader_parameter/color_a = Color(0.95, 0.95, 0.95, 1)
+shader_parameter/color_b = Color(0.9, 0.9, 0.92, 1)
+shader_parameter/color_c = Color(0.84, 0.86, 0.9, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_title"]
+shader = ExtResource("4_title_fx")
+shader_parameter/wobble_strength = 0.12
+shader_parameter/wobble_speed = 0.7
+shader_parameter/ink_noise = 0.06
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_start_normal"]
+bg_color = Color(0.08, 0.08, 0.08, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.9, 0.9, 0.95)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_start_pressed"]
+bg_color = Color(0.02, 0.02, 0.02, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_start_hover"]
+bg_color = Color(0.15, 0.15, 0.15, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.52)
+shadow_size = 24
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_marker"]
+shader = ExtResource("3_marker")
+shader_parameter/scribble_strength = 0.85
+shader_parameter/animation_speed = 0.95
+shader_parameter/ink_color = Color(1, 1, 1, 0.26)
+
+[sub_resource type="Animation" id="Animation_pulse"]
+resource_name = "pulse"
+length = 1.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("MenuRoot/StartButton/Pulse:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.7, 1.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.16), Color(1, 1, 1, 0.38), Color(1, 1, 1, 0.16)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("MenuRoot/StartButton/Pulse:scale")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.7, 1.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.08, 1.14), Vector2(1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_main_menu"]
+_data = {
+&"pulse": SubResource("Animation_pulse")
+}
+
+[node name="MainMenu" type="Control" unique_id=1459054607]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,16 +112,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_mm")
 
-[node name="Background" type="ColorRect" parent="." unique_id=1243386206]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.04, 0.04, 0.08, 1)
-
-[node name="Center" type="CenterContainer" parent="." unique_id=1970154351]
+[node name="Background" type="ColorRect" parent="." unique_id=517152798]
+material = SubResource("ShaderMaterial_bg")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,43 +121,75 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBox" type="VBoxContainer" parent="Center" unique_id=474603971]
-layout_mode = 2
-theme_override_constants/separation = 24
+[node name="OverlayFrame" type="ColorRect" parent="." unique_id=298530796]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.06)
 
-[node name="Title" type="Label" parent="Center/VBox" unique_id=2057415415]
+[node name="MenuRoot" type="VBoxContainer" parent="." unique_id=738307437]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="TitleText" type="Label" parent="MenuRoot" unique_id=1186230676]
+material = SubResource("ShaderMaterial_title")
+custom_minimum_size = Vector2(760, 220)
 layout_mode = 2
-theme_override_font_sizes/font_size = 72
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 0.9607843)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 0.62)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("5_hand_font")
+theme_override_font_sizes/font_size = 244
 text = "AXIOM"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Center/VBox" unique_id=656285286]
+[node name="StartButton" type="Button" parent="MenuRoot" unique_id=562451907]
+custom_minimum_size = Vector2(320, 78)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "[ REALITY IS YOURS TO BEND ]"
-horizontal_alignment = 1
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.86)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("5_hand_font")
+theme_override_font_sizes/font_size = 52
+theme_override_styles/normal = SubResource("StyleBox_start_normal")
+theme_override_styles/pressed = SubResource("StyleBox_start_pressed")
+theme_override_styles/hover = SubResource("StyleBox_start_hover")
+theme_override_styles/focus = SubResource("StyleBox_start_hover")
+text = "Start"
 
-[node name="Spacer" type="Control" parent="Center/VBox" unique_id=1102882143]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
+[node name="Pulse" type="ColorRect" parent="MenuRoot/StartButton" unique_id=1021405000]
+modulate = Color(1, 1, 1, 0.15999997)
+material = SubResource("ShaderMaterial_marker")
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -12.0
+offset_right = 20.0
+offset_bottom = 12.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.16)
 
-[node name="PlayButton" type="Button" parent="Center/VBox" unique_id=1883573762]
-custom_minimum_size = Vector2(240, 56)
-layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "PLAY"
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=268788544]
+libraries/ = SubResource("AnimationLibrary_main_menu")
 
-[node name="QuitButton" type="Button" parent="Center/VBox" unique_id=725704535]
-custom_minimum_size = Vector2(240, 48)
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "QUIT"
-
-[node name="Controls" type="Label" parent="Center/VBox" unique_id=326222130]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "MOUSE  look  ·  E  interact  ·  R  rewind  ·  ESC  pause"
-horizontal_alignment = 1
-
-[connection signal="pressed" from="Center/VBox/PlayButton" to="." method="_on_play_pressed"]
-[connection signal="pressed" from="Center/VBox/QuitButton" to="." method="_on_quit_pressed"]
+[connection signal="pressed" from="MenuRoot/StartButton" to="." method="_on_start_pressed"]

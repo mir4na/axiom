@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
 [ext_resource type="PackedScene" uid="uid://df54f57tnrpkk" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
 [ext_resource type="Script" uid="uid://s8lr0lefbmx2" path="res://scripts/world/objective_config.gd" id="10_objective"]
+[ext_resource type="PackedScene" uid="uid://brhadciupca48" path="res://scenes/objects/ending_board.tscn" id="11_ending_board"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.71349037, 0.5589468, 0.25426564, 1)
@@ -230,6 +231,13 @@ visible = false
 
 [node name="Player" parent="." unique_id=758033891 instance=ExtResource("2_player")]
 transform = Transform3D(-0.9893817, 0, 0.14534062, 0, 1, 0, -0.14534062, 0, -0.9893817, 8.660072, 0.16559601, -7.59978)
+
+[node name="EndingBoard" parent="." unique_id=1961188519 instance=ExtResource("11_ending_board")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -2, 0, 16.586983)
+
+[node name="EndingBoardCamera" type="Camera3D" parent="." unique_id=1374020934]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -2.0094867, 1.3039708, 15.81034)
+fov = 46.0
 
 [node name="Neighborhood" type="Node3D" parent="." unique_id=663843665]
 

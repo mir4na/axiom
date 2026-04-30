@@ -1,924 +1,197 @@
 [gd_scene format=3 uid="uid://2uh34cuhbd1n"]
 
-[ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
-[ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
-[ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="3_house"]
-[ext_resource type="Script" uid="uid://boiwq5gf777ux" path="res://scripts/world/level_three_surreal.gd" id="4_surreal"]
-[ext_resource type="Shader" uid="uid://d270balpvvv3t" path="res://shaders/spatial_glitch.gdshader" id="5_glitch"]
-[ext_resource type="PackedScene" path="res://scenes/objects/challenge_platform.tscn" id="6_challenge_platform"]
+[ext_resource type="Script" uid="uid://boiwq5gf777ux" path="res://scripts/world/level_three_surreal.gd" id="1"]
+[ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/objects/surreal_platform.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/objects/jumping_boots.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/objects/dragon_guard.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/objects/level4_gate.tscn" id="8"]
+[ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="9"]
+[ext_resource type="Shader" uid="uid://saoeakkn2rnt" path="res://shaders/surreal_white_surface.gdshader" id="10"]
 
-[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+[sub_resource type="ProceduralSkyMaterial" id="1"]
 sky_top_color = Color(0.98, 0.99, 1, 1)
-sky_horizon_color = Color(0.95, 0.96, 1, 1)
-ground_bottom_color = Color(0.88, 0.9, 0.96, 1)
-ground_horizon_color = Color(0.93, 0.94, 0.98, 1)
+sky_horizon_color = Color(0.96, 0.98, 1, 1)
+ground_bottom_color = Color(0.9, 0.93, 0.98, 1)
+ground_horizon_color = Color(0.94, 0.96, 1, 1)
 
-[sub_resource type="Sky" id="Sky"]
-sky_material = SubResource("SkyMat")
+[sub_resource type="Sky" id="2"]
+sky_material = SubResource("1")
 
-[sub_resource type="Environment" id="Env"]
+[sub_resource type="Environment" id="3"]
 background_mode = 2
-sky = SubResource("Sky")
+sky = SubResource("2")
 ambient_light_source = 3
-ambient_light_color = Color(1, 1, 1, 1)
-ambient_light_energy = 0.25
+ambient_light_color = Color(0.96, 0.98, 1, 1)
+ambient_light_energy = 0.72
 tonemap_mode = 2
 glow_enabled = true
-glow_intensity = 1.1
-glow_bloom = 0.12
+glow_intensity = 1.05
+glow_bloom = 0.14
 glow_hdr_threshold = 0.82
-glow_hdr_scale = 1.25
+glow_hdr_scale = 1.18
+fog_enabled = true
+fog_light_color = Color(0.96, 0.98, 1, 1)
+fog_light_energy = 0.75
+fog_density = 0.0065
+fog_aerial_perspective = 0.38
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.018
+volumetric_fog_albedo = Color(0.95, 0.97, 1, 1)
 
-[sub_resource type="StandardMaterial3D" id="MatIsland"]
-albedo_color = Color(0.42, 0.4, 0.46, 1)
-metallic = 0.08
-roughness = 0.86
-
-[sub_resource type="StandardMaterial3D" id="MatIslandGlow"]
-albedo_color = Color(0.56, 0.58, 0.66, 1)
-roughness = 0.48
-emission_enabled = true
-emission = Color(0.82, 0.9, 1, 1)
-emission_energy_multiplier = 1.2
-
-[sub_resource type="StandardMaterial3D" id="MatSand"]
-albedo_color = Color(0.82, 0.73, 0.54, 1)
-roughness = 0.92
-
-[sub_resource type="BoxMesh" id="PlatformWideMesh"]
-size = Vector3(10.5, 0.7, 6.8)
-
-[sub_resource type="StandardMaterial3D" id="MatStoneWarm"]
-albedo_color = Color(0.46, 0.42, 0.38, 1)
-roughness = 0.91
-
-[sub_resource type="BoxMesh" id="DebrisMesh"]
-size = Vector3(1.4, 1, 1.8)
-
-[sub_resource type="BoxMesh" id="PlatformLongMesh"]
-size = Vector3(14, 0.6, 4.6)
-
-[sub_resource type="BoxMesh" id="PlatformSmallMesh"]
-size = Vector3(6, 0.55, 4.2)
-
-[sub_resource type="StandardMaterial3D" id="MatGrass"]
-albedo_color = Color(0.28, 0.52, 0.24, 1)
-roughness = 0.88
-
-[sub_resource type="StandardMaterial3D" id="MatTrunk"]
-albedo_color = Color(0.42, 0.28, 0.16, 1)
-roughness = 0.95
-
-[sub_resource type="CylinderMesh" id="TreeTrunkMesh"]
-top_radius = 0.26
-bottom_radius = 0.34
-height = 3.2
-
-[sub_resource type="StandardMaterial3D" id="MatLeaves"]
-albedo_color = Color(0.22, 0.54, 0.2, 1)
-roughness = 0.86
-
-[sub_resource type="SphereMesh" id="TreeCanopyMesh"]
-radius = 1.6
-height = 3.2
-
-[sub_resource type="StandardMaterial3D" id="MatPoleDark"]
-albedo_color = Color(0.22, 0.22, 0.26, 1)
-metallic = 0.28
-roughness = 0.72
-
-[sub_resource type="CylinderMesh" id="LampPoleMesh"]
-top_radius = 0.08
-bottom_radius = 0.1
-height = 4.6
-
-[sub_resource type="StandardMaterial3D" id="MatCourtLine"]
-roughness = 0.18
-emission_enabled = true
-emission = Color(0.88, 0.88, 1, 1)
-emission_energy_multiplier = 3.2
-
-[sub_resource type="BoxMesh" id="SignPlateMesh"]
-size = Vector3(2.4, 1.2, 0.14)
-
-[sub_resource type="ShaderMaterial" id="MatGlitchCyan"]
+[sub_resource type="ShaderMaterial" id="4"]
 render_priority = 0
-shader = ExtResource("5_glitch")
-shader_parameter/glitch_speed = 20.0
-shader_parameter/glitch_intensity = 2.2
-shader_parameter/base_color = Vector3(0.16, 0.95, 1)
-shader_parameter/emission_energy = 8.6
-shader_parameter/rim_strength = 3.6
-shader_parameter/pulse_strength = 1.55
-shader_parameter/stripe_density = 82.0
-shader_parameter/alpha_flicker = 0.2
+shader = ExtResource("10")
+shader_parameter/base_color = Color(0.98, 0.99, 1, 1)
+shader_parameter/edge_color = Color(0.84, 0.9, 1, 1)
+shader_parameter/roughness_value = 0.22
+shader_parameter/metallic_value = 0.12
+shader_parameter/emission_strength = 1.6
+shader_parameter/pulse_speed = 1.9
+shader_parameter/pulse_amount = 0.26
+shader_parameter/fresnel_strength = 1.5
 
-[sub_resource type="PrismMesh" id="SpikeMesh"]
+[sub_resource type="SphereMesh" id="5"]
+radius = 2.5
+height = 5.0
+
+[sub_resource type="TorusMesh" id="6"]
+inner_radius = 1.2
+outer_radius = 2.45
+rings = 36
+ring_segments = 28
+
+[sub_resource type="PrismMesh" id="7"]
 left_to_right = 1.0
-size = Vector3(0.35, 1.5, 0.35)
+size = Vector3(3.2, 5.6, 3.2)
 
-[sub_resource type="ShaderMaterial" id="MatGlitchMagenta"]
-render_priority = 0
-shader = ExtResource("5_glitch")
-shader_parameter/glitch_speed = 23.0
-shader_parameter/glitch_intensity = 2.45
-shader_parameter/base_color = Vector3(1, 0.28, 0.82)
-shader_parameter/emission_energy = 8.0
-shader_parameter/rim_strength = 3.3
-shader_parameter/pulse_strength = 1.4
-shader_parameter/stripe_density = 76.0
-shader_parameter/alpha_flicker = 0.24
+[sub_resource type="BoxMesh" id="8"]
+size = Vector3(3.5, 3.5, 3.5)
 
-[sub_resource type="StandardMaterial3D" id="MatCourt"]
-albedo_color = Color(0.38, 0.24, 0.44, 1)
-roughness = 0.56
-emission_enabled = true
-emission = Color(0.6, 0.72, 1, 1)
-emission_energy_multiplier = 0.5
+[node name="Level03" type="Node3D" unique_id=364480891]
+script = ExtResource("1")
 
-[sub_resource type="BoxMesh" id="CourtMesh"]
-size = Vector3(17, 0.4, 9.5)
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=668653246]
+environment = SubResource("3")
 
-[sub_resource type="BoxMesh" id="CourtLineLong"]
-size = Vector3(17.1, 0.03, 0.14)
-
-[sub_resource type="BoxMesh" id="CourtLineMid"]
-size = Vector3(0.14, 0.03, 9.5)
-
-[sub_resource type="CylinderMesh" id="PoleMesh"]
-top_radius = 0.1
-bottom_radius = 0.1
-height = 3.6
-
-[sub_resource type="BoxMesh" id="BackboardMesh"]
-size = Vector3(1.8, 1.05, 0.08)
-
-[sub_resource type="TorusMesh" id="HoopMesh"]
-inner_radius = 0.32
-outer_radius = 0.46
-rings = 28
-ring_segments = 18
-
-[sub_resource type="StandardMaterial3D" id="MatCarA"]
-albedo_color = Color(0.72, 0.18, 0.16, 1)
-metallic = 0.24
-roughness = 0.34
-
-[sub_resource type="BoxMesh" id="BoxMeshCarBody"]
-size = Vector3(4.2, 1.1, 2.2)
-
-[sub_resource type="BoxMesh" id="BoxMeshCarCabin"]
-size = Vector3(2.4, 0.9, 1.8)
-
-[sub_resource type="StandardMaterial3D" id="MatWheel"]
-albedo_color = Color(0.08, 0.08, 0.1, 1)
-roughness = 0.94
-
-[sub_resource type="CylinderMesh" id="WheelMesh"]
-top_radius = 0.52
-bottom_radius = 0.52
-height = 0.45
-
-[sub_resource type="StandardMaterial3D" id="MatCarB"]
-albedo_color = Color(0.2, 0.28, 0.66, 1)
-metallic = 0.2
-roughness = 0.38
-
-[sub_resource type="StandardMaterial3D" id="MatCreatureSkin"]
-albedo_color = Color(0.3, 0.14, 0.42, 1)
-roughness = 0.28
-emission_enabled = true
-emission = Color(0.72, 0.3, 0.96, 1)
-emission_energy_multiplier = 1.4
-
-[sub_resource type="SphereMesh" id="CreatureCoreMesh"]
-radius = 1.4
-height = 2.8
-
-[sub_resource type="StandardMaterial3D" id="MatCreatureEye"]
-roughness = 0.05
-emission_enabled = true
-emission = Color(0.42, 0.9, 1, 1)
-emission_energy_multiplier = 7.0
-
-[sub_resource type="SphereMesh" id="CreatureEyeMesh"]
-radius = 0.22
-height = 0.44
-
-[sub_resource type="CylinderMesh" id="TentacleMesh"]
-top_radius = 0.16
-bottom_radius = 0.23
-height = 2.8
-
-[node name="Level03" type="Node3D" unique_id=1973290367]
-script = ExtResource("4_surreal")
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=820800062]
-environment = SubResource("Env")
-
-[node name="DreamSun" type="DirectionalLight3D" parent="." unique_id=2008772095]
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=874477554]
 transform = Transform3D(0.615661, -0.508532, 0.601031, 0, 0.763149, 0.646223, -0.788011, -0.397844, 0.469892, 0, 14, 0)
-light_energy = 0.8
+light_color = Color(0.98, 0.98, 1, 1)
+light_energy = 1.2
 shadow_enabled = true
 
-[node name="VoidGlowA" type="OmniLight3D" parent="." unique_id=1620328280]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 21, -26)
-light_color = Color(0.2, 0.9, 1, 1)
-omni_range = 34.0
+[node name="FillLight" type="OmniLight3D" parent="." unique_id=1202251739]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, 30, -22)
+light_color = Color(0.9, 0.94, 1, 1)
+light_energy = 1.35
+omni_range = 110.0
 
-[node name="VoidGlowB" type="OmniLight3D" parent="." unique_id=1040600829]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 18, -32)
-light_color = Color(1, 0.28, 0.86, 1)
-omni_range = 34.0
-
-[node name="VoidGlowC" type="OmniLight3D" parent="." unique_id=1014648573]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 26, -54)
+[node name="FillLightB" type="OmniLight3D" parent="." unique_id=1501622015]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26, 40, 18)
+light_color = Color(0.94, 0.96, 1, 1)
 light_energy = 1.1
-omni_range = 46.0
+omni_range = 96.0
 
-[node name="PlayerSpawn" type="Marker3D" parent="." unique_id=2073459487]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 26.8, 0)
+[node name="PlayerSpawn" type="Marker3D" parent="." unique_id=778854414]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 34, 0)
 
-[node name="World" type="Node3D" parent="." unique_id=70481313]
-script = ExtResource("1_world")
+[node name="World" type="Node3D" parent="." unique_id=944909002]
+script = ExtResource("2")
 
-[node name="DreamGround" type="CSGCombiner3D" parent="World" unique_id=363827959]
-use_collision = true
+[node name="Player" parent="World" unique_id=1430319868 instance=ExtResource("3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 32.204937, 0)
 
-[node name="MainIsland" type="CSGBox3D" parent="World/DreamGround" unique_id=1399596311]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.8, 0)
-size = Vector3(36, 1.2, 28)
-material = SubResource("MatIsland")
+[node name="Platforms" type="Node3D" parent="World" unique_id=1494453223]
 
-[node name="MainIslandGlow" type="CSGBox3D" parent="World/DreamGround" unique_id=1641323461]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.45, 0)
-size = Vector3(38, 0.45, 30)
-material = SubResource("MatIslandGlow")
+[node name="SpawnPlatform" parent="World/Platforms" unique_id=388563077 instance=ExtResource("4")]
+transform = Transform3D(2.8, 0, 0, 0, 1, 0, 0, 0, 2.8, 0, 32, 0)
 
-[node name="CrackA" type="CSGBox3D" parent="World/DreamGround" unique_id=1928775844]
-transform = Transform3D(0.92050487, 0, -0.39073113, 0, 1, 0, 0.39073113, 0, 0.92050487, -4.4, -0.7, -1.8)
-operation = 2
-size = Vector3(2.2, 1.5, 22)
+[node name="BootsPlatform" parent="World/Platforms" unique_id=1001763443 instance=ExtResource("4")]
+transform = Transform3D(3, 0, 0, 0, 1, 0, 0, 0, 3, 12, 29.6, -4)
 
-[node name="CrackB" type="CSGBox3D" parent="World/DreamGround" unique_id=873912967]
-transform = Transform3D(0.809017, 0, 0.58778524, 0, 1, 0, -0.58778524, 0, 0.809017, 6.6, -0.7, 2.7)
-operation = 2
-size = Vector3(1.6, 1.5, 16)
+[node name="BootsHouse" parent="World/Platforms/BootsPlatform" unique_id=1286526512 instance=ExtResource("9")]
+transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 1.8, 0)
 
-[node name="FloatRock01" type="CSGBox3D" parent="World/DreamGround" unique_id=1255780648 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8674502, 0.31287873, 0.38682956, -0.19773579, 0.9302737, -0.309017, -0.4565422, 0.1915668, 0.86883336, 10.4, 7.6, 10.6)
-size = Vector3(8.5, 0.8, 6.2)
-material = SubResource("MatIsland")
+[node name="BridgePlatforms" type="Node3D" parent="World/Platforms" unique_id=756291455]
 
-[node name="FloatRock02" type="CSGBox3D" parent="World/DreamGround" unique_id=220914435 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.72819453, -0.4323309, -0.5318108, 0.2555665, 0.89126635, -0.3746066, 0.6359391, 0.13687344, 0.75950456, -13.4, 9.8, 9.4)
-size = Vector3(6.6, 0.7, 4.9)
-material = SubResource("MatIsland")
-
-[node name="FloatRock03" type="CSGBox3D" parent="World/DreamGround" unique_id=1941574953 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.54122674, -0.37631726, 0.75197005, 0.36772403, 0.91014886, 0.190809, -0.7562094, 0.17324653, 0.6309778, 2.2, 12.8, -14.5)
-size = Vector3(9, 0.9, 5)
-material = SubResource("MatIslandGlow")
-
-[node name="FloatRock04" type="CSGBox3D" parent="World/DreamGround" unique_id=1177712215 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.85379946, -0.42558646, -0.2998379, 0.3634792, 0.8996425, -0.2419219, 0.3727056, 0.09756795, 0.9228061, -20, 11.6, -5.8)
-size = Vector3(7.4, 0.75, 5.2)
-material = SubResource("MatIslandGlow")
-
-[node name="FloatRock05" type="CSGBox3D" parent="World/DreamGround" unique_id=2135191798 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8880259, 0.0880443, 0.45128503, -0.23255026, 0.9327081, 0.27563736, -0.3966489, -0.34971958, 0.8487437, 18.8, 14.4, -8.4)
-size = Vector3(8.2, 0.82, 5.7)
-material = SubResource("MatIsland")
-
-[node name="FloatRock06" type="CSGBox3D" parent="World/DreamGround" unique_id=543323037 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.5673225, 0.44717014, 0.6915085, -0.30783075, 0.89400536, -0.32556817, -0.7637966, -0.02816543, 0.6448421, -6.5, 16, 26.5)
-size = Vector3(10.4, 0.86, 6.8)
-material = SubResource("MatIslandGlow")
-
-[node name="FloatRock07" type="CSGBox3D" parent="World/DreamGround" unique_id=1308135544 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8323339, -0.062869065, -0.5506975, 0.18791017, 0.966714, 0.17364818, 0.5214499, -0.24801493, 0.81644267, 30.5, 19.6, 24)
-size = Vector3(9.1, 0.74, 4.9)
-material = SubResource("MatIsland")
-
-[node name="FloatRock08" type="CSGBox3D" parent="World/DreamGround" unique_id=1939059348 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.78560627, 0.42186266, 0.45260873, -0.27295247, 0.8927874, -0.35836795, -0.5552655, 0.15799545, 0.81652784, -30, 22.2, 32)
-size = Vector3(11.6, 0.9, 6.1)
-material = SubResource("MatIslandGlow")
-
-[node name="FloatRock09" type="CSGBox3D" parent="World/DreamGround" unique_id=1558724872 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.55749744, 0.033158004, 0.82951623, 0.25316322, 0.944818, -0.2079117, -0.79063576, 0.32591325, 0.5183393, 6, 24, 40)
-size = Vector3(8.8, 0.72, 5.4)
-material = SubResource("MatIsland")
-
-[node name="FloatRock10" type="CSGBox3D" parent="World/DreamGround" unique_id=835365174 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.71819186, -0.03759466, -0.69482887, 0.2984875, 0.9186501, 0.25881904, 0.6285744, -0.39327946, 0.6709885, -16.5, 27, 54.5)
-size = Vector3(10.2, 0.88, 6)
-material = SubResource("MatIslandGlow")
-
-[node name="FloatRock11" type="CSGBox3D" parent="World/DreamGround" unique_id=1639883171 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.7995181, 0.26801416, 0.5375307, -0.13378178, 0.95190674, -0.27563736, -0.5855538, 0.14846525, 0.7969221, 34.5, 29.4, 58.4)
-size = Vector3(8.7, 0.7, 5.8)
-material = SubResource("MatIsland")
-
-[node name="FloatRock12" type="CSGBox3D" parent="World/DreamGround" unique_id=186222019 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.4598159, 0.18356991, 0.8688334, 0.21394117, 0.92668104, -0.309017, -0.8618576, 0.32797015, 0.38682953, -40, 32, 68)
-size = Vector3(12.4, 0.96, 6.9)
-material = SubResource("MatIslandGlow")
-
-[node name="Player" parent="World" unique_id=32608367 instance=ExtResource("2_player")]
-
-[node name="TraversalPlatforms" type="Node3D" parent="World" unique_id=900301111]
-
-[node name="SpawnPlatform" parent="World/TraversalPlatforms" unique_id=900301112 instance=ExtResource("6_challenge_platform")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 26, 0)
-platform_mode = 0
-
-[node name="MovingPlatform" parent="World/TraversalPlatforms" unique_id=900301113 instance=ExtResource("6_challenge_platform")]
-transform = Transform3D(0.9832549, 0, -0.18223552, 0, 1, 0, 0.18223552, 0, 0.9832549, 8, 23, -4)
+[node name="BridgeA" parent="World/Platforms/BridgePlatforms" unique_id=267916812 instance=ExtResource("4")]
+transform = Transform3D(2.3, 0, 0, 0, 1, 0, 0, 0, 2.3, 22, 27, -9)
+visible = false
 platform_mode = 1
-move_axis = Vector3(1, 0, 0)
-move_distance = 6.0
-move_speed = 0.95
+move_speed = 1
 
-[node name="RotatingPlatform" parent="World/TraversalPlatforms" unique_id=900301114 instance=ExtResource("6_challenge_platform")]
-transform = Transform3D(0.997564, 0, 0.0697565, 0, 1, 0, -0.0697565, 0, 0.997564, 18, 20, 3)
+[node name="BridgeB" parent="World/Platforms/BridgePlatforms" unique_id=1070735776 instance=ExtResource("4")]
+transform = Transform3D(2.2, 0, 0, 0, 1, 0, 0, 0, 2.2, 30, 24, -12)
+visible = false
 platform_mode = 2
-rotate_axis = Vector3(0, 1, 0)
-rotate_speed_deg = 56.0
+rotate_speed_deg = 46
 
-[node name="DisappearingPlatform" parent="World/TraversalPlatforms" unique_id=900301115 instance=ExtResource("6_challenge_platform")]
-transform = Transform3D(0.9396926, 0, -0.34202015, 0, 1, 0, 0.34202015, 0, 0.9396926, 28, 17, 0)
+[node name="BridgeC" parent="World/Platforms/BridgePlatforms" unique_id=827969476 instance=ExtResource("4")]
+transform = Transform3D(2.1, 0, 0, 0, 1, 0, 0, 0, 2.1, 38, 21, -14)
+visible = false
 platform_mode = 3
-disappear_delay = 0.3
-reappear_delay = 0.0
+disappear_delay = 0.4
+reappear_delay = 2.2
 
-[node name="FloatingRealm" type="Node3D" parent="World" unique_id=1892166497]
+[node name="BridgeD" parent="World/Platforms/BridgePlatforms" unique_id=511658935 instance=ExtResource("4")]
+transform = Transform3D(2.4, 0, 0, 0, 1, 0, 0, 0, 2.4, 46, 19.5, -14)
+visible = false
 
-[node name="BiomePlatforms" type="Node3D" parent="World/FloatingRealm" unique_id=497218870]
+[node name="DragonPlatform" parent="World/Platforms" unique_id=1060336020 instance=ExtResource("4")]
+transform = Transform3D(4.2, 0, 0, 0, 1, 0, 0, 0, 4.2, 56, 17, -14)
 
-[node name="SandPlatformA" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=1068328647 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.92929685, -0.21223529, -0.30226424, 0.15301602, 0.96610504, -0.2079117, 0.3361452, 0.14696042, 0.9302737, -18, 8.5, -8)
-material_override = SubResource("MatSand")
-mesh = SubResource("PlatformWideMesh")
+[node name="FinalPlatform" parent="World/Platforms" unique_id=183987220 instance=ExtResource("4")]
+transform = Transform3D(5.5, 0, 0, 0, 1, 0, 0, 0, 5.5, 74, 25, -8)
 
-[node name="SandRockA" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms/SandPlatformA" unique_id=1557274084 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.7755683, 0.3549028, 0.5220515, -0.17813554, 0.9164279, -0.35836795, -0.6056084, 0.18494292, 0.7739733, -2.6, 0.8, -1.2)
-material_override = SubResource("MatStoneWarm")
-mesh = SubResource("DebrisMesh")
+[node name="JumpingBoots" parent="World" unique_id=444350027 instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 31.1, -4)
 
-[node name="SandRockB" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms/SandPlatformA" unique_id=848662050 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.89991313, -0.23078236, -0.36999458, 0.3052125, 0.9393475, 0.15643448, 0.31145117, -0.2537044, 0.91576874, 2.2, 0.74, 1)
-material_override = SubResource("MatStoneWarm")
-mesh = SubResource("DebrisMesh")
+[node name="DragonGuard" parent="World" unique_id=735975463 instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 18.654394, -11.486603)
 
-[node name="SandPlatformB" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=583999800 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.905019, 0.004274361, 0.42534965, -0.118249305, 0.9630633, 0.2419219, -0.40860456, -0.2692412, 0.872096, 22, 10.5, 22)
-material_override = SubResource("MatSand")
-mesh = SubResource("PlatformLongMesh")
+[node name="DragonKeycard" parent="World" unique_id=375519423 instance=ExtResource("7")]
+transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 59, 18.4, -13)
+key_id = "key_3"
+use_any_free_slot = true
+auto_select_after_pickup = true
 
-[node name="SandPlatformC" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=1070100344 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.75003135, -0.025960892, 0.66089255, 0.17151028, 0.97268313, -0.15643448, -0.6387778, 0.23068064, 0.7339955, 38, 14.5, 34)
-material_override = SubResource("MatSand")
-mesh = SubResource("PlatformSmallMesh")
+[node name="Level4Gate" parent="World" unique_id=2147423050 instance=ExtResource("8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 27.2, -4.4)
 
-[node name="GrassPlatformA" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=1612553006 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.9335948, 0.19075088, 0.30333948, -0.1366161, 0.97207403, -0.190809, -0.33126542, 0.13669723, 0.93358296, -28, 12, 26)
-material_override = SubResource("MatGrass")
-mesh = SubResource("PlatformWideMesh")
+[node name="SurrealShapes" type="Node3D" parent="World" unique_id=62983666]
 
-[node name="TreeTrunkA" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms/GrassPlatformA" unique_id=576324088 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4, 1.9, -0.8)
-material_override = SubResource("MatTrunk")
-mesh = SubResource("TreeTrunkMesh")
+[node name="OrbA" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1129927275 groups=["surreal_float"]]
+transform = Transform3D(0.9659258, 0, -0.25881904, 0, 1, 0, 0.25881904, 0, 0.9659258, 18, 40, -20)
+material_override = SubResource("4")
+mesh = SubResource("5")
 
-[node name="TreeCanopyA" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms/GrassPlatformA" unique_id=1943818360 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4, 4, -0.8)
-material_override = SubResource("MatLeaves")
-mesh = SubResource("TreeCanopyMesh")
+[node name="RingA" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=92716762 groups=["surreal_float"]]
+transform = Transform3D(0.8466338, -0.22320507, 0.4829629, 0.30814955, 0.9396926, -0.15038373, -0.4330127, 0.25, 0.8660254, -24, 47, 10)
+material_override = SubResource("4")
+mesh = SubResource("6")
 
-[node name="TreeTrunkB" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms/GrassPlatformA" unique_id=1873685235 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 1.7, 1)
-material_override = SubResource("MatTrunk")
-mesh = SubResource("TreeTrunkMesh")
+[node name="PrismA" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=904758515 groups=["surreal_float"]]
+transform = Transform3D(0.76604444, 0, -0.64278764, 0, 1, 0, 0.64278764, 0, 0.76604444, 44, 55, 20)
+material_override = SubResource("4")
+mesh = SubResource("7")
 
-[node name="TreeCanopyB" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms/GrassPlatformA" unique_id=1851874552 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 3.8, 1)
-material_override = SubResource("MatLeaves")
-mesh = SubResource("TreeCanopyMesh")
+[node name="CubeA" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1267531812 groups=["surreal_float"]]
+transform = Transform3D(0.9396926, -0.17101, 0.2961981, 0.34202015, 0.4698463, -0.81379765, 0, 0.8660254, 0.5, -40, 50, -34)
+material_override = SubResource("4")
+mesh = SubResource("8")
 
-[node name="GrassPlatformB" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=1869038789 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.81837344, -0.15370391, -0.5537509, 0.27295488, 0.95190674, 0.1391731, 0.50572777, -0.26504457, 0.82096946, 14, 17, 46)
-material_override = SubResource("MatGrass")
-mesh = SubResource("PlatformLongMesh")
+[node name="DragonRidePath" type="Node3D" parent="World" unique_id=1292534026]
 
-[node name="GrassPlatformC" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=1928684712 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8334903, 0.3254796, 0.446494, -0.19773579, 0.9302737, -0.309017, -0.51594037, 0.16927484, 0.83973306, -42, 20, 54)
-material_override = SubResource("MatGrass")
-mesh = SubResource("PlatformSmallMesh")
+[node name="Start" type="Marker3D" parent="World/DragonRidePath" unique_id=1031007858]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 20.8, -14)
 
-[node name="StonePlatformA" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=1202198606 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.81787515, -0.3694035, -0.44115898, 0.22733222, 0.9117797, -0.34202012, 0.5285832, 0.17944011, 0.8296993, 4, 9.6, -10)
-material_override = SubResource("MatStoneWarm")
-mesh = SubResource("PlatformWideMesh")
+[node name="Mid" type="Marker3D" parent="World/DragonRidePath" unique_id=721280988]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 35, -12)
 
-[node name="StonePlatformB" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=818336117 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.79428965, 0.080310576, 0.60220784, -0.25316322, 0.944818, 0.2079117, -0.5522793, -0.317599, 0.7707909, -10, 15.8, 38)
-material_override = SubResource("MatStoneWarm")
-mesh = SubResource("PlatformSmallMesh")
+[node name="End" type="Marker3D" parent="World/DragonRidePath" unique_id=43358179]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 28.2, -8)
 
-[node name="StonePlatformC" type="MeshInstance3D" parent="World/FloatingRealm/BiomePlatforms" unique_id=740876258 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.63915014, 0.15364444, 0.7535784, 0.11654424, 0.9491766, -0.2923717, -0.76020026, 0.27469462, 0.58876, 30, 22, -52)
-material_override = SubResource("MatStoneWarm")
-mesh = SubResource("PlatformWideMesh")
-
-[node name="StreetFurniture" type="Node3D" parent="World/FloatingRealm" unique_id=1017936907]
-
-[node name="LampPostA" type="MeshInstance3D" parent="World/FloatingRealm/StreetFurniture" unique_id=139352088 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.9393475, -0.14877804, 0.309017, 0.15643448, 0.98768836, 0, -0.3052125, 0.048340913, 0.95105654, 10, 11.5, 18)
-material_override = SubResource("MatPoleDark")
-mesh = SubResource("LampPoleMesh")
-
-[node name="LampGlowA" type="OmniLight3D" parent="World/FloatingRealm/StreetFurniture/LampPostA" unique_id=2051584524]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)
-light_color = Color(1, 0.94, 0.76, 1)
-light_energy = 0.8
-omni_range = 9.0
-
-[node name="LampPostB" type="MeshInstance3D" parent="World/FloatingRealm/StreetFurniture" unique_id=1634949681 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.90465486, 0.12714095, -0.40673664, -0.1391731, 0.99026805, 0, 0.4027783, 0.056606803, 0.9135454, -30, 16, 42)
-material_override = SubResource("MatPoleDark")
-mesh = SubResource("LampPoleMesh")
-
-[node name="LampGlowB" type="OmniLight3D" parent="World/FloatingRealm/StreetFurniture/LampPostB" unique_id=216326147]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)
-light_color = Color(1, 0.94, 0.76, 1)
-light_energy = 0.8
-omni_range = 9.0
-
-[node name="SignA" type="Node3D" parent="World/FloatingRealm/StreetFurniture" unique_id=1209701398 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.79301727, 0.17978851, 0.5820649, -0.12068332, 0.98288673, -0.1391731, -0.5971257, 0.040121146, 0.8011437, 24, 13, 30)
-
-[node name="Pole" type="MeshInstance3D" parent="World/FloatingRealm/StreetFurniture/SignA" unique_id=897736551]
-material_override = SubResource("MatPoleDark")
-mesh = SubResource("LampPoleMesh")
-
-[node name="Plate" type="MeshInstance3D" parent="World/FloatingRealm/StreetFurniture/SignA" unique_id=1822317779]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("SignPlateMesh")
-
-[node name="SignB" type="Node3D" parent="World/FloatingRealm/StreetFurniture" unique_id=849578076 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.7534507, -0.029622383, -0.6568368, 0.20409177, 0.9601763, 0.190809, 0.62502694, -0.27782017, 0.7294911, -12, 21, -46)
-
-[node name="Pole" type="MeshInstance3D" parent="World/FloatingRealm/StreetFurniture/SignB" unique_id=1259460441]
-material_override = SubResource("MatPoleDark")
-mesh = SubResource("LampPoleMesh")
-
-[node name="Plate" type="MeshInstance3D" parent="World/FloatingRealm/StreetFurniture/SignB" unique_id=2131172069]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("SignPlateMesh")
-
-[node name="ExtraSpikes" type="Node3D" parent="World/FloatingRealm" unique_id=587329878]
-
-[node name="SpikeA" type="MeshInstance3D" parent="World/FloatingRealm/ExtraSpikes" unique_id=1329522322 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(1.3221351, 1.1562941, 1.0569881, -0.17188469, 3.0890393, -0.73212594, -1.2093031, 0.8251184, 1.2596695, -6, 7.6, -8)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("SpikeMesh")
-
-[node name="SpikeB" type="MeshInstance3D" parent="World/FloatingRealm/ExtraSpikes" unique_id=274454853 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(1.3262838, -0.058435947, -0.89442724, 0.36813027, 2.7684183, 0.4944272, 0.815752, -1.1543162, 1.2310735, 18, 18.6, 50)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("SpikeMesh")
-
-[node name="SpikeC" type="MeshInstance3D" parent="World/FloatingRealm/ExtraSpikes" unique_id=565838584 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8057756, 1.2791078, 1.5974029, -0.37972933, 3.572972, -0.52371097, -1.6782525, -0.19430237, 0.88545483, -34, 24.2, 70)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("SpikeMesh")
-
-[node name="InvertedHouseA" parent="World/FloatingRealm" unique_id=2018256235 groups=["dream_float", "dream_house", "dream_spin"] instance=ExtResource("3_house")]
-transform = Transform3D(0.8263445, -0.11613513, 0.33714595, -0.1252558, -0.89124125, 7.86805e-08, 0.33386484, -0.046921723, -0.83446544, -34, 24, 40)
-
-[node name="InvertedHouseB" parent="World/FloatingRealm" unique_id=1813605025 groups=["dream_float", "dream_house", "dream_spin"] instance=ExtResource("3_house")]
-transform = Transform3D(0.5456813, 0.05735336, -0.6093788, 0.08571334, -0.81550795, 7.168668e-08, -0.6060406, -0.06369748, -0.54868704, 40, 30, 58)
-
-[node name="InvertedHouseC" parent="World/FloatingRealm" unique_id=809450083 groups=["dream_float", "dream_house", "dream_spin"] instance=ExtResource("3_house")]
-transform = Transform3D(-0.26382285, 0.056077216, -0.66757244, -0.14969642, -0.7042663, 6.29444e-08, -0.6529844, 0.13879614, 0.26971677, 6, 34, -60)
-
-[node name="InvertedHouseD" parent="World/FloatingRealm" unique_id=504966045 groups=["dream_float", "dream_house", "dream_spin"] instance=ExtResource("3_house")]
-transform = Transform3D(0.1851258, 0.029321106, 0.653658, 0.10637545, -0.6716281, 5.9447487e-08, 0.6456104, 0.10225462, -0.18743342, -48, 28, -54)
-
-[node name="InvertedHouseE" parent="World/FloatingRealm" unique_id=257205621 groups=["dream_float", "dream_house", "dream_spin"] instance=ExtResource("3_house")]
-transform = Transform3D(0.051440157, -0.012825539, -0.75814867, -0.18386064, -0.73742473, 6.644131e-08, -0.7356284, 0.18341278, -0.053014945, 50, 25, 36)
-
-[node name="FloatingCourt" type="Node3D" parent="World/FloatingRealm" unique_id=1834544082 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.93660784, 0.16514921, -0.309017, 0.17364818, -0.9848077, 8.742278e-08, -0.30432233, -0.053660322, -0.95105654, -8, 19, 24)
-
-[node name="CourtBase" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=2041975373]
-material_override = SubResource("MatCourt")
-mesh = SubResource("CourtMesh")
-
-[node name="CourtLineN" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=962833744]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, -4.65)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("CourtLineLong")
-
-[node name="CourtLineS" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=669204388]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, 4.65)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("CourtLineLong")
-
-[node name="CourtLineMid" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=935384082]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("CourtLineMid")
-
-[node name="PoleA" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=2076345210]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.4, 1.9, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("PoleMesh")
-
-[node name="BackboardA" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=1763662018]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.4, 3.6, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("BackboardMesh")
-
-[node name="HoopA" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=362187252]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -5.8, 3.25, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("HoopMesh")
-
-[node name="PoleB" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=2128230342]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 1.9, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("PoleMesh")
-
-[node name="BackboardB" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=688330258]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 3.6, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("BackboardMesh")
-
-[node name="HoopB" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCourt" unique_id=640584228]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 5.8, 3.25, 0)
-material_override = SubResource("MatCourtLine")
-mesh = SubResource("HoopMesh")
-
-[node name="FloatingCarA" type="Node3D" parent="World/FloatingRealm" unique_id=1865795473 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.7686703, -0.3105629, 0.5591929, -0.3746066, -0.92718387, 8.742278e-08, 0.51847464, -0.20947742, -0.8290376, 15, 15, 16)
-
-[node name="Body" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarA" unique_id=1750626165]
-material_override = SubResource("MatCarA")
-mesh = SubResource("BoxMeshCarBody")
-
-[node name="Cabin" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarA" unique_id=1231839973]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.95, -0.05)
-material_override = SubResource("MatCarA")
-mesh = SubResource("BoxMeshCarCabin")
-
-[node name="WheelFL" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarA" unique_id=1190856309]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, -0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelFR" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarA" unique_id=874092020]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, 0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelBL" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarA" unique_id=1848034257]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, -0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelBR" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarA" unique_id=255802301]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, 0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="FloatingCarB" type="Node3D" parent="World/FloatingRealm" unique_id=658008697 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.39132172, 0.09756739, -0.8268905, 0.22256815, -0.89267206, 8.0428954e-08, -0.80232835, -0.20004296, -0.40330148, -22, 20, 34)
-
-[node name="Body" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarB" unique_id=2036629613]
-material_override = SubResource("MatCarB")
-mesh = SubResource("BoxMeshCarBody")
-
-[node name="Cabin" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarB" unique_id=580191902]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.95, 0.04)
-material_override = SubResource("MatCarB")
-mesh = SubResource("BoxMeshCarCabin")
-
-[node name="WheelFL" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarB" unique_id=18725199]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, -0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelFR" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarB" unique_id=1034742137]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, 0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelBL" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarB" unique_id=1133018105]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, -0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelBR" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarB" unique_id=1641705904]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, 0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="FloatingCarC" type="Node3D" parent="World/FloatingRealm" unique_id=1380906192 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.76858276, -0.27974126, -0.26575464, -0.2941373, -0.8081357, 7.5183586e-08, -0.24972768, 0.090893365, -0.81790864, 34, 23, -44)
-
-[node name="Body" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarC" unique_id=1957434122]
-material_override = SubResource("MatCarA")
-mesh = SubResource("BoxMeshCarBody")
-
-[node name="Cabin" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarC" unique_id=1126215416]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
-material_override = SubResource("MatCarA")
-mesh = SubResource("BoxMeshCarCabin")
-
-[node name="WheelFL" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarC" unique_id=1423915689]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, -0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelFR" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarC" unique_id=384660010]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, 0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelBL" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarC" unique_id=1138915464]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, -0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelBR" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarC" unique_id=971339519]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, 0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="FloatingCarD" type="Node3D" parent="World/FloatingRealm" unique_id=1377823444 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.57421726, 0.18657453, 0.5248472, 0.2472136, -0.76084524, 6.9938224e-08, 0.4991594, 0.16218667, -0.6037677, -40, 18, -40)
-
-[node name="Body" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarD" unique_id=200869426]
-material_override = SubResource("MatCarB")
-mesh = SubResource("BoxMeshCarBody")
-
-[node name="Cabin" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarD" unique_id=983865768]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
-material_override = SubResource("MatCarB")
-mesh = SubResource("BoxMeshCarCabin")
-
-[node name="WheelFL" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarD" unique_id=1762047565]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, -0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelFR" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarD" unique_id=1872778330]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, 0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelBL" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarD" unique_id=352529876]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, -0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="WheelBR" type="MeshInstance3D" parent="World/FloatingRealm/FloatingCarD" unique_id=406708854]
-transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, 0.95)
-material_override = SubResource("MatWheel")
-mesh = SubResource("WheelMesh")
-
-[node name="GlitchObeliskA" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=760377007 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(1.9843192, 1.4857836, 1.7916999, -0.37265736, 4.73499, -0.8186407, -1.9400008, 0.6101751, 1.9898841, 22, 14, 26)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("SpikeMesh")
-
-[node name="GlitchObeliskB" type="MeshInstance3D" parent="World/FloatingRealm" unique_id=775394003 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(1.9815937, -1.0710244, -1.0313226, 0.7769614, 4.1765556, 0.3597993, 0.87156045, -1.2881346, 2.0240846, -30, 17, -44)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("SpikeMesh")
-
-[node name="CreatureA" type="Node3D" parent="World/FloatingRealm" unique_id=721752669 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.92042863, -0.19264333, 0.3401465, 0.24059664, 0.96498036, -0.104528464, -0.30809796, 0.17804909, 0.9345449, 3.911686, 10, 12)
-
-[node name="Core" type="MeshInstance3D" parent="World/FloatingRealm/CreatureA" unique_id=378290629]
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("CreatureCoreMesh")
-
-[node name="Eye" type="MeshInstance3D" parent="World/FloatingRealm/CreatureA" unique_id=1232431830]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 1.35)
-material_override = SubResource("MatCreatureEye")
-mesh = SubResource("CreatureEyeMesh")
-
-[node name="TentacleL" type="MeshInstance3D" parent="World/FloatingRealm/CreatureA" unique_id=660088656]
-transform = Transform3D(0.9702957, -0.2419219, 0, 0.22733222, 0.9117797, -0.34202012, 0.08274216, 0.33186066, 0.9396926, -0.88, -1.95, 0.16)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="TentacleR" type="MeshInstance3D" parent="World/FloatingRealm/CreatureA" unique_id=1482534330]
-transform = Transform3D(0.9702957, 0.2419219, 0, -0.22733222, 0.9117797, -0.34202012, -0.08274216, 0.33186066, 0.9396926, 0.88, -1.95, 0.16)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="CreatureB" type="Node3D" parent="World/FloatingRealm" unique_id=103475744 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.6297809, -0.022698365, -0.6142156, -0.17752753, 0.8352013, -0.21289127, 0.5884387, 0.27626708, 0.5931412, -12, 13, 30)
-
-[node name="Core" type="MeshInstance3D" parent="World/FloatingRealm/CreatureB" unique_id=696313008]
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("CreatureCoreMesh")
-
-[node name="EyeL" type="MeshInstance3D" parent="World/FloatingRealm/CreatureB" unique_id=379137564]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.2, 1.3)
-material_override = SubResource("MatCreatureEye")
-mesh = SubResource("CreatureEyeMesh")
-
-[node name="EyeR" type="MeshInstance3D" parent="World/FloatingRealm/CreatureB" unique_id=959442766]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.2, 1.3)
-material_override = SubResource("MatCreatureEye")
-mesh = SubResource("CreatureEyeMesh")
-
-[node name="TentacleL" type="MeshInstance3D" parent="World/FloatingRealm/CreatureB" unique_id=2037396094]
-transform = Transform3D(0.9135454, -0.40673664, 0, 0.38220742, 0.8584519, -0.34202012, 0.13911211, 0.31245092, 0.9396926, -1, -1.9, -0.25)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="TentacleR" type="MeshInstance3D" parent="World/FloatingRealm/CreatureB" unique_id=1359007970]
-transform = Transform3D(0.9135454, 0.40673664, 0, -0.38220742, 0.8584519, -0.34202012, -0.13911211, 0.31245092, 0.9396926, 1, -1.9, -0.25)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="CreatureC" type="Node3D" parent="World/FloatingRealm" unique_id=590263553 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.57238114, -0.12672827, 0.41799504, 0.07433392, 0.70724, 0.112632826, -0.43041188, -0.046385694, 0.57532084, 27, 16, -34)
-
-[node name="Core" type="MeshInstance3D" parent="World/FloatingRealm/CreatureC" unique_id=142846531]
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("CreatureCoreMesh")
-
-[node name="Eye" type="MeshInstance3D" parent="World/FloatingRealm/CreatureC" unique_id=2035785678]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.38, 1.3)
-material_override = SubResource("MatCreatureEye")
-mesh = SubResource("CreatureEyeMesh")
-
-[node name="TentacleL" type="MeshInstance3D" parent="World/FloatingRealm/CreatureC" unique_id=1014273036]
-transform = Transform3D(0.9848077, -0.17364818, 0, 0.16317591, 0.9254165, -0.34202012, 0.05939117, 0.33682406, 0.9396926, -0.84, -1.95, 0.24)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="TentacleR" type="MeshInstance3D" parent="World/FloatingRealm/CreatureC" unique_id=278659734]
-transform = Transform3D(0.9848077, 0.17364818, 0, -0.16317591, 0.9254165, -0.34202012, -0.05939117, 0.33682406, 0.9396926, 0.84, -1.95, 0.24)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="CreatureD" type="Node3D" parent="World/FloatingRealm" unique_id=621034631 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.9038088, -0.23051833, -0.48217312, 0.14293842, 1.0170597, -0.21830727, 0.514974, 0.122273296, 0.9068357, -35, 23, 52)
-
-[node name="Core" type="MeshInstance3D" parent="World/FloatingRealm/CreatureD" unique_id=2068447608]
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("CreatureCoreMesh")
-
-[node name="EyeL" type="MeshInstance3D" parent="World/FloatingRealm/CreatureD" unique_id=1836459983]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0.18, 1.32)
-material_override = SubResource("MatCreatureEye")
-mesh = SubResource("CreatureEyeMesh")
-
-[node name="EyeR" type="MeshInstance3D" parent="World/FloatingRealm/CreatureD" unique_id=628108269]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 0.18, 1.32)
-material_override = SubResource("MatCreatureEye")
-mesh = SubResource("CreatureEyeMesh")
-
-[node name="TentacleL" type="MeshInstance3D" parent="World/FloatingRealm/CreatureD" unique_id=1626274345]
-transform = Transform3D(0.95105654, -0.309017, 0, 0.29038098, 0.89370084, -0.34202012, 0.10569003, 0.3252805, 0.9396926, -0.95, -1.9, 0.1)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="TentacleR" type="MeshInstance3D" parent="World/FloatingRealm/CreatureD" unique_id=1073710837]
-transform = Transform3D(0.95105654, 0.309017, 0, -0.29038098, 0.89370084, -0.34202012, -0.10569003, 0.3252805, 0.9396926, 0.95, -1.9, 0.1)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="CreatureE" type="Node3D" parent="World/FloatingRealm" unique_id=2035604777 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.40603667, -0.057727326, 0.49132654, -0.12790883, 0.6017637, 0.1764079, -0.47788447, -0.21011421, 0.3702411, 41, 27, 62)
-
-[node name="Core" type="MeshInstance3D" parent="World/FloatingRealm/CreatureE" unique_id=1018380040]
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("CreatureCoreMesh")
-
-[node name="Eye" type="MeshInstance3D" parent="World/FloatingRealm/CreatureE" unique_id=1856642594]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 1.28)
-material_override = SubResource("MatCreatureEye")
-mesh = SubResource("CreatureEyeMesh")
-
-[node name="TentacleL" type="MeshInstance3D" parent="World/FloatingRealm/CreatureE" unique_id=911221798]
-transform = Transform3D(0.97437006, -0.22495106, 0, 0.21138485, 0.91560835, -0.34202012, 0.07693779, 0.33325416, 0.9396926, -0.82, -1.88, 0.16)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="TentacleR" type="MeshInstance3D" parent="World/FloatingRealm/CreatureE" unique_id=825952820]
-transform = Transform3D(0.97437006, 0.22495106, 0, -0.21138485, 0.91560835, -0.34202012, -0.07693779, 0.33325416, 0.9396926, 0.82, -1.88, 0.16)
-material_override = SubResource("MatCreatureSkin")
-mesh = SubResource("TentacleMesh")
-
-[node name="DebrisField" type="Node3D" parent="World/FloatingRealm" unique_id=1208370033]
-
-[node name="Debris01" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=338428880 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.70971495, 0.31771687, 0.6287771, -0.11451972, 0.9326883, -0.34202012, -0.6951186, 0.1707294, 0.6983277, -18, 9, 16)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris02" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=1905484226 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8518604, -0.46683878, 0.23747711, 0.43031704, 0.88228065, 0.190809, -0.29859853, -0.06035219, 0.95246863, 14, 15, 28)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris03" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=622844442 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8424622, 0.0363089, -0.5375307, -0.21623683, 0.9366246, -0.27563736, 0.49345642, 0.34844798, 0.7969221, -30, 12, 6)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris04" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=72289964 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8698241, -0.10888742, 0.4811959, 0.18938674, 0.9743103, -0.12186935, -0.45556408, 0.19713703, 0.8681004, 32, 18, 12)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris05" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=1612424454 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.74225515, 0.088068426, -0.66430515, 0.14959905, 0.9445311, 0.2923717, 0.6532056, -0.3163938, 0.6879081, 24, 11, -12)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris06" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=908085013 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.92037606, 0.382148, 0.08289003, -0.34082818, 0.8878877, -0.309017, -0.19168727, 0.2561606, 0.9474375, -12, 23, 38)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris07" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=2043934375 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.42758685, 0.39944547, 0.8109333, -0.14504352, 0.91576874, -0.3746066, -0.8922622, 0.042556256, 0.44950762, -36, 20, -18)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris08" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=1554057400 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.76216775, -0.35807008, 0.53933865, 0.3386916, 0.9305476, 0.1391731, -0.55171406, 0.07659622, 0.83050865, 6, 13, 44)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris09" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=766614676 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.5862169, -0.2774622, -0.7611599, 0.11771675, 0.9587259, -0.25881904, 0.8015562, 0.06212283, 0.59468335, 42, 26, -34)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris10" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=1804579681 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.18534312, 0.22542539, 0.9564681, -0.18730329, 0.9635919, -0.190809, -0.96465814, -0.1437845, 0.22081806, -44, 28, 26)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris11" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=2037963982 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8571039, -0.2906039, 0.42534965, 0.20173584, 0.94909245, 0.2419219, -0.4739996, -0.121543944, 0.872096, -4, 8, -26)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris12" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=286479793 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.840112, 0.1882529, -0.5086971, -0.3052125, 0.9393475, -0.15643448, 0.44839406, 0.28668317, 0.8466142, 20, 10, 2)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris13" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=454569488 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.75798357, -0.009915695, 0.6521983, 0.26359332, 0.91925913, -0.2923717, -0.59664017, 0.39352804, 0.699397, -26, 14, 30)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris14" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=1677255082 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.87279505, -0.39479077, 0.287, 0.35178372, 0.9164279, 0.190809, -0.33834442, -0.06557522, 0.93873477, 34, 16, -4)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris15" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=37335596 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.8082301, 0.015458152, -0.5886639, -0.16985355, 0.96328735, -0.2079117, 0.56383854, 0.26802713, 0.7811835, -38, 19, -42)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris16" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=749806532 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.734918, 0.44485062, 0.5118627, -0.3618422, 0.89559084, -0.25881904, -0.57355535, 0.0049972534, 0.8191515, 10, 22, 56)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris17" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=761597355 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.4396077, 0.035510086, 0.8974877, 0.20588832, 0.96862835, -0.1391731, -0.8742741, 0.2459638, 0.41850534, 28, 24, 36)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris18" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=215494020 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.89562666, 0.028474964, -0.4438941, 0.13159075, 0.9363168, 0.32556817, 0.42489606, -0.34999987, 0.8348433, -24, 26, 52)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris19" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=849113949 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.6922943, 0.41898373, 0.5875212, -0.24162838, 0.9017694, -0.35836795, -0.67995894, 0.106134295, 0.7255282, 44, 30, -58)
-material_override = SubResource("MatGlitchCyan")
-mesh = SubResource("DebrisMesh")
-
-[node name="Debris20" type="MeshInstance3D" parent="World/FloatingRealm/DebrisField" unique_id=2035427514 groups=["dream_float", "dream_spin"]]
-transform = Transform3D(0.43842137, -0.37847322, -0.81519616, 0.2810457, 0.91925913, -0.27563736, 0.8536979, -0.10826206, 0.50939107, -48, 32, 64)
-material_override = SubResource("MatGlitchMagenta")
-mesh = SubResource("DebrisMesh")
+[node name="PlayerDrop" type="Marker3D" parent="World/DragonRidePath" unique_id=452536603]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71, 27.2, -8)

@@ -1,0 +1,40 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/jumping_boots.gd" id="1"]
+
+[sub_resource type="BoxShape3D" id="1"]
+size = Vector3(0.9, 0.4, 0.8)
+
+[sub_resource type="BoxMesh" id="2"]
+size = Vector3(0.9, 0.4, 0.8)
+
+[sub_resource type="BoxMesh" id="3"]
+size = Vector3(1.05, 0.52, 0.95)
+
+[sub_resource type="StandardMaterial3D" id="4"]
+albedo_color = Color(0.12, 0.16, 0.24, 1)
+metallic = 0.18
+roughness = 0.32
+emission_enabled = true
+emission = Color(0.22, 0.72, 1, 1)
+emission_energy_multiplier = 1.3
+
+[node name="JumpingBoots" type="StaticBody3D"]
+script = ExtResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+material_override = SubResource("4")
+mesh = SubResource("2")
+
+[node name="Aura" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("3")
+
+[node name="Glow" type="OmniLight3D" parent="."]
+visible = false
+light_color = Color(0.22, 0.76, 1, 1)
+light_energy = 0.0
+omni_range = 4.8

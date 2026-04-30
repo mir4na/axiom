@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://cqyoqwm80jlnp"]
+
+[ext_resource type="PackedScene" uid="uid://d2q36h2g1sddt" path="res://assets/dragon (1)/upload/Dragon2.glb" id="1_a2ttd"]
+
+[node name="Dragon2" unique_id=830891828 instance=ExtResource("1_a2ttd")]

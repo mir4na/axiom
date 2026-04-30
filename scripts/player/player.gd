@@ -19,6 +19,16 @@ extends CharacterBody3D
 @export var lightning_target_max_distance: float = 80.0
 @export var lightning_strike_height: float = 26.0
 @export var lightning_target_control_radius: float = 22.0
+@export var rewind_pointer_overload_time: float = 10.0
+@export var rewind_overload_stun_duration: float = 5.0
+@export_group("Audio Placeholder")
+@export var sfx_rewind_enter: AudioStream
+@export var sfx_rewind_exit: AudioStream
+@export var sfx_gun_fire: AudioStream
+@export var sfx_gun_reload: AudioStream
+@export var sfx_lightning_target_enter: AudioStream
+@export var sfx_lightning_cast: AudioStream
+@export var sfx_player_hurt: AudioStream
 
 const LIGHTNING_SKILL_ITEM_ID := "LightningSkill"
 const KEY_ITEM_SCENE := preload("res://scenes/objects/key_item.tscn")
@@ -84,6 +94,10 @@ var _lightning_target_core: MeshInstance3D
 var _lightning_target_trace: MeshInstance3D
 var _lightning_target_camera: Camera3D
 var _time_stop_active: bool = false
+var _sfx_player: AudioStreamPlayer
+var _rewind_pointer_elapsed: float = 0.0
+var _rewind_overload_stun_active: bool = false
+var _rewind_overload_stun_remaining: float = 0.0
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -106,6 +120,7 @@ func _ready() -> void:
 	_setup_gun_view_model()
 	_setup_lightning_target_indicator()
 	_resolve_lightning_target_camera()
+	_setup_audio_player()
 	_update_hud_status()
 	
 	_hitbox_pairs.clear()
@@ -170,6 +185,10 @@ func _input(event: InputEvent) -> void:
 		if _lightning_targeting:
 			_set_lightning_targeting(false)
 		return
+	if _rewind_overload_stun_active:
+		if _lightning_targeting:
+			_set_lightning_targeting(false)
+		return
 	if Input.is_action_just_pressed("ui_cancel"):
 		if _lightning_targeting:
 			_set_lightning_targeting(false)
@@ -180,8 +199,10 @@ func _input(event: InputEvent) -> void:
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_SPACE:
 				GameState.deactivate_rewind_mode(true)
+				_play_sfx(sfx_rewind_exit)
 			elif event.keycode == KEY_X and _can_use_axiom():
 				GameState.cancel_rewind_mode()
+				_play_sfx(sfx_rewind_exit)
 		return
 
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -192,6 +213,7 @@ func _input(event: InputEvent) -> void:
 				return
 			if GameState.world_history.size() > 0:
 				GameState.activate_rewind_mode()
+				_play_sfx(sfx_rewind_enter)
 			return
 		elif event.keycode == KEY_X:
 			if _can_use_axiom():
@@ -219,11 +241,17 @@ func _input(event: InputEvent) -> void:
 				return
 			if _can_activate_lightning_target():
 				_set_lightning_targeting(true)
+				_play_sfx(sfx_lightning_target_enter)
 				return
 			if _can_use_gun():
 				_fire_gun()
 
 func _physics_process(delta: float) -> void:
+	if _rewind_overload_stun_active:
+		_rewind_overload_stun_remaining = maxf(0.0, _rewind_overload_stun_remaining - delta)
+		_update_rewind_overload_stun_hud()
+		if _rewind_overload_stun_remaining <= 0.0:
+			_end_rewind_overload_stun()
 	if health > 0.0 and health < max_health:
 		_health_regen_timer += delta
 		while _health_regen_timer >= 1.0:
@@ -251,6 +279,17 @@ func _physics_process(delta: float) -> void:
 		_sync_hitboxes(delta)
 		_update_hud_status()
 		return
+	if _rewind_overload_stun_active:
+		velocity.x = lerpf(velocity.x, 0.0, acceleration * delta)
+		velocity.z = lerpf(velocity.z, 0.0, acceleration * delta)
+		if is_on_floor():
+			velocity.y = 0.0
+		else:
+			velocity.y = max(velocity.y - gravity * delta, -30.0)
+		move_and_slide()
+		_sync_hitboxes(delta)
+		_update_hud_status()
+		return
 	if mobility_locked and not GameState.rewind_mode_active:
 		velocity.x = lerpf(velocity.x, 0.0, acceleration * delta)
 		velocity.z = lerpf(velocity.z, 0.0, acceleration * delta)
@@ -263,6 +302,12 @@ func _physics_process(delta: float) -> void:
 		_update_hud_status()
 		return
 	if GameState.rewind_mode_active:
+		_rewind_pointer_elapsed += delta
+		if _rewind_pointer_elapsed >= rewind_pointer_overload_time:
+			_trigger_rewind_overload_stun()
+			_sync_hitboxes(delta)
+			_update_hud_status()
+			return
 		var r_held = Input.is_key_pressed(KEY_R)
 		var f_held = Input.is_key_pressed(KEY_F)
 		if r_held or f_held:
@@ -280,6 +325,7 @@ func _physics_process(delta: float) -> void:
 		_sync_hitboxes(delta)
 		_update_hud_status()
 		return
+	_rewind_pointer_elapsed = 0.0
 
 	var dir = GameState.time_direction
 	if dir == 1 and not GameState.is_scrubbing_past:
@@ -532,7 +578,48 @@ func _node_has_property(node: Object, property_name: String) -> bool:
 	return false
 
 func _can_use_axiom() -> bool:
+	if _rewind_overload_stun_active:
+		return false
 	return GameState.has_rewind_access()
+
+func _trigger_rewind_overload_stun() -> void:
+	if _rewind_overload_stun_active:
+		return
+	_rewind_pointer_elapsed = 0.0
+	if GameState.rewind_mode_active:
+		GameState.cancel_rewind_mode()
+		_play_sfx(sfx_rewind_exit)
+	_rewind_overload_stun_active = true
+	_rewind_overload_stun_remaining = maxf(0.1, rewind_overload_stun_duration)
+	_update_rewind_overload_stun_hud()
+
+func _end_rewind_overload_stun() -> void:
+	_rewind_overload_stun_active = false
+	_rewind_overload_stun_remaining = 0.0
+	_update_rewind_overload_stun_hud()
+
+func _update_rewind_overload_stun_hud() -> void:
+	if hud == null or not hud.has_method("set_rewind_stun_state"):
+		return
+	var ratio: float = 0.0
+	if _rewind_overload_stun_active and rewind_overload_stun_duration > 0.001:
+		ratio = clampf(_rewind_overload_stun_remaining / rewind_overload_stun_duration, 0.0, 1.0)
+	hud.call("set_rewind_stun_state", _rewind_overload_stun_active, ratio)
+
+func _setup_audio_player() -> void:
+	_sfx_player = AudioStreamPlayer.new()
+	_sfx_player.name = "PlayerSFX"
+	_sfx_player.bus = "Master"
+	_sfx_player.autoplay = false
+	add_child(_sfx_player)
+
+func _play_sfx(stream: AudioStream) -> void:
+	if stream == null:
+		return
+	if _sfx_player == null or not is_instance_valid(_sfx_player):
+		return
+	_sfx_player.stream = stream
+	_sfx_player.play()
 
 func _has_gun_selected() -> bool:
 	return GameState.has_selected_item("Gun")
@@ -554,6 +641,7 @@ func _can_reload_gun() -> bool:
 func _start_gun_reload() -> void:
 	if not _can_reload_gun():
 		return
+	_play_sfx(sfx_gun_reload)
 	_gun_reloading = true
 	_gun_reload_timer = _gun_reload_duration
 
@@ -564,6 +652,7 @@ func _fire_gun() -> void:
 		_start_gun_reload()
 		return
 	_gun_ammo -= 1
+	_play_sfx(sfx_gun_fire)
 	_gun_shot_timer = _gun_shot_cooldown
 	_gun_recoil = minf(1.0, _gun_recoil + 0.42)
 	var from: Vector3 = camera.global_position
@@ -935,6 +1024,7 @@ func _cast_lightning_at_target() -> void:
 	cast_point = _snap_lightning_point_to_ground(cast_point)
 	GameState.consume_selected_item(LIGHTNING_SKILL_ITEM_ID)
 	_set_lightning_targeting(false)
+	_play_sfx(sfx_lightning_cast)
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return
@@ -1050,6 +1140,7 @@ func set_cinematic_pose(target_position: Vector3, target_yaw: float, target_pitc
 
 func take_damage(amount: float) -> void:
 	health = maxf(0.0, health - amount)
+	_play_sfx(sfx_player_hurt)
 	_update_hud_status()
 	if health <= 0.0:
 		var world := get_parent()

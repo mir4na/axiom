@@ -38,7 +38,7 @@ func configure(direction: Vector3, speed_value: float, damage_value: float, play
 func _physics_process(delta: float) -> void:
 	if not _active:
 		return
-	if GameState.is_time_blocked():
+	if _is_time_state_blocked():
 		return
 	_life_left -= delta
 	if _life_left <= 0.0:
@@ -87,7 +87,7 @@ func _play_impact() -> void:
 	queue_free()
 
 func _is_time_state_blocked() -> bool:
-	return GameState.is_time_blocked()
+	return GameState.is_paused or GameState.time_direction != GameState.TIME_FORWARD or GameState.is_scrubbing_past
 
 func _await_tween_with_time_control(tween: Tween) -> void:
 	if tween == null:
