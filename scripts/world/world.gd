@@ -2294,7 +2294,9 @@ func restart_current_level() -> void:
 	else:
 		GameState.full_reset_inventory()
 	var screen_fx := _screen_fx()
-	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
+	if screen_fx != null and screen_fx.has_method("respawn_to_scene"):
+		await screen_fx.respawn_to_scene(current_scene.scene_file_path, true)
+	elif screen_fx != null and screen_fx.has_method("reboot_to_scene"):
 		await screen_fx.reboot_to_scene(current_scene.scene_file_path, true)
 	else:
 		get_tree().change_scene_to_file(current_scene.scene_file_path)

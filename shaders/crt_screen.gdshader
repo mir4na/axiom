@@ -11,6 +11,9 @@ uniform float vhs_jitter_strength : hint_range(0.0, 0.03) = 0.0038;
 uniform float vhs_band_strength : hint_range(0.0, 0.2) = 0.06;
 uniform float vhs_bleed_strength : hint_range(0.0, 0.25) = 0.05;
 uniform float vhs_ghost_strength : hint_range(0.0, 0.3) = 0.055;
+uniform float corner_roundness : hint_range(0.0, 0.8) = 0.30;
+uniform float corner_softness : hint_range(0.001, 0.2) = 0.035;
+uniform float content_fit : hint_range(0.7, 1.2) = 0.84;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(41.0, 289.0))) * 45758.5453);
@@ -22,9 +25,20 @@ vec2 warp(vec2 uv) {
 	return p * 0.5 + 0.5;
 }
 
+float rounded_mask(vec2 uv, float radius, float feather) {
+	vec2 p = uv * 2.0 - 1.0;
+	vec2 half_size = vec2(1.0 - radius);
+	vec2 q = abs(p) - half_size;
+	float dist = length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - radius;
+	return 1.0 - smoothstep(0.0, feather, dist);
+}
+
 void fragment() {
 	vec2 viewport_size = 1.0 / SCREEN_PIXEL_SIZE;
-	vec2 vhs_uv = SCREEN_UV;
+	// Fit gameplay into CRT shape first so edges are projected inward,
+	// not hard-cropped by the rounded frame mask.
+	vec2 fit_uv = (SCREEN_UV - vec2(0.5)) / content_fit + vec2(0.5);
+	vec2 vhs_uv = fit_uv;
 	float tape_wave = sin(vhs_uv.y * 34.0 + TIME * 2.6) * 0.5 + 0.5;
 	float tape_wave_b = sin(vhs_uv.y * 16.0 - TIME * 1.7) * 0.5 + 0.5;
 	float tape_band = smoothstep(0.48, 1.0, tape_wave) * vhs_band_strength;
@@ -33,8 +47,8 @@ void fragment() {
 	vhs_uv.x += sin(vhs_uv.y * 42.0 + TIME * 3.3) * vhs_jitter_strength * tape_total;
 	vhs_uv.x += sin(vhs_uv.y * 8.0 - TIME * 1.15) * vhs_jitter_strength * 0.35;
 	vec2 uv = warp(vhs_uv);
-	vec3 base = texture(screen_texture, SCREEN_UV).rgb;
-	float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
+	// Keep the CRT frame geometry stable and use warp only for signal distortion.
+	float inside = rounded_mask(fit_uv, corner_roundness, corner_softness);
 	float chroma = chroma_strength / viewport_size.x;
 	vec3 crt = vec3(
 		texture(screen_texture, uv + vec2(chroma, 0.0)).r,
@@ -54,6 +68,6 @@ void fragment() {
 	crt = mix(crt, crt * vec3(1.03, 0.985, 0.95), 0.14);
 	crt += vec3(tape_total * 0.018, tape_total * 0.008, tape_total * 0.012);
 	crt += noise;
-	crt *= inside;
-	COLOR = vec4(mix(base, crt, intensity), 1.0);
+	float effect_mix = intensity * inside;
+	COLOR = vec4(crt * effect_mix, 1.0);
 }
