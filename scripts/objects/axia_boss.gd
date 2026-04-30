@@ -138,6 +138,8 @@ func _setup_audio_player() -> void:
 func _play_sfx(stream: AudioStream) -> void:
 	if stream == null:
 		return
+	if stream != sfx_sword_fire:
+		return
 	if _sfx_player == null or not is_instance_valid(_sfx_player):
 		return
 	_sfx_player.stream = stream

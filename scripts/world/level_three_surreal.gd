@@ -26,8 +26,9 @@ enum Stage {
 @export var bob_speed: float = 0.8
 @export var bob_height: float = 0.55
 @export var spin_speed: float = 0.24
-@export var extra_float_mesh_count: int = 24
-@export var extra_float_prop_count: int = 64
+@export_range(1, 4, 1) var floating_update_slices: int = 2
+@export var extra_float_mesh_count: int = 8
+@export var extra_float_prop_count: int = 16
 @export var surreal_field_center: Vector3 = Vector3(36.0, 34.0, -10.0)
 @export var surreal_field_extent: Vector3 = Vector3(58.0, 26.0, 44.0)
 
@@ -55,6 +56,7 @@ var _floating_nodes: Array[Node3D] = []
 var _base_positions: Dictionary = {}
 var _phase_map: Dictionary = {}
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var _floating_update_bucket: int = 0
 
 func _ready() -> void:
 	_rng.randomize()
@@ -92,13 +94,16 @@ func _process(delta: float) -> void:
 	if GameState.is_time_blocked():
 		return
 	_time += delta
-	for node3d in _floating_nodes:
+	var slices: int = maxi(1, floating_update_slices)
+	for i in range(_floating_update_bucket, _floating_nodes.size(), slices):
+		var node3d: Node3D = _floating_nodes[i]
 		if node3d == null or not is_instance_valid(node3d):
 			continue
 		var base_position: Vector3 = _base_positions.get(node3d, node3d.position)
 		var phase: float = float(_phase_map.get(node3d, 0.0))
 		node3d.position = base_position + Vector3(0.0, sin(_time * bob_speed + phase) * bob_height, 0.0)
 		node3d.rotate_y(delta * spin_speed)
+	_floating_update_bucket = (_floating_update_bucket + 1) % slices
 
 func _collect_floaters() -> void:
 	_floating_nodes.clear()

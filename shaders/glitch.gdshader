@@ -7,6 +7,7 @@ uniform float screenshot_flash : hint_range(0.0, 1.0) = 0.0;
 uniform float corner_roundness : hint_range(0.0, 0.8) = 0.22;
 uniform float corner_softness : hint_range(0.001, 0.2) = 0.028;
 uniform float content_fit : hint_range(0.7, 1.2) = 0.92;
+uniform bool apply_crt_mask = false;
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
 
 float rand(vec2 co) {
@@ -25,7 +26,10 @@ void fragment() {
 	vec2 frame_uv = (SCREEN_UV - vec2(0.5)) / content_fit + vec2(0.5);
 	vec2 uv = frame_uv;
 	float time = TIME * 10.0;
-	float frame_mask = rounded_mask(frame_uv, corner_roundness, corner_softness);
+	float frame_mask = 1.0;
+	if (apply_crt_mask) {
+		frame_mask = rounded_mask(frame_uv, corner_roundness, corner_softness);
+	}
 
 	if (glitch_intensity > 0.0) {
 		float noise = rand(vec2(floor(uv.y * 30.0), floor(time)));

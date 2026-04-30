@@ -1,6 +1,6 @@
 extends Node
 
-@export var scoop_objective: String = "Pick up the scoop"
+@export var shovel_objective: String = "Pick up the shovel"
 @export var dig_objective: String = "Bury the old stuff"
 @export var rest_objective: String = "Rest on the sofa"
 @export var check_outside_objective: String = "Check outside"
@@ -10,8 +10,8 @@ extends Node
 
 func get_objective_text(key: String, fallback: String = "") -> String:
 	match key:
-		"scoop":
-			return scoop_objective
+		"shovel":
+			return shovel_objective
 		"dig":
 			return dig_objective
 		"rest":

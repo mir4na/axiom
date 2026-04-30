@@ -1,23 +1,9 @@
 [gd_scene format=3 uid="uid://b5l1buxicxxq5"]
 
 [ext_resource type="Script" uid="uid://br738ge8fh8ny" path="res://scripts/objects/electric_orb.gd" id="1_orb_script"]
-[ext_resource type="Shader" uid="uid://b2dspj2ryyyri" path="res://shaders/electric_orb.gdshader" id="2_orb_shader"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_orb"]
 radius = 2.9
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_core"]
-render_priority = 0
-shader = ExtResource("2_orb_shader")
-shader_parameter/tint_a = Color(0.2, 0.94, 1, 0.95)
-shader_parameter/tint_b = Color(0.8, 0.25, 1, 0.92)
-shader_parameter/glow_strength = 10.6
-shader_parameter/flicker_speed = 16.0
-shader_parameter/ripple_speed = 8.2
-
-[sub_resource type="SphereMesh" id="SphereMesh_core"]
-radius = 1.5
-height = 3.0
 
 [node name="ElectricOrb" type="CharacterBody3D" unique_id=1151066551]
 script = ExtResource("1_orb_script")
@@ -25,11 +11,13 @@ script = ExtResource("1_orb_script")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=488463843]
 shape = SubResource("SphereShape3D_orb")
 
-[node name="CoreShard" type="MeshInstance3D" parent="." unique_id=583525094]
-material_override = SubResource("ShaderMaterial_core")
-mesh = SubResource("SphereMesh_core")
+[node name="VisualRoot" type="Node3D" parent="." unique_id=297821509]
+transform = Transform3D(0.075, 0, 0, 0, 0.075, 0, 0, 0, 0.075, 0, 0, 0)
+
+[node name="ModelAnchor" type="Node3D" parent="VisualRoot" unique_id=520080425]
+transform = Transform3D(8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0)
 
 [node name="GlowLight" type="OmniLight3D" parent="." unique_id=2134898988]
-light_color = Color(0.28, 0.92, 1, 1)
-light_energy = 4.4
+light_color = Color(1, 0.42, 0.16, 1)
+light_energy = 4.6
 omni_range = 9.4

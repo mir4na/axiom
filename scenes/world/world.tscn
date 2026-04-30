@@ -3,10 +3,15 @@
 [ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="1_world"]
 [ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="7_house"]
-[ext_resource type="PackedScene" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
+[ext_resource type="PackedScene" uid="uid://bedhgyqv8dpsb" path="res://scenes/objects/shovel.tscn" id="8_shovel"]
 [ext_resource type="PackedScene" uid="uid://df54f57tnrpkk" path="res://scenes/objects/dig_spot.tscn" id="9_dig"]
 [ext_resource type="Script" uid="uid://s8lr0lefbmx2" path="res://scripts/world/objective_config.gd" id="10_objective"]
 [ext_resource type="PackedScene" uid="uid://brhadciupca48" path="res://scenes/objects/ending_board.tscn" id="11_ending_board"]
+[ext_resource type="AudioStream" uid="uid://cxshusirauqx4" path="res://audio/bgm/level_1_before_disaster.mp3" id="12_bgm_level1"]
+[ext_resource type="AudioStream" uid="uid://unoa5a565im0" path="res://audio/bgm/level_2.mp3" id="13_bgm_level2"]
+[ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="14_bgm_level4"]
+[ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="15_sfx_glitch"]
+[ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="16_sfx_sky_cracking"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.71349037, 0.5589468, 0.25426564, 1)
@@ -98,6 +103,20 @@ size = Vector3(1, 10, 35)
 
 [node name="World" type="Node3D" unique_id=921239400]
 script = ExtResource("1_world")
+bgm_world_intro = ExtResource("12_bgm_level1")
+bgm_level_one = ExtResource("12_bgm_level1")
+bgm_level_two = ExtResource("13_bgm_level2")
+bgm_level_three = ExtResource("13_bgm_level2")
+bgm_level_four = ExtResource("14_bgm_level4")
+bgm_ending_credits = ExtResource("14_bgm_level4")
+sfx_glitch_overlay = ExtResource("15_sfx_glitch")
+sfx_sky_cracking = ExtResource("16_sfx_sky_cracking")
+
+[node name="Audio" type="Node" parent="." unique_id=1627757438]
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="Audio" unique_id=1466325774]
+
+[node name="SFXPlayer2D" type="AudioStreamPlayer2D" parent="Audio" unique_id=1292983177]
 
 [node name="ObjectiveConfig" type="Node" parent="." unique_id=1423068012]
 script = ExtResource("10_objective")
@@ -1366,7 +1385,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.046556, 5, 0.5)
 shape = SubResource("ShapeYardEW")
 
 [node name="Shovel" parent="." unique_id=1577906131 instance=ExtResource("8_shovel")]
-transform = Transform3D(0.9722074, -0.1926882, -0.13298142, 0.22170511, 0.9402355, 0.25846532, 0.075230606, -0.28076452, 0.9568237, 5.6831894, 0, 5.455897)
+transform = Transform3D(0.9722074, -0.1926882, -0.13298137, 0.2217051, 0.9402354, 0.2584653, 0.075230576, -0.28076452, 0.9568237, 5.688654, 0.029126406, 5.5363107)
 
 [node name="DigSpot" parent="." unique_id=2020308069 instance=ExtResource("9_dig")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.569308, 0, 7.4110394)

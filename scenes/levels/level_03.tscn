@@ -10,6 +10,11 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/level4_gate.tscn" id="8"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="9"]
 [ext_resource type="Shader" uid="uid://saoeakkn2rnt" path="res://shaders/surreal_white_surface.gdshader" id="10"]
+[ext_resource type="AudioStream" uid="uid://cxshusirauqx4" path="res://audio/bgm/level_1_before_disaster.mp3" id="11_bgm_level1"]
+[ext_resource type="AudioStream" uid="uid://unoa5a565im0" path="res://audio/bgm/level_2.mp3" id="12_bgm_level2"]
+[ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="13_bgm_level4"]
+[ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="14_sfx_glitch"]
+[ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="15_sfx_sky_cracking"]
 
 [sub_resource type="ProceduralSkyMaterial" id="1"]
 sky_top_color = Color(0.98, 0.99, 1, 1)
@@ -145,8 +150,9 @@ height = 2.8
 
 [node name="Level03" type="Node3D" unique_id=364480891]
 script = ExtResource("1")
-extra_float_mesh_count = 4680
-extra_float_prop_count = 10900
+floating_update_slices = 3
+extra_float_mesh_count = 0
+extra_float_prop_count = 0
 surreal_field_center = Vector3(34, 30, -8)
 surreal_field_extent = Vector3(174, 87, 132)
 
@@ -176,6 +182,20 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 34, 0)
 
 [node name="World" type="Node3D" parent="." unique_id=944909002]
 script = ExtResource("2")
+bgm_world_intro = ExtResource("11_bgm_level1")
+bgm_level_one = ExtResource("11_bgm_level1")
+bgm_level_two = ExtResource("12_bgm_level2")
+bgm_level_three = ExtResource("12_bgm_level2")
+bgm_level_four = ExtResource("13_bgm_level4")
+bgm_ending_credits = ExtResource("13_bgm_level4")
+sfx_glitch_overlay = ExtResource("14_sfx_glitch")
+sfx_sky_cracking = ExtResource("15_sfx_sky_cracking")
+
+[node name="Audio" type="Node" parent="World" unique_id=693592687]
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="World/Audio" unique_id=101583076]
+
+[node name="SFXPlayer2D" type="AudioStreamPlayer2D" parent="World/Audio" unique_id=1219291697]
 
 [node name="Player" parent="World" unique_id=1430319868 instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 32.204937, 0)

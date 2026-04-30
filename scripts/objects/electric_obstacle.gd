@@ -7,7 +7,7 @@ signal destroyed(obstacle: Node3D)
 @export var fire_cooldown: float = 8.0
 @export var projectile_speed: float = 10.5
 @export var projectile_damage: float = 50.0
-@export var projectile_radius: float = 4.35
+@export var projectile_radius: float = 1.25
 @export var detection_range: float = 260.0
 
 @onready var _core_body: StaticBody3D = get_node_or_null("CoreBody") as StaticBody3D
@@ -185,11 +185,10 @@ func _fire_projectile(player: CharacterBody3D) -> void:
 	_flash_corridor_lights()
 
 func _on_projectile_finished(projectile: Node3D) -> void:
-	var remaining: Array[Node3D] = []
-	for entry in _projectiles:
-		if entry != projectile and entry != null and is_instance_valid(entry):
-			remaining.append(entry)
-	_projectiles = remaining
+	var index: int = _projectiles.find(projectile)
+	if index >= 0:
+		_projectiles.remove_at(index)
+	_cleanup_projectiles()
 
 func _clear_projectiles() -> void:
 	for projectile in _projectiles:
@@ -201,11 +200,10 @@ func _clear_projectiles() -> void:
 	_projectiles.clear()
 
 func _cleanup_projectiles() -> void:
-	var remaining: Array[Node3D] = []
-	for projectile in _projectiles:
-		if projectile != null and is_instance_valid(projectile):
-			remaining.append(projectile)
-	_projectiles = remaining
+	for i in range(_projectiles.size() - 1, -1, -1):
+		var projectile: Node3D = _projectiles[i]
+		if projectile == null or not is_instance_valid(projectile):
+			_projectiles.remove_at(i)
 
 func _setup_materials() -> void:
 	if _core_mesh != null:

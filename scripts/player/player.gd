@@ -98,6 +98,7 @@ var _sfx_player: AudioStreamPlayer
 var _rewind_pointer_elapsed: float = 0.0
 var _rewind_overload_stun_active: bool = false
 var _rewind_overload_stun_remaining: float = 0.0
+var _rewind_overload_enabled: bool = true
 var _suppress_space_jump_until_release: bool = false
 
 func _ready() -> void:
@@ -310,12 +311,15 @@ func _physics_process(delta: float) -> void:
 		_update_hud_status()
 		return
 	if GameState.rewind_mode_active:
-		_rewind_pointer_elapsed += delta
-		if _rewind_pointer_elapsed >= rewind_pointer_overload_time:
-			_trigger_rewind_overload_stun()
-			_sync_hitboxes(delta)
-			_update_hud_status()
-			return
+		if _rewind_overload_enabled:
+			_rewind_pointer_elapsed += delta
+			if _rewind_pointer_elapsed >= rewind_pointer_overload_time:
+				_trigger_rewind_overload_stun()
+				_sync_hitboxes(delta)
+				_update_hud_status()
+				return
+		else:
+			_rewind_pointer_elapsed = 0.0
 		var r_held = Input.is_key_pressed(KEY_R)
 		var f_held = Input.is_key_pressed(KEY_F)
 		if r_held or f_held:
@@ -639,6 +643,8 @@ func _can_use_axiom() -> bool:
 	return GameState.has_rewind_access()
 
 func _trigger_rewind_overload_stun() -> void:
+	if not _rewind_overload_enabled:
+		return
 	if _rewind_overload_stun_active:
 		return
 	_rewind_pointer_elapsed = 0.0
@@ -653,6 +659,12 @@ func _end_rewind_overload_stun() -> void:
 	_rewind_overload_stun_active = false
 	_rewind_overload_stun_remaining = 0.0
 	_update_rewind_overload_stun_hud()
+
+func set_rewind_overload_enabled(enabled: bool) -> void:
+	_rewind_overload_enabled = enabled
+	_rewind_pointer_elapsed = 0.0
+	if not enabled and _rewind_overload_stun_active:
+		_end_rewind_overload_stun()
 
 func _update_rewind_overload_stun_hud() -> void:
 	if hud == null or not hud.has_method("set_rewind_stun_state"):
@@ -671,6 +683,8 @@ func _setup_audio_player() -> void:
 
 func _play_sfx(stream: AudioStream) -> void:
 	if stream == null:
+		return
+	if stream != sfx_gun_fire:
 		return
 	if _sfx_player == null or not is_instance_valid(_sfx_player):
 		return

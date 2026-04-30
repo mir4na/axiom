@@ -3,12 +3,13 @@ extends RefCounted
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const BROKEN_HOUSE_SCENE := preload("res://scenes/objects/broken_house.tscn")
 const METEOR_SHADER := preload("res://shaders/spatial_glitch.gdshader")
+const LEVEL_ONE_TUTORIAL_OVERLAY_SCENE := preload("res://scenes/ui/level_one_tutorial_overlay.tscn")
 const ESCAPE_DURATION := 60.0
 const SMALL_METEOR_INTERVAL := 3.0
 const TUTORIAL_PAGES := [
-	"AXIOM lets you rewind the recorded state of the world.",
-	"Press R to enter rewind mode, then hold R or F to move the pointer through time.",
-	"Reach the underground hole before the timer ends."
+	"AXIOM records your recent movement and facing over time.",
+	"You can rewind to any recorded moment and commit that state as your new position.",
+	"Let's run a quick rewind tutorial before the final sprint."
 ]
 var _world
 var _front_door: Node3D
@@ -41,14 +42,29 @@ var _escape_time_left: float = 0.0
 var _tutorial_active: bool = false
 var _tutorial_page_index: int = 0
 var _tutorial_space_consumed: bool = false
+var _rewind_tutorial_prompt_active: bool = false
+var _rewind_tutorial_active: bool = false
+var _rewind_tutorial_start_index: int = -1
+var _rewind_tutorial_shift_step_one_done: bool = false
+var _rewind_tutorial_shift_step_two_done: bool = false
 var _small_meteor_spawn_timer: float = 0.0
 var _active_small_meteors: Array = []
 var _escape_failed_sequence_started: bool = false
 var _timer_label: Label
+var _tutorial_overlay_root: Control
 var _tutorial_panel: Panel
 var _tutorial_title: Label
 var _tutorial_body: Label
 var _tutorial_hint: Label
+var _tutorial_callout_rewind: Panel
+var _tutorial_callout_rewind_label: Label
+var _tutorial_callout_rewind_line: ColorRect
+var _tutorial_callout_warning: Panel
+var _tutorial_callout_warning_label: Label
+var _tutorial_callout_warning_line: ColorRect
+var _tutorial_callout_commit: Panel
+var _tutorial_callout_commit_label: Label
+var _tutorial_callout_commit_line: ColorRect
 var _marker_root: Node3D
 var _guest_reveal_exterior_start: Node3D
 var _guest_reveal_exterior_start_look: Node3D
@@ -185,6 +201,11 @@ func _prepare_phase() -> void:
 	_tutorial_active = false
 	_tutorial_page_index = 0
 	_tutorial_space_consumed = false
+	_rewind_tutorial_prompt_active = false
+	_rewind_tutorial_active = false
+	_rewind_tutorial_start_index = -1
+	_rewind_tutorial_shift_step_one_done = false
+	_rewind_tutorial_shift_step_two_done = false
 	_small_meteor_spawn_timer = SMALL_METEOR_INTERVAL
 	_clear_small_meteors()
 	_escape_failed_sequence_started = false
@@ -217,6 +238,9 @@ func _prepare_phase() -> void:
 		_timer_label.visible = false
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = false
+	_set_rewind_overload_enabled(true)
+	_set_hud_rewind_tutorial_focus(false)
+	_set_rewind_tutorial_callouts_visible(false)
 
 func _configure_house() -> void:
 	if _world.house == null:
@@ -248,109 +272,38 @@ func _configure_house() -> void:
 func _create_escape_ui() -> void:
 	if _world._intro_ui == null or _timer_label != null:
 		return
-	var gameplay_font: Font = null
-	if _world._objective_label != null:
-		gameplay_font = _world._objective_label.get_theme_font("font")
-	_timer_label = Label.new()
-	_timer_label.anchor_left = 0.5
-	_timer_label.anchor_top = 0.02
-	_timer_label.anchor_right = 0.5
-	_timer_label.anchor_bottom = 0.02
-	_timer_label.offset_left = -80.0
-	_timer_label.offset_top = 0.0
-	_timer_label.offset_right = 80.0
-	_timer_label.offset_bottom = 44.0
-	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_timer_label.add_theme_font_size_override("font_size", 60)
-	if gameplay_font != null:
-		_timer_label.add_theme_font_override("font", gameplay_font)
-	_timer_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.64, 1.0))
-	_timer_label.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.02, 0.92))
-	_timer_label.add_theme_constant_override("outline_size", 10)
-	_timer_label.visible = false
-	_world._intro_ui.add_child(_timer_label)
-	_tutorial_panel = Panel.new()
-	_tutorial_panel.anchor_left = 0.5
-	_tutorial_panel.anchor_top = 0.5
-	_tutorial_panel.anchor_right = 0.5
-	_tutorial_panel.anchor_bottom = 0.5
-	_tutorial_panel.offset_left = -320.0
-	_tutorial_panel.offset_top = -130.0
-	_tutorial_panel.offset_right = 320.0
-	_tutorial_panel.offset_bottom = 130.0
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.07, 0.1, 0.94)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = Color(0.2, 0.88, 1.0, 0.9)
-	style.corner_radius_top_left = 10
-	style.corner_radius_top_right = 10
-	style.corner_radius_bottom_left = 10
-	style.corner_radius_bottom_right = 10
-	_tutorial_panel.add_theme_stylebox_override("panel", style)
-	_tutorial_panel.visible = false
-	_world._intro_ui.add_child(_tutorial_panel)
-	_tutorial_title = Label.new()
-	_tutorial_title.anchor_left = 0.0
-	_tutorial_title.anchor_top = 0.0
-	_tutorial_title.anchor_right = 1.0
-	_tutorial_title.anchor_bottom = 0.0
-	_tutorial_title.offset_left = 24.0
-	_tutorial_title.offset_top = 18.0
-	_tutorial_title.offset_right = -24.0
-	_tutorial_title.offset_bottom = 50.0
-	_tutorial_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_tutorial_title.text = "AXIOM"
-	_tutorial_title.add_theme_font_size_override("font_size", 52)
-	if gameplay_font != null:
-		_tutorial_title.add_theme_font_override("font", gameplay_font)
-	_tutorial_title.add_theme_color_override("font_color", Color(0.92, 0.98, 1.0, 1.0))
-	_tutorial_panel.add_child(_tutorial_title)
-	_tutorial_body = Label.new()
-	_tutorial_body.anchor_left = 0.0
-	_tutorial_body.anchor_top = 0.0
-	_tutorial_body.anchor_right = 1.0
-	_tutorial_body.anchor_bottom = 1.0
-	_tutorial_body.offset_left = 24.0
-	_tutorial_body.offset_top = 60.0
-	_tutorial_body.offset_right = -24.0
-	_tutorial_body.offset_bottom = -54.0
-	_tutorial_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_tutorial_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_tutorial_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_tutorial_body.add_theme_font_size_override("font_size", 44)
-	if gameplay_font != null:
-		_tutorial_body.add_theme_font_override("font", gameplay_font)
-	_tutorial_body.add_theme_color_override("font_color", Color(0.88, 0.96, 0.98, 1.0))
-	_tutorial_panel.add_child(_tutorial_body)
-	_tutorial_hint = Label.new()
-	_tutorial_hint.anchor_left = 0.0
-	_tutorial_hint.anchor_top = 1.0
-	_tutorial_hint.anchor_right = 1.0
-	_tutorial_hint.anchor_bottom = 1.0
-	_tutorial_hint.offset_left = 24.0
-	_tutorial_hint.offset_top = -38.0
-	_tutorial_hint.offset_right = -24.0
-	_tutorial_hint.offset_bottom = -12.0
-	_tutorial_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_tutorial_hint.text = "[SPACE] NEXT"
-	_tutorial_hint.add_theme_font_size_override("font_size", 32)
-	if gameplay_font != null:
-		_tutorial_hint.add_theme_font_override("font", gameplay_font)
-	_tutorial_hint.add_theme_color_override("font_color", Color(1.0, 0.84, 0.44, 1.0))
-	_tutorial_panel.add_child(_tutorial_hint)
+	if LEVEL_ONE_TUTORIAL_OVERLAY_SCENE == null:
+		return
+	_tutorial_overlay_root = LEVEL_ONE_TUTORIAL_OVERLAY_SCENE.instantiate() as Control
+	if _tutorial_overlay_root == null:
+		return
+	_world._intro_ui.add_child(_tutorial_overlay_root)
+	_timer_label = _tutorial_overlay_root.get_node_or_null("TimerLabel") as Label
+	_tutorial_panel = _tutorial_overlay_root.get_node_or_null("TutorialPanel") as Panel
+	_tutorial_title = _tutorial_overlay_root.get_node_or_null("TutorialPanel/TutorialTitle") as Label
+	_tutorial_body = _tutorial_overlay_root.get_node_or_null("TutorialPanel/TutorialBody") as Label
+	_tutorial_hint = _tutorial_overlay_root.get_node_or_null("TutorialPanel/TutorialHint") as Label
+	_tutorial_callout_rewind = _tutorial_overlay_root.get_node_or_null("RewindCallout") as Panel
+	_tutorial_callout_rewind_label = _tutorial_overlay_root.get_node_or_null("RewindCallout/Label") as Label
+	_tutorial_callout_rewind_line = _tutorial_overlay_root.get_node_or_null("RewindLine") as ColorRect
+	_tutorial_callout_warning = _tutorial_overlay_root.get_node_or_null("WarningCallout") as Panel
+	_tutorial_callout_warning_label = _tutorial_overlay_root.get_node_or_null("WarningCallout/Label") as Label
+	_tutorial_callout_warning_line = _tutorial_overlay_root.get_node_or_null("WarningLine") as ColorRect
+	_tutorial_callout_commit = _tutorial_overlay_root.get_node_or_null("CommitCallout") as Panel
+	_tutorial_callout_commit_label = _tutorial_overlay_root.get_node_or_null("CommitCallout/Label") as Label
+	_tutorial_callout_commit_line = _tutorial_overlay_root.get_node_or_null("CommitLine") as ColorRect
 
 func _connect_hooks() -> void:
 	var axiom_callable := Callable(self, "_on_axiom_equipped_changed")
+	var rewind_mode_callable := Callable(self, "_on_rewind_mode_changed")
 	var front_door_callable := Callable(self, "_on_front_door_opened")
 	var guest_door_callable := Callable(self, "_on_guest_door_opened")
 	var guest_locked_callable := Callable(self, "_on_guest_door_locked_interaction")
 	var hole_descended_callable := Callable(self, "_on_underground_hole_descended")
 	if not GameState.axiom_equipped_changed.is_connected(axiom_callable):
 		GameState.axiom_equipped_changed.connect(axiom_callable)
+	if not GameState.rewind_mode_changed.is_connected(rewind_mode_callable):
+		GameState.rewind_mode_changed.connect(rewind_mode_callable)
 	if _front_door != null and _front_door.has_signal("opened") and not _front_door.is_connected("opened", front_door_callable):
 		_front_door.connect("opened", front_door_callable)
 	if _guest_door != null and _guest_door.has_signal("opened") and not _guest_door.is_connected("opened", guest_door_callable):
@@ -475,6 +428,12 @@ func _process_escape_phase(delta: float) -> void:
 					_update_axiom_tutorial_page()
 		else:
 			_tutorial_space_consumed = false
+		return
+	if _rewind_tutorial_prompt_active:
+		return
+	if _rewind_tutorial_active:
+		_process_rewind_tutorial_guidance()
+		return
 	if GameState.rewind_mode_active:
 		return
 	if not _escape_timer_running or _escape_failed_sequence_started:
@@ -500,10 +459,16 @@ func _start_axiom_tutorial() -> void:
 	_tutorial_active = true
 	_tutorial_page_index = 0
 	_tutorial_space_consumed = true
+	_rewind_tutorial_prompt_active = false
+	_rewind_tutorial_active = false
 	_set_gameplay_ui_visible(false)
 	_world._set_intro_lock(true)
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = true
+	_set_tutorial_panel_rewind_layout(false)
+	_set_rewind_tutorial_callouts_visible(false)
+	if _tutorial_title != null:
+		_tutorial_title.text = "AXIOM"
 	_update_axiom_tutorial_page()
 
 func _update_axiom_tutorial_page() -> void:
@@ -515,8 +480,62 @@ func _update_axiom_tutorial_page() -> void:
 func _end_axiom_tutorial() -> void:
 	_tutorial_active = false
 	_tutorial_space_consumed = false
+	_set_objective_state("")
+	_world._set_intro_lock(false)
+	_set_gameplay_ui_visible(true)
+	_start_rewind_activation_tutorial()
+
+func _start_rewind_activation_tutorial() -> void:
+	_rewind_tutorial_prompt_active = true
+	_rewind_tutorial_active = false
+	_rewind_tutorial_start_index = -1
+	_rewind_tutorial_shift_step_one_done = false
+	_rewind_tutorial_shift_step_two_done = false
+	_set_rewind_overload_enabled(false)
+	_set_hud_rewind_tutorial_focus(false)
+	if _tutorial_panel != null:
+		_tutorial_panel.visible = true
+	_set_tutorial_panel_rewind_layout(true)
+	_set_rewind_tutorial_callouts_visible(false)
+	if _tutorial_title != null:
+		_tutorial_title.text = "AXIOM REWIND"
+	if _tutorial_body != null:
+		_tutorial_body.text = "Press R to activate Axiom rewind mode."
+	if _tutorial_hint != null:
+		_tutorial_hint.text = "[R] ACTIVATE"
+
+func _process_rewind_tutorial_guidance() -> void:
+	if not GameState.rewind_mode_active:
+		return
+	if _rewind_tutorial_start_index < 0:
+		_rewind_tutorial_start_index = GameState.rewind_pointer_index
+	var pointer_shift: int = abs(GameState.rewind_pointer_index - _rewind_tutorial_start_index)
+	if not _rewind_tutorial_shift_step_one_done and pointer_shift >= 14:
+		_rewind_tutorial_shift_step_one_done = true
+		_set_rewind_tutorial_callouts_step(1)
+		if _tutorial_body != null:
+			_tutorial_body.text = "That split is too wide for a normal jump. You cannot clear it without rewinding."
+		if _tutorial_hint != null:
+			_tutorial_hint.text = "[R/F] KEEP MOVING THE POINTER"
+	elif _rewind_tutorial_shift_step_one_done and not _rewind_tutorial_shift_step_two_done and pointer_shift >= 42:
+		_rewind_tutorial_shift_step_two_done = true
+		_set_rewind_tutorial_callouts_step(2)
+		if _tutorial_body != null:
+			_tutorial_body.text = "Remember the keycard you took in the kitchen? Axiom recorded that exact state. Jump back to that moment, then cross the split and reach the hole."
+		if _tutorial_hint != null:
+			_tutorial_hint.text = "[SPACE] JUMP TO SELECTED MOMENT"
+
+func _finish_rewind_tutorial() -> void:
+	_rewind_tutorial_prompt_active = false
+	_rewind_tutorial_active = false
+	_rewind_tutorial_start_index = -1
+	_set_rewind_overload_enabled(true)
+	_set_hud_rewind_tutorial_focus(false)
+	_set_rewind_tutorial_callouts_visible(false)
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = false
+	_set_tutorial_panel_rewind_layout(false)
+	_tutorial_space_consumed = false
 	_set_objective_state("escape_hole")
 	_world._set_intro_lock(false)
 	_set_gameplay_ui_visible(true)
@@ -707,9 +726,14 @@ func _play_house_split_glitch() -> void:
 func play_escape_fail_sequence() -> void:
 	_escape_timer_running = false
 	_tutorial_active = false
+	_rewind_tutorial_prompt_active = false
+	_rewind_tutorial_active = false
+	_set_rewind_overload_enabled(true)
 	_clear_small_meteors()
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = false
+	_set_hud_rewind_tutorial_focus(false)
+	_set_rewind_tutorial_callouts_visible(false)
 	_set_objective_state("")
 	_set_gameplay_ui_visible(false)
 	_world._set_intro_lock(true)
@@ -1054,12 +1078,126 @@ func _attach_underground_hole_to_broken_house() -> void:
 func _on_underground_hole_descended() -> void:
 	_escape_timer_running = false
 	_tutorial_active = false
+	_rewind_tutorial_prompt_active = false
+	_rewind_tutorial_active = false
+	_set_rewind_overload_enabled(true)
 	_escape_failed_sequence_started = true
 	_clear_small_meteors()
 	if _tutorial_panel != null:
 		_tutorial_panel.visible = false
+	_set_hud_rewind_tutorial_focus(false)
+	_set_rewind_tutorial_callouts_visible(false)
 	_set_objective_state("")
 	_set_gameplay_ui_visible(false)
+
+func _on_rewind_mode_changed(active: bool) -> void:
+	if not _world._is_level_one_scene():
+		return
+	if not _rewind_tutorial_prompt_active and not _rewind_tutorial_active:
+		return
+	if active:
+		_rewind_tutorial_prompt_active = false
+		_rewind_tutorial_active = true
+		_rewind_tutorial_start_index = GameState.rewind_pointer_index
+		_rewind_tutorial_shift_step_one_done = false
+		_rewind_tutorial_shift_step_two_done = false
+		if _tutorial_panel != null:
+			_tutorial_panel.visible = true
+		if _tutorial_title != null:
+			_tutorial_title.text = "AXIOM REWIND"
+		if _tutorial_body != null:
+			_tutorial_body.text = "Good. Hold R to move into the past and hold F to move toward the present."
+		if _tutorial_hint != null:
+			_tutorial_hint.text = "[HOLD R / HOLD F] MOVE POINTER"
+		_set_rewind_tutorial_callouts_step(0)
+		_set_hud_rewind_tutorial_focus(true)
+		return
+	_set_hud_rewind_tutorial_focus(false)
+	_set_rewind_tutorial_callouts_visible(false)
+	if _rewind_tutorial_active and _rewind_tutorial_shift_step_two_done:
+		_finish_rewind_tutorial()
+		return
+	if _tutorial_title != null:
+		_tutorial_title.text = "AXIOM REWIND"
+	if _tutorial_body != null:
+		_tutorial_body.text = "Press R again. Keep moving the pointer until you find the moment that helps you cross the split."
+	if _tutorial_hint != null:
+		_tutorial_hint.text = "[R] RE-ENTER REWIND"
+	_rewind_tutorial_prompt_active = true
+	_rewind_tutorial_active = false
+
+func _set_hud_rewind_tutorial_focus(enabled: bool) -> void:
+	if _world.player_hud != null and _world.player_hud.has_method("set_rewind_tutorial_focus_enabled"):
+		_world.player_hud.call("set_rewind_tutorial_focus_enabled", enabled)
+
+func _set_rewind_overload_enabled(enabled: bool) -> void:
+	if _world.player != null and _world.player.has_method("set_rewind_overload_enabled"):
+		_world.player.call("set_rewind_overload_enabled", enabled)
+
+func _set_tutorial_panel_rewind_layout(enabled: bool) -> void:
+	if _tutorial_panel == null:
+		return
+	if enabled:
+		_tutorial_panel.offset_left = -420.0
+		_tutorial_panel.offset_top = -300.0
+		_tutorial_panel.offset_right = 420.0
+		_tutorial_panel.offset_bottom = -188.0
+		if _tutorial_title != null:
+			_tutorial_title.offset_top = 14.0
+			_tutorial_title.offset_bottom = 44.0
+			_tutorial_title.add_theme_font_size_override("font_size", 40)
+		if _tutorial_body != null:
+			_tutorial_body.offset_top = 44.0
+			_tutorial_body.offset_bottom = -34.0
+			_tutorial_body.add_theme_font_size_override("font_size", 30)
+		if _tutorial_hint != null:
+			_tutorial_hint.offset_top = -30.0
+			_tutorial_hint.offset_bottom = -8.0
+			_tutorial_hint.add_theme_font_size_override("font_size", 24)
+	else:
+		_tutorial_panel.offset_left = -320.0
+		_tutorial_panel.offset_top = -130.0
+		_tutorial_panel.offset_right = 320.0
+		_tutorial_panel.offset_bottom = 130.0
+		if _tutorial_title != null:
+			_tutorial_title.offset_top = 18.0
+			_tutorial_title.offset_bottom = 50.0
+			_tutorial_title.add_theme_font_size_override("font_size", 52)
+		if _tutorial_body != null:
+			_tutorial_body.offset_top = 60.0
+			_tutorial_body.offset_bottom = -54.0
+			_tutorial_body.add_theme_font_size_override("font_size", 44)
+		if _tutorial_hint != null:
+			_tutorial_hint.offset_top = -38.0
+			_tutorial_hint.offset_bottom = -12.0
+			_tutorial_hint.add_theme_font_size_override("font_size", 32)
+
+func _set_rewind_tutorial_callouts_visible(visible: bool) -> void:
+	if _tutorial_callout_rewind != null:
+		_tutorial_callout_rewind.visible = visible
+	if _tutorial_callout_rewind_line != null:
+		_tutorial_callout_rewind_line.visible = visible
+	if _tutorial_callout_warning != null:
+		_tutorial_callout_warning.visible = visible
+	if _tutorial_callout_warning_line != null:
+		_tutorial_callout_warning_line.visible = visible
+	if _tutorial_callout_commit != null:
+		_tutorial_callout_commit.visible = visible
+	if _tutorial_callout_commit_line != null:
+		_tutorial_callout_commit_line.visible = visible
+
+func _set_rewind_tutorial_callouts_step(step: int) -> void:
+	_set_rewind_tutorial_callouts_visible(true)
+	if _tutorial_callout_rewind_label != null:
+		_tutorial_callout_rewind_label.text = "Timeline Pointer\nHold R = past, hold F = forward. Keep moving the pointer to browse recorded moments."
+	if _tutorial_callout_warning_label != null:
+		_tutorial_callout_warning_label.text = "Warning\nIf rewind stays active for over 10 seconds, the system overloads and stuns you."
+	if _tutorial_callout_commit_label != null:
+		_tutorial_callout_commit_label.text = "Commit Rule\nPress SPACE to jump to the selected state. Any state ahead of the pointer is permanently erased."
+	if step >= 1 and _tutorial_callout_rewind_label != null:
+		_tutorial_callout_rewind_label.text = "Timeline Pointer\nShift backward until you find the keycard moment."
+	if step >= 2 and _tutorial_callout_commit_label != null:
+		_tutorial_callout_commit_label.text = "Commit Now\nJump to that keycard state, then cross the split and reach the hole."
 
 func _clear_small_meteors() -> void:
 	for meteor_data in _active_small_meteors:
@@ -1077,6 +1215,8 @@ func _pulse_objective_highlight(target: Node, minimum: float, maximum: float) ->
 func _set_gameplay_ui_visible(visible: bool) -> void:
 	if _world.player_hud != null:
 		_world.player_hud.visible = visible
+		if not visible and _world.player_hud.has_method("set_rewind_tutorial_focus_enabled"):
+			_world.player_hud.call("set_rewind_tutorial_focus_enabled", false)
 	if _world._objective_panel != null:
 		_world._objective_panel.visible = visible and _objective_state != ""
 	if _timer_label != null:

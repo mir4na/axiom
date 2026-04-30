@@ -2,6 +2,10 @@
 
 [ext_resource type="Script" uid="uid://3ccmihnukr3q" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="PackedScene" uid="uid://d1btx5xvtov5u" path="res://scenes/ui/player_hud.tscn" id="2_hud"]
+[ext_resource type="AudioStream" path="res://audio/sfx/rewind.mp3" id="3_sfx_rewind"]
+[ext_resource type="AudioStream" path="res://audio/sfx/shoot.mp3" id="4_sfx_shoot"]
+[ext_resource type="AudioStream" path="res://audio/sfx/reload.mp3" id="5_sfx_reload"]
+[ext_resource type="AudioStream" path="res://audio/sfx/teleport.mp3" id="6_sfx_teleport"]
 
 [sub_resource type="CapsuleShape3D" id="capsule_standing"]
 radius = 0.3
@@ -7180,6 +7184,13 @@ _data = {
 [node name="Player" type="CharacterBody3D" unique_id=239219086 groups=["player"]]
 safe_margin = 0.005
 script = ExtResource("1_player")
+sfx_rewind_enter = ExtResource("3_sfx_rewind")
+sfx_rewind_exit = ExtResource("3_sfx_rewind")
+sfx_gun_fire = ExtResource("4_sfx_shoot")
+sfx_gun_reload = ExtResource("5_sfx_reload")
+sfx_lightning_target_enter = ExtResource("6_sfx_teleport")
+sfx_lightning_cast = ExtResource("6_sfx_teleport")
+sfx_player_hurt = ExtResource("6_sfx_teleport")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=172552551]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.83333004, 0)

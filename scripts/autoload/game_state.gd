@@ -33,6 +33,7 @@ var current_level_index: int = 0
 var world_history: Array[Dictionary] = []
 var history_index: int = -1
 const MAX_HISTORY: int = 10800
+const HISTORY_PRUNE_BATCH: int = 240
 var is_scrubbing_past: bool = false
 var mark_indices: Array[int] = []
 
@@ -68,8 +69,7 @@ func _physics_process(_delta: float) -> void:
 		snap_dict[actor.get_path()] = _get_actor_state(actor)
 
 		world_history.append(snap_dict)
-		if world_history.size() > MAX_HISTORY:
-			world_history.pop_front()
+		_prune_history_if_needed()
 
 		history_index = world_history.size() - 1
 		timeline_position = (float(history_index) / float(MAX_HISTORY)) * 100.0
@@ -88,6 +88,21 @@ func _physics_process(_delta: float) -> void:
 
 		if time_direction == 1 and history_index == world_history.size() - 1:
 			is_scrubbing_past = false
+
+func _prune_history_if_needed() -> void:
+	var prune_threshold: int = MAX_HISTORY + HISTORY_PRUNE_BATCH
+	if world_history.size() <= prune_threshold:
+		return
+	var overflow: int = world_history.size() - MAX_HISTORY
+	world_history = world_history.slice(overflow, world_history.size())
+	history_index = max(-1, history_index - overflow)
+	rewind_pointer_index = max(-1, rewind_pointer_index - overflow)
+	var shifted_marks: Array[int] = []
+	for mark_index in mark_indices:
+		var shifted_index: int = mark_index - overflow
+		if shifted_index >= 0:
+			shifted_marks.append(shifted_index)
+	mark_indices = shifted_marks
 
 func activate_rewind_mode() -> void:
 	if rewind_disabled:

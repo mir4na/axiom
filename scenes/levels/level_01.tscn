@@ -8,6 +8,11 @@
 [ext_resource type="Script" uid="uid://njng5yim6rnu" path="res://scripts/objects/reset_zone.gd" id="10_reset_zone"]
 [ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="11_key_item"]
 [ext_resource type="PackedScene" uid="uid://p82t7gldc3q5" path="res://scenes/objects/underground_hole.tscn" id="12_underground_hole"]
+[ext_resource type="AudioStream" path="res://audio/bgm/level_1_before_disaster.mp3" id="13_bgm_level1"]
+[ext_resource type="AudioStream" path="res://audio/bgm/level_2.mp3" id="14_bgm_level2"]
+[ext_resource type="AudioStream" path="res://audio/bgm/bgm_level_4.mp3" id="15_bgm_level4"]
+[ext_resource type="AudioStream" path="res://audio/sfx/in-rewind-bgfx.mp3" id="16_sfx_glitch"]
+[ext_resource type="AudioStream" path="res://audio/sfx/sky_cracking.mp3" id="17_sfx_sky_cracking"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.04, 0.02, 0.12, 1)
@@ -99,6 +104,22 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.3611188, 0.27058798, -3.44
 
 [node name="World" type="Node3D" parent="." unique_id=640408122]
 script = ExtResource("1_world")
+bgm_world_intro = ExtResource("13_bgm_level1")
+bgm_level_one = ExtResource("13_bgm_level1")
+bgm_level_two = ExtResource("14_bgm_level2")
+bgm_level_three = ExtResource("14_bgm_level2")
+bgm_level_four = ExtResource("15_bgm_level4")
+bgm_ending_credits = ExtResource("15_bgm_level4")
+sfx_glitch_overlay = ExtResource("16_sfx_glitch")
+sfx_sky_cracking = ExtResource("17_sfx_sky_cracking")
+
+[node name="Audio" type="Node" parent="World"]
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="World/Audio"]
+bus = &"Master"
+
+[node name="SFXPlayer2D" type="AudioStreamPlayer2D" parent="World/Audio"]
+bus = &"Master"
 
 [node name="ObjectiveConfig" type="Node" parent="World" unique_id=1388753107]
 script = ExtResource("9_objective")

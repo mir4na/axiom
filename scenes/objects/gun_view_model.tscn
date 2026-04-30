@@ -9,7 +9,7 @@ rotation_degrees = Vector3(-2, -3.5, 0)
 [node name="ModelRoot" type="Node3D" parent="."]
 position = Vector3(0.03, -0.06, -0.04)
 rotation_degrees = Vector3(2.5, -92, 0)
-scale = Vector3(0.15, 0.15, 0.15)
+scale = Vector3(1, 1, 1)
 
 [node name="Model" parent="ModelRoot" instance=ExtResource("1_model")]
 

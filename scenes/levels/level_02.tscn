@@ -6,12 +6,17 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="5_key"]
 [ext_resource type="PackedScene" path="res://scenes/objects/sliding_door.tscn" id="6_slide_door"]
 [ext_resource type="PackedScene" uid="uid://df7x8h205lam1" path="res://scenes/characters/rose.tscn" id="7_rose"]
-[ext_resource type="PackedScene" path="res://scenes/objects/flashlight_item.tscn" id="8_flashlight"]
+[ext_resource type="PackedScene" uid="uid://wo4b56kr1jbf" path="res://scenes/objects/flashlight_item.tscn" id="8_flashlight"]
 [ext_resource type="PackedScene" path="res://scenes/objects/door_button.tscn" id="9_door_button"]
 [ext_resource type="PackedScene" uid="uid://dei2dtsftmpyi" path="res://scenes/objects/gun_item.tscn" id="10_gun"]
 [ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="11_enemy"]
 [ext_resource type="PackedScene" uid="uid://c5287n5mgov23" path="res://scenes/objects/electric_obstacle.tscn" id="12_obstacle"]
 [ext_resource type="PackedScene" uid="uid://cp8n1f0xys6sq" path="res://scenes/objects/blackhole_portal.tscn" id="13_portal"]
+[ext_resource type="AudioStream" uid="uid://cxshusirauqx4" path="res://audio/bgm/level_1_before_disaster.mp3" id="14_bgm_level1"]
+[ext_resource type="AudioStream" uid="uid://unoa5a565im0" path="res://audio/bgm/level_2.mp3" id="15_bgm_level2"]
+[ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="16_bgm_level4"]
+[ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="17_sfx_glitch"]
+[ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="18_sfx_sky_cracking"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -119,6 +124,20 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2719526, -25.740091)
 
 [node name="World" type="Node3D" parent="." unique_id=235410429]
 script = ExtResource("1_world")
+bgm_world_intro = ExtResource("14_bgm_level1")
+bgm_level_one = ExtResource("14_bgm_level1")
+bgm_level_two = ExtResource("15_bgm_level2")
+bgm_level_three = ExtResource("15_bgm_level2")
+bgm_level_four = ExtResource("16_bgm_level4")
+bgm_ending_credits = ExtResource("16_bgm_level4")
+sfx_glitch_overlay = ExtResource("17_sfx_glitch")
+sfx_sky_cracking = ExtResource("18_sfx_sky_cracking")
+
+[node name="Audio" type="Node" parent="World" unique_id=910519672]
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="World/Audio" unique_id=130913784]
+
+[node name="SFXPlayer2D" type="AudioStreamPlayer2D" parent="World/Audio" unique_id=443230309]
 
 [node name="TunnelShell" type="CSGCombiner3D" parent="World" unique_id=2015082241]
 use_collision = true
@@ -206,7 +225,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.85, 166.2)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 166.8)
 
 [node name="AxiaCinematicCamera" type="Camera3D" parent="World/CutsceneMarkers" unique_id=1517746352]
-transform = Transform3D(-4.371139e-08, 3.821371e-15, 1, 8.742278e-08, 1, 0, 1, -8.742278e-08, 4.371139e-08, -0.8730335, 1.6532493, 160.35486)
+transform = Transform3D(-4.371139e-08, 3.821371e-15, 1, 8.742278e-08, 1, 0, 1, -8.742278e-08, 4.371139e-08, -0.9295273, 1.4573405, 159.98895)
 fov = 63.0
 
 [node name="Stall1" type="CSGCombiner3D" parent="World" unique_id=1332012744]
@@ -586,7 +605,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 1.811847, 23.114544)
 shape = SubResource("BoxShape3D_combat_trigger")
 
 [node name="LevelFallDeathZone" type="Area3D" parent="World" unique_id=410271084]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -7, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -17.959412, 192.13454)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/LevelFallDeathZone" unique_id=410271085]
 shape = SubResource("BoxShape3D_level2_death")
@@ -627,9 +646,10 @@ visible = false
 key_id = "key_2"
 
 [node name="CorridorObstacle" parent="World" unique_id=410271083 instance=ExtResource("12_obstacle")]
-transform = Transform3D(0.991595, 0, 0.12938432, 0, 1, 0, -0.12938432, 0, 0.991595, -0.056529284, 0.8440082, 139.59364)
+transform = Transform3D(0.991595, 0, 0.12938431, 0.0034749245, 0.9996393, -0.02663165, -0.12933764, 0.026857387, 0.9912373, -0.056529284, 0.8440082, 139.59364)
 fire_cooldown = 15.0
 projectile_damage = 75.0
+projectile_radius = 1.25
 
 [node name="Rose" parent="World" unique_id=1861027441 instance=ExtResource("7_rose")]
 transform = Transform3D(0.71515644, 0, -0.6989649, 0, 1, 0, 0.6989649, 0, 0.71515644, -6.2, 0, 160.1)

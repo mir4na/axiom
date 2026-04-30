@@ -6,6 +6,7 @@ uniform float line_density : hint_range(10.0, 300.0) = 110.0;
 uniform float corner_roundness : hint_range(0.0, 0.8) = 0.22;
 uniform float corner_softness : hint_range(0.001, 0.2) = 0.028;
 uniform float content_fit : hint_range(0.7, 1.2) = 0.92;
+uniform bool apply_crt_mask = false;
 
 float rand(vec2 co) {
 	return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
@@ -22,7 +23,10 @@ float rounded_mask(vec2 uv, float radius, float feather) {
 void fragment() {
 	vec2 frame_uv = (SCREEN_UV - vec2(0.5)) / content_fit + vec2(0.5);
 	vec2 uv = frame_uv;
-	float frame_mask = rounded_mask(frame_uv, corner_roundness, corner_softness);
+	float frame_mask = 1.0;
+	if (apply_crt_mask) {
+		frame_mask = rounded_mask(frame_uv, corner_roundness, corner_softness);
+	}
 	float block = floor(uv.y * line_density + TIME * 9.0);
 	float noise = rand(vec2(block, floor(TIME * 18.0)));
 	float x_shift = (noise - 0.5) * 0.08 * glitch_strength;

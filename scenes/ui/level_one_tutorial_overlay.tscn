@@ -1,0 +1,241 @@
+[gd_scene format=3 uid="uid://ut5t8aamkmkw"]
+
+[ext_resource type="FontFile" uid="uid://djt08l5gryxok" path="res://fonts/CatPentagram.ttf" id="1_game_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleMain"]
+bg_color = Color(0.05, 0.07, 0.1, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.88, 1, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleRewind"]
+bg_color = Color(0.05, 0.07, 0.1, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.88, 1, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleWarning"]
+bg_color = Color(0.1, 0.05, 0.06, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.35, 0.3, 0.92)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleCommit"]
+bg_color = Color(0.07, 0.08, 0.12, 0.93)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.94, 0.84, 0.42, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="LevelOneTutorialOverlay" type="Control" unique_id=385746488]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TimerLabel" type="Label" parent="." unique_id=812080165]
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.0
+offset_top = 8.0
+offset_right = 80.0
+offset_bottom = 52.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.64, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.92)
+theme_override_constants/outline_size = 10
+theme_override_fonts/font = ExtResource("1_game_font")
+theme_override_font_sizes/font_size = 60
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TutorialPanel" type="Panel" parent="." unique_id=873362162]
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -130.0
+offset_right = 320.0
+offset_bottom = 130.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleMain")
+
+[node name="TutorialTitle" type="Label" parent="TutorialPanel" unique_id=200593909]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 616.0
+offset_bottom = 50.0
+theme_override_colors/font_color = Color(0.92, 0.98, 1, 1)
+theme_override_fonts/font = ExtResource("1_game_font")
+theme_override_font_sizes/font_size = 52
+text = "AXIOM"
+horizontal_alignment = 1
+
+[node name="TutorialBody" type="Label" parent="TutorialPanel" unique_id=1418074129]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 60.0
+offset_right = -24.0
+offset_bottom = -54.0
+theme_override_colors/font_color = Color(0.88, 0.96, 0.98, 1)
+theme_override_fonts/font = ExtResource("1_game_font")
+theme_override_font_sizes/font_size = 44
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="TutorialHint" type="Label" parent="TutorialPanel" unique_id=1410746749]
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -38.0
+offset_right = -24.0
+offset_bottom = -12.0
+theme_override_colors/font_color = Color(1, 0.84, 0.44, 1)
+theme_override_fonts/font = ExtResource("1_game_font")
+theme_override_font_sizes/font_size = 32
+text = "[SPACE] NEXT"
+horizontal_alignment = 2
+
+[node name="RewindCallout" type="Panel" parent="." unique_id=1770482909]
+visible = false
+layout_mode = 0
+anchor_left = 0.04
+anchor_top = 0.58
+anchor_right = 0.34
+anchor_bottom = 0.78
+theme_override_styles/panel = SubResource("StyleRewind")
+
+[node name="Label" type="Label" parent="RewindCallout" unique_id=1127941990]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+theme_override_colors/font_color = Color(0.9, 0.96, 1, 1)
+theme_override_fonts/font = ExtResource("1_game_font")
+theme_override_font_sizes/font_size = 28
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="RewindLine" type="ColorRect" parent="." unique_id=1004756652]
+visible = false
+layout_mode = 0
+anchor_left = 0.33
+anchor_top = 0.79
+anchor_right = 0.5
+anchor_bottom = 0.79
+offset_left = -6.0
+offset_right = 6.0
+offset_bottom = 84.0
+mouse_filter = 2
+color = Color(0.28, 0.9, 1, 0.95)
+
+[node name="WarningCallout" type="Panel" parent="." unique_id=294537877]
+visible = false
+layout_mode = 0
+anchor_left = 0.68
+anchor_top = 0.08
+anchor_right = 0.97
+anchor_bottom = 0.26
+theme_override_styles/panel = SubResource("StyleWarning")
+
+[node name="Label" type="Label" parent="WarningCallout" unique_id=352180410]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+theme_override_colors/font_color = Color(1, 0.9, 0.88, 1)
+theme_override_fonts/font = ExtResource("1_game_font")
+theme_override_font_sizes/font_size = 26
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="WarningLine" type="ColorRect" parent="." unique_id=1158072807]
+visible = false
+layout_mode = 0
+anchor_left = 0.71
+anchor_top = 0.26
+anchor_right = 0.71
+anchor_bottom = 0.48
+offset_left = -2.0
+offset_right = 2.0
+mouse_filter = 2
+color = Color(1, 0.35, 0.3, 0.92)
+
+[node name="CommitCallout" type="Panel" parent="." unique_id=1796255017]
+visible = false
+layout_mode = 0
+anchor_left = 0.66
+anchor_top = 0.58
+anchor_right = 0.97
+anchor_bottom = 0.82
+theme_override_styles/panel = SubResource("StyleCommit")
+
+[node name="Label" type="Label" parent="CommitCallout" unique_id=1846709823]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+theme_override_colors/font_color = Color(0.98, 0.96, 0.84, 1)
+theme_override_fonts/font = ExtResource("1_game_font")
+theme_override_font_sizes/font_size = 26
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="CommitLine" type="ColorRect" parent="." unique_id=1416108573]
+visible = false
+layout_mode = 0
+anchor_left = 0.54
+anchor_top = 0.77
+anchor_right = 0.66
+anchor_bottom = 0.77
+offset_top = -2.0
+offset_bottom = 2.0
+mouse_filter = 2
+color = Color(0.94, 0.84, 0.42, 0.94)

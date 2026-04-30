@@ -7,7 +7,7 @@ const INTRO_LINES := [
 	{"text": "What time is it?", "duration": 2.0},
 	{"text": "Why does my head feel so heavy?", "duration": 2.2},
 	{"text": "Right... I still need to clear out the yard.", "duration": 2.8},
-	{"text": "The scoop should still be outside.", "duration": 2.4}
+	{"text": "The shovel should still be outside.", "duration": 2.4}
 ]
 const WORLD_SCENE_PATH := "res://scenes/world/world.tscn"
 const LEVEL_ONE_SCENE_PATH := "res://scenes/levels/level_01.tscn"
@@ -151,6 +151,7 @@ var _level_two_rose_focus: Node3D
 var _level_two_tunnel_blast_focus: Node3D
 var _level_two_portal_look_target: Node3D
 var _level_two_axia_cinematic_camera: Camera3D
+var _level_two_axia_cinematic_transform_from_scene: Transform3D = Transform3D.IDENTITY
 var _level_two_fall_death_zone: Area3D
 var _level_two_room3_sequence_running: bool = false
 var _level_two_room3_sequence_played: bool = false
@@ -240,19 +241,31 @@ func _ready() -> void:
 	call_deferred("_play_intro_sequence")
 
 func _setup_audio_players() -> void:
-	_bgm_player = AudioStreamPlayer.new()
-	_bgm_player.name = "BGMPlayer"
-	_bgm_player.bus = "Master"
-	_bgm_player.autoplay = false
-	add_child(_bgm_player)
-	_sfx_player_2d = AudioStreamPlayer2D.new()
-	_sfx_player_2d.name = "SFXPlayer2D"
-	_sfx_player_2d.bus = "Master"
-	_sfx_player_2d.autoplay = false
-	add_child(_sfx_player_2d)
+	var audio_root: Node = get_node_or_null("Audio")
+	if audio_root == null:
+		audio_root = Node.new()
+		audio_root.name = "Audio"
+		add_child(audio_root)
+	_bgm_player = audio_root.get_node_or_null("BGMPlayer") as AudioStreamPlayer
+	if _bgm_player == null:
+		_bgm_player = AudioStreamPlayer.new()
+		_bgm_player.name = "BGMPlayer"
+		_bgm_player.bus = "Master"
+		_bgm_player.autoplay = false
+		audio_root.add_child(_bgm_player)
+	_sfx_player_2d = audio_root.get_node_or_null("SFXPlayer2D") as AudioStreamPlayer2D
+	if _sfx_player_2d == null:
+		_sfx_player_2d = AudioStreamPlayer2D.new()
+		_sfx_player_2d.name = "SFXPlayer2D"
+		_sfx_player_2d.bus = "Master"
+		_sfx_player_2d.autoplay = false
+		audio_root.add_child(_sfx_player_2d)
 
 func _play_bgm_stream(stream: AudioStream) -> void:
 	if stream == null:
+		return
+	var allow_bgm: bool = false
+	if not allow_bgm:
 		return
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
 		return
@@ -300,6 +313,9 @@ func fade_out_level_four_bgm() -> void:
 
 func _play_sfx_stream(stream: AudioStream) -> void:
 	if stream == null:
+		return
+	var allow_sky_crack: bool = stream == sfx_sky_cracking or stream == sfx_sky_crack_start or stream == sfx_sky_crack_grow or stream == sfx_sky_crack_break
+	if not allow_sky_crack:
 		return
 	if _sfx_player_2d == null or not is_instance_valid(_sfx_player_2d):
 		return
@@ -413,9 +429,9 @@ func _process(delta: float) -> void:
 		_update_ending_board_hint()
 		return
 
-	if _objective_state == "scoop" and is_instance_valid(shovel):
+	if _objective_state == "shovel" and is_instance_valid(shovel):
 		_update_shovel_highlight()
-		_update_hint_marker(shovel.global_position + Vector3(0.0, 1.1, 0.0), "SCOOP", shovel.global_position)
+		_update_hint_marker(shovel.global_position + Vector3(0.0, 1.1, 0.0), "SHOVEL", shovel.global_position)
 	elif _objective_state == "rest" and is_instance_valid(_sofa_target):
 		_update_sofa_highlight()
 		_update_hint_marker(_sofa_target.global_position + Vector3(0.0, -0.8, 0.25), "SOFA", _sofa_target.global_position)
@@ -454,7 +470,7 @@ func _on_inventory_changed() -> void:
 		return
 	if _ending_mode_active:
 		return
-	if _objective_state == "scoop" and GameState.has_item("Shovel"):
+	if _objective_state == "shovel" and GameState.has_item("Shovel"):
 		_begin_dig_phase()
 
 func _create_intro_ui() -> void:
@@ -804,9 +820,9 @@ func _play_intro_sequence() -> void:
 	_subtitle_label.visible = false
 	_intro_running = false
 	await _restore_player_camera()
-	_show_objective(_objective_text("scoop", "OBJECTIVE: Pick up the scoop"))
-	_objective_state = "scoop"
-	await _show_subtitle("I should grab the scoop before I start digging.", 2.5)
+	_show_objective(_objective_text("shovel", "OBJECTIVE: Pick up the shovel"))
+	_objective_state = "shovel"
+	await _show_subtitle("I should grab the shovel before I start digging.", 2.5)
 	_set_intro_lock(false)
 
 func _play_level_one_arrival() -> void:
@@ -880,6 +896,8 @@ func _cache_level_two_targets() -> void:
 	_level_two_tunnel_blast_focus = get_node_or_null("CutsceneMarkers/TunnelBlastFocus") as Node3D
 	_level_two_portal_look_target = get_node_or_null("CutsceneMarkers/PortalLookTarget") as Node3D
 	_level_two_axia_cinematic_camera = get_node_or_null("CutsceneMarkers/AxiaCinematicCamera") as Camera3D
+	if _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera):
+		_level_two_axia_cinematic_transform_from_scene = _level_two_axia_cinematic_camera.global_transform
 	_level_two_fall_death_zone = get_node_or_null("LevelFallDeathZone") as Area3D
 	_level_two_enemy_nodes.clear()
 	for node_name in ["Enemy01", "Enemy02", "Enemy03"]:
@@ -1290,10 +1308,14 @@ func _play_level_two_room3_sequence() -> void:
 		return
 	var rose_target: Vector3 = _level_two_rose_focus.global_position if _level_two_rose_focus != null else ((_level_two_rose.global_position if _level_two_rose != null else Vector3(0.0, 1.5, 0.0)) + Vector3(0.0, 1.35, 0.0))
 	var player_view_transform: Transform3D = player_camera.global_transform if player_camera != null else _make_look_transform(rose_target + Vector3(0.0, 1.6, -5.0), rose_target)
-	var axia_camera_transform: Transform3D = _resolve_level_two_axia_camera_transform(player_view_transform, rose_target)
+	var axia_camera_transform: Transform3D = _resolve_level_two_axia_camera_transform(player_view_transform)
+	var use_scene_axia_camera: bool = _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera)
 	_intro_camera.global_transform = player_view_transform
 	_intro_camera.make_current()
 	await _play_camera_shot(player_view_transform, axia_camera_transform, 1.05)
+	if use_scene_axia_camera:
+		_level_two_axia_cinematic_camera.global_transform = axia_camera_transform
+		_level_two_axia_cinematic_camera.make_current()
 	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(rose_target)
 	await _show_subtitle("Axia: Hey... so you finally opened it.", 2.4, "axia")
 	await _show_subtitle("Axia: This place gets weird every time you start second-guessing yourself.", 2.8, "axia")
@@ -1302,26 +1324,30 @@ func _play_level_two_room3_sequence() -> void:
 	if is_instance_valid(flashlight_fx):
 		flashlight_fx.queue_free()
 	await _play_level_two_rose_glitch_disappear()
-	var tunnel_anchor: Vector3 = _level_two_tunnel_blast_focus.global_position if _level_two_tunnel_blast_focus != null else ((_level_two_end_cap_near.global_position if _level_two_end_cap_near != null else (_level_two_exit_door.global_position if _level_two_exit_door != null else rose_target + Vector3(0.0, 0.0, 7.5))) + Vector3(0.0, 0.75, 0.0))
-	await _play_level_two_tunnel_breach_sequence(tunnel_anchor)
+	_prepare_level_two_portal_access()
 	await _show_subtitle("Axia: There. Go on... the portal will take you through.", 2.7, "axia")
 	if _level_two_portal != null:
-		var portal_target: Vector3 = _level_two_portal_look_target.global_position if _level_two_portal_look_target != null else tunnel_anchor
 		if _level_two_portal.has_signal("player_entered") and not _level_two_portal.is_connected("player_entered", Callable(self, "_on_level_two_portal_entered")):
 			_level_two_portal.connect("player_entered", Callable(self, "_on_level_two_portal_entered"))
 		if _level_two_portal.has_method("play_open_sequence"):
 			_level_two_portal.call("play_open_sequence")
-		var portal_focus_transform: Transform3D = _make_look_transform(axia_camera_transform.origin, portal_target)
-		await _play_camera_shot(_intro_camera.global_transform, portal_focus_transform, 1.1)
-		await get_tree().create_timer(2.0).timeout
 	await _complete_level_two_room3_cutscene()
 
 func _complete_level_two_room3_cutscene() -> void:
 	await _set_cinematic_bars(false, 0.2)
-	if _intro_camera != null and player_camera != null:
-		await _return_intro_camera_to_player(0.8)
-	elif player_camera != null:
-		player_camera.make_current()
+	if player_camera != null:
+		var has_cutscene_transform: bool = false
+		if _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera) and _level_two_axia_cinematic_camera.current:
+			has_cutscene_transform = true
+			if _intro_camera != null:
+				_intro_camera.global_transform = _level_two_axia_cinematic_camera.global_transform
+				_intro_camera.make_current()
+		elif _intro_camera != null:
+			has_cutscene_transform = true
+		if has_cutscene_transform and _intro_camera != null:
+			await _return_intro_camera_to_player(0.8)
+		else:
+			player_camera.make_current()
 	if player != null:
 		player.set_cinematic_lock(false)
 	_set_player_body_visible(true)
@@ -1332,10 +1358,18 @@ func _complete_level_two_room3_cutscene() -> void:
 	_show_objective("Enter the portal")
 	_level_two_room3_sequence_running = false
 
-func _resolve_level_two_axia_camera_transform(fallback_start: Transform3D, focus_target: Vector3) -> Transform3D:
+func _resolve_level_two_axia_camera_transform(fallback_start: Transform3D) -> Transform3D:
 	if _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera):
 		return _level_two_axia_cinematic_camera.global_transform
-	return _make_look_transform(fallback_start.origin, focus_target)
+	if _level_two_axia_cinematic_transform_from_scene != Transform3D.IDENTITY:
+		return _level_two_axia_cinematic_transform_from_scene
+	return fallback_start
+
+func _prepare_level_two_portal_access() -> void:
+	if _level_two_end_cap_near != null and is_instance_valid(_level_two_end_cap_near):
+		_level_two_end_cap_near.visible = false
+	if _level_two_exit_door != null and is_instance_valid(_level_two_exit_door):
+		_level_two_exit_door.visible = false
 
 func _set_level_two_cinematic_ui(visible: bool) -> void:
 	if player_hud != null:
@@ -1772,8 +1806,8 @@ func _objective_text(key: String, fallback: String) -> String:
 	return fallback
 
 func _update_objective_text() -> void:
-	if _objective_state == "scoop":
-		_show_objective(_objective_text("scoop", "Pick up the scoop"))
+	if _objective_state == "shovel":
+		_show_objective(_objective_text("shovel", "Pick up the shovel"))
 	elif _objective_state == "dig":
 		_show_objective("%s %d/%d" % [_objective_text("dig", "Bury the old stuff"), _completed_dig_spots, _total_dig_spots])
 	elif _objective_state == "rest":

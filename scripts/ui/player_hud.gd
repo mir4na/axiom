@@ -60,6 +60,9 @@ var _rewind_stun_visual_active: bool = false
 var _time_stop_overlay: ColorRect
 var _time_stop_overlay_material: ShaderMaterial
 var _time_stop_expand_tween: Tween
+var _rewind_tutorial_focus_overlay: ColorRect
+var _rewind_tutorial_focus_enabled: bool = false
+var _glitch_visibility_ticket: int = 0
 
 func set_dig_progress(val: float, is_vis: bool) -> void:
 	dig_progress_bar.set_progress(val, is_vis)
@@ -129,9 +132,12 @@ func hide_boss_bar() -> void:
 
 func _ready() -> void:
 	prompt_label.visible = false
+	if glitch_overlay != null:
+		glitch_overlay.visible = false
 	_setup_weapon_hud()
 	_setup_threat_warning()
 	_setup_time_stop_overlay()
+	_setup_rewind_tutorial_focus_overlay()
 	set_rewind_stun_state(false, 0.0)
 
 	GameState.inventory_changed.connect(_update_inventory_ui)
@@ -160,6 +166,7 @@ func set_rewind_stun_state(active: bool, ratio: float = 0.0) -> void:
 	if _rewind_stun_label != null:
 		_rewind_stun_label.visible = active
 	_animate_screen_fx(0.18 if active else 0.3)
+	_refresh_glitch_overlay_visibility()
 
 func _set_shader_param(param: String, value: float) -> void:
 	if glitch_overlay.material is ShaderMaterial:
@@ -221,9 +228,12 @@ func _update_mark_nodes() -> void:
 		node.position = Vector2(px - 6.0, strip_h * 0.5 - 10.0)
 
 func show_mark_screenshot_effect() -> void:
+	if glitch_overlay != null:
+		glitch_overlay.visible = true
 	var t = create_tween()
 	t.tween_method(func(v): _set_shader_param("screenshot_flash", v), 0.0, 1.0, 0.07)
 	t.tween_method(func(v): _set_shader_param("screenshot_flash", v), 1.0, 0.0, 0.55)
+	_schedule_glitch_overlay_visibility_refresh(0.68)
 
 func remove_mark_current() -> void:
 	var idx = GameState.history_index
@@ -248,14 +258,18 @@ func _on_time_direction_changed(dir: int) -> void:
 	if _rewind_visual_active or _time_stop_visual_active:
 		return
 	var target = 0.8 if dir != 1 else 0.0
+	if glitch_overlay != null:
+		glitch_overlay.visible = true
 	if _glitch_tween:
 		_glitch_tween.kill()
 	_glitch_tween = create_tween()
 	_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
 		_get_shader_param("glitch_intensity"), target, 0.2)
+	_schedule_glitch_overlay_visibility_refresh(0.24)
 
 func _on_rewind_mode_changed(active: bool) -> void:
 	_rewind_visual_active = active
+	_refresh_rewind_tutorial_focus_overlay()
 	_animate_screen_fx(0.35 if active else 0.5)
 	if active:
 		var tween_ui = create_tween().set_parallel(true)
@@ -273,10 +287,14 @@ func _on_rewind_mode_changed(active: bool) -> void:
 		tween_ui.tween_property(status_panel, "modulate:a", 1.0, 0.3)
 		tween_ui.tween_property(timeline_bar_container, "scale", Vector2(1.0, 0.3), 0.3).set_trans(Tween.TRANS_BACK)
 		tween_ui.tween_property(timeline_bar_container, "modulate:a", 0.0, 0.2)
-
 		for key in _mark_nodes.keys():
 			_mark_nodes[key].queue_free()
 		_mark_nodes.clear()
+	_refresh_glitch_overlay_visibility()
+
+func set_rewind_tutorial_focus_enabled(enabled: bool) -> void:
+	_rewind_tutorial_focus_enabled = enabled
+	_refresh_rewind_tutorial_focus_overlay()
 
 func set_time_stop_active(active: bool, world_origin: Vector3 = Vector3.ZERO, expand_duration: float = 1.0) -> void:
 	_time_stop_visual_active = active
@@ -311,6 +329,9 @@ func _animate_screen_fx(duration: float) -> void:
 	_invert_tween.tween_method(func(v): _set_shader_param("vignette_strength", v), _get_shader_param("vignette_strength"), vignette_target, duration)
 	_glitch_tween = create_tween()
 	_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v), _get_shader_param("glitch_intensity"), glitch_target, duration)
+	if glitch_overlay != null:
+		glitch_overlay.visible = true
+	_schedule_glitch_overlay_visibility_refresh(duration + 0.05)
 
 func _setup_time_stop_overlay() -> void:
 	_time_stop_overlay = ColorRect.new()
@@ -367,11 +388,38 @@ func _world_to_screen_uv(world_origin: Vector3) -> Vector2:
 func trigger_pointer_glitch() -> void:
 	if _glitch_tween:
 		_glitch_tween.kill()
+	if glitch_overlay != null:
+		glitch_overlay.visible = true
 	_glitch_tween = create_tween()
 	_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
 		_get_shader_param("glitch_intensity"), 1.0, 0.05)
 	_glitch_tween.tween_method(func(v): _set_shader_param("glitch_intensity", v),
 		1.0, 0.3, 0.15)
+	_schedule_glitch_overlay_visibility_refresh(0.24)
+
+func _refresh_glitch_overlay_visibility() -> void:
+	if glitch_overlay == null:
+		return
+	var should_show: bool = _rewind_visual_active or _time_stop_visual_active or _rewind_stun_visual_active
+	if glitch_overlay.material is ShaderMaterial:
+		should_show = should_show or (
+			_get_shader_param("glitch_intensity") > 0.001
+			or _get_shader_param("invert_amount") > 0.001
+			or _get_shader_param("vignette_strength") > 0.001
+			or _get_shader_param("screenshot_flash") > 0.001
+		)
+	glitch_overlay.visible = should_show
+
+func _schedule_glitch_overlay_visibility_refresh(delay: float) -> void:
+	_glitch_visibility_ticket += 1
+	var ticket: int = _glitch_visibility_ticket
+	_defer_glitch_overlay_visibility_refresh(ticket, delay)
+
+func _defer_glitch_overlay_visibility_refresh(ticket: int, delay: float) -> void:
+	await get_tree().create_timer(maxf(delay, 0.0)).timeout
+	if ticket != _glitch_visibility_ticket:
+		return
+	_refresh_glitch_overlay_visibility()
 
 func show_prompt(text: String) -> void:
 	prompt_label.text = text
@@ -551,3 +599,21 @@ func _setup_threat_warning() -> void:
 	_threat_warning_overlay.color = Color(1.0, 0.08, 0.06, 0.0)
 	_threat_warning_overlay.visible = false
 	add_child(_threat_warning_overlay)
+
+func _setup_rewind_tutorial_focus_overlay() -> void:
+	_rewind_tutorial_focus_overlay = ColorRect.new()
+	_rewind_tutorial_focus_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_rewind_tutorial_focus_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rewind_tutorial_focus_overlay.color = Color(0.0, 0.0, 0.0, 0.8)
+	_rewind_tutorial_focus_overlay.visible = false
+	_rewind_tutorial_focus_overlay.z_index = 45
+	add_child(_rewind_tutorial_focus_overlay)
+	if timeline_bar_container != null:
+		timeline_bar_container.z_index = 60
+	_refresh_rewind_tutorial_focus_overlay()
+
+func _refresh_rewind_tutorial_focus_overlay() -> void:
+	if _rewind_tutorial_focus_overlay == null:
+		return
+	var visible_state: bool = _rewind_tutorial_focus_enabled and _rewind_visual_active
+	_rewind_tutorial_focus_overlay.visible = visible_state
