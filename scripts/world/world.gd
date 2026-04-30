@@ -27,6 +27,11 @@ const ENDING_BOARD_LINE_PAUSE := 0.26
 const ENDING_BOARD_FOOTER_PAUSE := 0.36
 const ENDING_BOARD_HOLD_DURATION := 5.0
 const ENDING_BOARD_FADE_DURATION := 2.6
+const OBJECTIVE_PANEL_MIN_HEIGHT := 98.0
+const OBJECTIVE_PANEL_TEXT_TOP := 44.0
+const OBJECTIVE_PANEL_TEXT_BOTTOM_PADDING := 12.0
+const OBJECTIVE_PANEL_TEXT_WIDTH_FALLBACK := 394.0
+const OBJECTIVE_PANEL_LINE_HEIGHT_FACTOR := 1.28
 const LEVEL_ONE_FLOW := preload("res://scripts/world/level_one_flow.gd")
 const LEVEL_FOUR_FLOW := preload("res://scripts/world/level_four_flow.gd")
 const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
@@ -494,10 +499,12 @@ func _create_intro_ui() -> void:
 	_objective_panel.anchor_top = 0.0
 	_objective_panel.anchor_right = 1.0
 	_objective_panel.anchor_bottom = 0.0
+	_objective_panel.clip_contents = true
 	_objective_panel.visible = false
 	_intro_ui.add_child(_objective_panel)
 	_objective_tag = _objective_panel.get_node("Tag") as Label
 	_objective_label = _objective_panel.get_node("Text") as Label
+	_resize_objective_panel("OBJECTIVE")
 
 	_subtitle_label = Label.new()
 	_subtitle_label.anchor_left = 0.16
@@ -1613,7 +1620,6 @@ func _show_objective(text: String) -> void:
 	if has_visible_objective:
 		_objective_tween = create_tween().set_parallel(true)
 		_objective_tween.tween_property(_objective_panel, "modulate:a", 0.0, 0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-		_objective_tween.tween_property(_objective_panel, "position:y", -10.0, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 		await _objective_tween.finished
 		if transition_serial != _objective_transition_serial:
 			return
@@ -1622,7 +1628,6 @@ func _show_objective(text: String) -> void:
 	_objective_panel.visible = true
 	_objective_tween = create_tween().set_parallel(true)
 	_objective_tween.tween_property(_objective_panel, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	_objective_tween.tween_property(_objective_panel, "position:y", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 func _hide_objective(animated: bool = true) -> void:
 	if _objective_panel == null:
@@ -1636,7 +1641,6 @@ func _hide_objective(animated: bool = true) -> void:
 		return
 	_objective_tween = create_tween().set_parallel(true)
 	_objective_tween.tween_property(_objective_panel, "modulate:a", 0.0, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	_objective_tween.tween_property(_objective_panel, "position:y", -12.0, 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	await _objective_tween.finished
 	if _objective_panel != null:
 		_objective_panel.visible = false
@@ -1645,7 +1649,48 @@ func _apply_objective_text(text: String) -> void:
 	if _objective_label == null or _objective_panel == null:
 		return
 	_objective_label.text = text
-	_objective_panel.position.y = 12.0
+	_resize_objective_panel(text)
+
+func _resize_objective_panel(text: String) -> void:
+	if _objective_panel == null or _objective_label == null:
+		return
+	var font: Font = _objective_label.get_theme_font("font")
+	var font_size: int = _objective_label.get_theme_font_size("font_size")
+	var max_text_width: float = _objective_label.size.x
+	if max_text_width <= 1.0:
+		max_text_width = OBJECTIVE_PANEL_TEXT_WIDTH_FALLBACK
+	var line_count: int = _estimate_wrapped_line_count(text, font, font_size, max_text_width)
+	var line_height: float = float(font_size) * OBJECTIVE_PANEL_LINE_HEIGHT_FACTOR
+	var panel_height: float = maxf(OBJECTIVE_PANEL_MIN_HEIGHT, OBJECTIVE_PANEL_TEXT_TOP + line_height * float(line_count) + OBJECTIVE_PANEL_TEXT_BOTTOM_PADDING)
+	_objective_panel.offset_bottom = _objective_panel.offset_top + panel_height
+
+func _estimate_wrapped_line_count(text: String, font: Font, font_size: int, max_width: float) -> int:
+	if text.is_empty():
+		return 1
+	if font == null:
+		return maxi(1, text.count("\n") + 1)
+	var total_lines: int = 0
+	var paragraphs: PackedStringArray = text.split("\n", false)
+	for paragraph in paragraphs:
+		if paragraph.strip_edges().is_empty():
+			total_lines += 1
+			continue
+		var words: PackedStringArray = paragraph.split(" ", false)
+		if words.is_empty():
+			total_lines += 1
+			continue
+		var current_width: float = 0.0
+		for i in range(words.size()):
+			var word: String = words[i]
+			var token: String = word if i == 0 else " " + word
+			var token_width: float = font.get_string_size(token, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
+			if current_width > 0.0 and current_width + token_width > max_width:
+				total_lines += 1
+				current_width = font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
+			else:
+				current_width += token_width
+		total_lines += 1
+	return maxi(1, total_lines)
 
 func _objective_text(key: String, fallback: String) -> String:
 	if objective_config != null and objective_config.has_method("get_objective_text"):

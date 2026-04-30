@@ -4,9 +4,9 @@ uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_l
 uniform float power : hint_range(0.0, 1.0) = 0.0;
 uniform vec3 glow_color : source_color = vec3(0.95, 1.0, 0.82);
 uniform float glow_strength : hint_range(0.0, 6.0) = 2.8;
-uniform float corner_roundness : hint_range(0.0, 0.8) = 0.30;
-uniform float corner_softness : hint_range(0.001, 0.2) = 0.035;
-uniform float content_fit : hint_range(0.7, 1.2) = 0.84;
+uniform float corner_roundness : hint_range(0.0, 0.8) = 0.22;
+uniform float corner_softness : hint_range(0.001, 0.2) = 0.028;
+uniform float content_fit : hint_range(0.7, 1.2) = 0.92;
 
 float rounded_box(vec2 p, vec2 b, float r) {
 	vec2 q = abs(p) - b + vec2(r);

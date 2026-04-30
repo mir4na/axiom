@@ -4,6 +4,7 @@ const BOOT_SCENE_SWAP_TIME := 0.34
 const BOOT_DURATION := 1.2
 const POWER_OFF_DURATION := 0.42
 const RESPAWN_BLACK_DURATION := 0.24
+const POWER_TO_CRT_BLEND_DURATION := 0.24
 
 var _boot_backdrop: ColorRect
 var _crt_rect: ColorRect
@@ -51,9 +52,7 @@ func reboot_to_scene(path: String, enable_crt_after: bool = true) -> void:
 	var power_on: Tween = create_tween()
 	power_on.tween_method(_set_power_amount, 0.0, 1.0, BOOT_DURATION).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 	await power_on.finished
-	_hide_boot_overlay()
-	_crt_enabled = enable_crt_after
-	_apply_crt_state(enable_crt_after)
+	await _blend_power_to_crt(enable_crt_after)
 	_boot_running = false
 
 func respawn_to_scene(path: String, enable_crt_after: bool = true) -> void:
@@ -81,9 +80,7 @@ func _power_on_to_scene(path: String, black_duration: float, enable_crt_after: b
 	var power_on: Tween = create_tween()
 	power_on.tween_method(_set_power_amount, 0.0, 1.0, BOOT_DURATION).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 	await power_on.finished
-	_hide_boot_overlay()
-	_crt_enabled = enable_crt_after
-	_apply_crt_state(enable_crt_after)
+	await _blend_power_to_crt(enable_crt_after)
 	_boot_running = false
 
 func _build_overlay() -> void:
@@ -131,3 +128,29 @@ func _hide_boot_overlay() -> void:
 func _set_power_amount(value: float) -> void:
 	if _power_material != null:
 		_power_material.set_shader_parameter("power", value)
+
+func _set_crt_intensity(value: float) -> void:
+	if _crt_material != null:
+		_crt_material.set_shader_parameter("intensity", clampf(value, 0.0, 1.0))
+
+func _blend_power_to_crt(enable_crt_after: bool) -> void:
+	_crt_enabled = enable_crt_after
+	if not enable_crt_after:
+		_hide_boot_overlay()
+		_apply_crt_state(false)
+		return
+	if _crt_rect != null:
+		_crt_rect.visible = true
+	_set_crt_intensity(0.0)
+	if _power_rect != null:
+		_power_rect.modulate.a = 1.0
+		_power_rect.visible = true
+	var blend: Tween = create_tween()
+	blend.parallel().tween_method(_set_crt_intensity, 0.0, 1.0, POWER_TO_CRT_BLEND_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if _power_rect != null:
+		blend.parallel().tween_property(_power_rect, "modulate:a", 0.0, POWER_TO_CRT_BLEND_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await blend.finished
+	_hide_boot_overlay()
+	if _power_rect != null:
+		_power_rect.modulate.a = 1.0
+	_apply_crt_state(true)

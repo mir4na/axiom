@@ -11,9 +11,9 @@ uniform float vhs_jitter_strength : hint_range(0.0, 0.03) = 0.0038;
 uniform float vhs_band_strength : hint_range(0.0, 0.2) = 0.06;
 uniform float vhs_bleed_strength : hint_range(0.0, 0.25) = 0.05;
 uniform float vhs_ghost_strength : hint_range(0.0, 0.3) = 0.055;
-uniform float corner_roundness : hint_range(0.0, 0.8) = 0.30;
-uniform float corner_softness : hint_range(0.001, 0.2) = 0.035;
-uniform float content_fit : hint_range(0.7, 1.2) = 0.84;
+uniform float corner_roundness : hint_range(0.0, 0.8) = 0.22;
+uniform float corner_softness : hint_range(0.001, 0.2) = 0.028;
+uniform float content_fit : hint_range(0.7, 1.2) = 0.92;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(41.0, 289.0))) * 45758.5453);
