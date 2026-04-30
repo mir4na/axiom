@@ -111,6 +111,8 @@ func play_intro_sequence() -> void:
 	await _world._fade_black(1.0, 0.32)
 	_prepare_player_look_down_pose()
 	await _show_player_line("No. I am not staying here.", 2.0)
+	if _world != null and _world.has_method("play_level_four_bgm"):
+		_world.call("play_level_four_bgm")
 	await _show_player_line("The real world is hard... but that is where things actually mean something.", 2.8)
 	var final_focus: Node3D = _boss if _boss != null and is_instance_valid(_boss) else (_axia_focus if _axia_focus != null else _combat_focus)
 	await _show_player_line("I still want to go back. I still want to keep moving.", 2.5)
@@ -141,6 +143,8 @@ func on_boss_defeated() -> void:
 	if _world.player_hud != null and _world.player_hud.has_method("hide_boss_bar"):
 		_world.player_hud.call("hide_boss_bar")
 	_world._hide_objective()
+	if _world != null and _world.has_method("fade_out_level_four_bgm"):
+		_world.call_deferred("fade_out_level_four_bgm")
 	call_deferred("_run_boss_defeat_transition")
 
 func _run_boss_defeat_transition() -> void:
@@ -167,6 +171,8 @@ func play_victory_subtitle() -> void:
 		var sky_transform: Transform3D = _world._make_look_transform(start_transform.origin, sky_target)
 		await _world._play_camera_shot(start_transform, sky_transform, 1.3)
 	_world.call("_set_sky_crack_intensity", 0.0)
+	if _world.has_method("play_sky_cracking_sfx"):
+		_world.call("play_sky_cracking_sfx")
 	if _world._glitch_overlay != null:
 		_world._glitch_overlay.modulate.a = 0.0
 		_world._glitch_overlay.visible = false

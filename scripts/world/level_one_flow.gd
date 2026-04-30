@@ -248,6 +248,9 @@ func _configure_house() -> void:
 func _create_escape_ui() -> void:
 	if _world._intro_ui == null or _timer_label != null:
 		return
+	var gameplay_font: Font = null
+	if _world._objective_label != null:
+		gameplay_font = _world._objective_label.get_theme_font("font")
 	_timer_label = Label.new()
 	_timer_label.anchor_left = 0.5
 	_timer_label.anchor_top = 0.02
@@ -259,7 +262,9 @@ func _create_escape_ui() -> void:
 	_timer_label.offset_bottom = 44.0
 	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_timer_label.add_theme_font_size_override("font_size", 30)
+	_timer_label.add_theme_font_size_override("font_size", 60)
+	if gameplay_font != null:
+		_timer_label.add_theme_font_override("font", gameplay_font)
 	_timer_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.64, 1.0))
 	_timer_label.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.02, 0.92))
 	_timer_label.add_theme_constant_override("outline_size", 10)
@@ -299,7 +304,9 @@ func _create_escape_ui() -> void:
 	_tutorial_title.offset_bottom = 50.0
 	_tutorial_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tutorial_title.text = "AXIOM"
-	_tutorial_title.add_theme_font_size_override("font_size", 26)
+	_tutorial_title.add_theme_font_size_override("font_size", 52)
+	if gameplay_font != null:
+		_tutorial_title.add_theme_font_override("font", gameplay_font)
 	_tutorial_title.add_theme_color_override("font_color", Color(0.92, 0.98, 1.0, 1.0))
 	_tutorial_panel.add_child(_tutorial_title)
 	_tutorial_body = Label.new()
@@ -314,7 +321,9 @@ func _create_escape_ui() -> void:
 	_tutorial_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tutorial_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tutorial_body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_tutorial_body.add_theme_font_size_override("font_size", 22)
+	_tutorial_body.add_theme_font_size_override("font_size", 44)
+	if gameplay_font != null:
+		_tutorial_body.add_theme_font_override("font", gameplay_font)
 	_tutorial_body.add_theme_color_override("font_color", Color(0.88, 0.96, 0.98, 1.0))
 	_tutorial_panel.add_child(_tutorial_body)
 	_tutorial_hint = Label.new()
@@ -328,7 +337,9 @@ func _create_escape_ui() -> void:
 	_tutorial_hint.offset_bottom = -12.0
 	_tutorial_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_tutorial_hint.text = "[SPACE] NEXT"
-	_tutorial_hint.add_theme_font_size_override("font_size", 16)
+	_tutorial_hint.add_theme_font_size_override("font_size", 32)
+	if gameplay_font != null:
+		_tutorial_hint.add_theme_font_override("font", gameplay_font)
 	_tutorial_hint.add_theme_color_override("font_color", Color(1.0, 0.84, 0.44, 1.0))
 	_tutorial_panel.add_child(_tutorial_hint)
 

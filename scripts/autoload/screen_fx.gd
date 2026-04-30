@@ -5,10 +5,14 @@ const BOOT_DURATION := 1.2
 const POWER_OFF_DURATION := 0.42
 const RESPAWN_BLACK_DURATION := 0.24
 const POWER_TO_CRT_BLEND_DURATION := 0.24
+const LEVEL_FADE_OUT_DURATION := 0.32
+const LEVEL_FADE_IN_DURATION := 0.34
+const LEVEL_FADE_HOLD_DURATION := 0.04
 
 var _boot_backdrop: ColorRect
 var _crt_rect: ColorRect
 var _power_rect: ColorRect
+var _fade_rect: ColorRect
 var _crt_material: ShaderMaterial
 var _power_material: ShaderMaterial
 var _crt_enabled: bool = false
@@ -20,6 +24,7 @@ func _ready() -> void:
 	_build_overlay()
 	_apply_crt_state(false)
 	_hide_boot_overlay()
+	_hide_fade_overlay()
 
 func set_gameplay_filter_enabled(enabled: bool) -> void:
 	_crt_enabled = enabled
@@ -55,8 +60,74 @@ func reboot_to_scene(path: String, enable_crt_after: bool = true) -> void:
 	await _blend_power_to_crt(enable_crt_after)
 	_boot_running = false
 
+func death_respawn_to_scene(path: String, enable_crt_after: bool = true, reset_rewind_recording: bool = false) -> void:
+	if _boot_running:
+		return
+	_boot_running = true
+	get_tree().paused = false
+	if reset_rewind_recording:
+		_prepare_rewind_reset_before_respawn()
+	_boot_backdrop.visible = true
+	_power_rect.visible = true
+	_crt_rect.visible = _crt_enabled
+	_set_power_amount(1.0)
+	var power_off: Tween = create_tween()
+	power_off.tween_method(_set_power_amount, 1.0, 0.0, POWER_OFF_DURATION).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	await power_off.finished
+	get_tree().change_scene_to_file(path)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if reset_rewind_recording:
+		_finalize_rewind_reset_after_respawn()
+	_apply_crt_state(false)
+	if _boot_backdrop != null:
+		_boot_backdrop.visible = false
+	if _power_rect != null:
+		_power_rect.visible = true
+	_set_power_amount(0.0)
+	var power_on: Tween = create_tween()
+	power_on.tween_method(_set_power_amount, 0.0, 1.0, BOOT_DURATION).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	await power_on.finished
+	await _blend_power_to_crt(enable_crt_after)
+	_boot_running = false
+
 func respawn_to_scene(path: String, enable_crt_after: bool = true) -> void:
 	await _power_on_to_scene(path, RESPAWN_BLACK_DURATION, enable_crt_after)
+
+func fade_to_scene(
+	path: String,
+	enable_crt_after: bool = true,
+	fade_out_duration: float = LEVEL_FADE_OUT_DURATION,
+	fade_in_duration: float = LEVEL_FADE_IN_DURATION,
+	hold_duration: float = LEVEL_FADE_HOLD_DURATION
+) -> void:
+	if _boot_running:
+		return
+	_boot_running = true
+	get_tree().paused = false
+	_hide_boot_overlay()
+	_apply_crt_state(_crt_enabled)
+	if _fade_rect != null:
+		_fade_rect.visible = true
+		_set_fade_amount(0.0)
+	var fade_out: Tween = create_tween()
+	fade_out.tween_method(_set_fade_amount, 0.0, 1.0, maxf(0.01, fade_out_duration)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await fade_out.finished
+	if hold_duration > 0.0:
+		await get_tree().create_timer(hold_duration, true, false, true).timeout
+	get_tree().change_scene_to_file(path)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_crt_enabled = enable_crt_after
+	_apply_crt_state(enable_crt_after)
+	if _fade_rect != null:
+		_fade_rect.visible = true
+		_set_fade_amount(1.0)
+	var fade_in: Tween = create_tween()
+	fade_in.tween_method(_set_fade_amount, 1.0, 0.0, maxf(0.01, fade_in_duration)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await fade_in.finished
+	_hide_fade_overlay()
+	_boot_running = false
 
 func _power_on_to_scene(path: String, black_duration: float, enable_crt_after: bool) -> void:
 	if _boot_running:
@@ -106,6 +177,14 @@ func _build_overlay() -> void:
 	_power_rect.material = _power_material
 	add_child(_power_rect)
 
+	_fade_rect = ColorRect.new()
+	_fade_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade_rect.color = Color.BLACK
+	_fade_rect.modulate.a = 0.0
+	_fade_rect.visible = false
+	add_child(_fade_rect)
+
 func _apply_crt_state(enabled: bool) -> void:
 	if _crt_rect == null:
 		return
@@ -132,6 +211,23 @@ func _set_power_amount(value: float) -> void:
 func _set_crt_intensity(value: float) -> void:
 	if _crt_material != null:
 		_crt_material.set_shader_parameter("intensity", clampf(value, 0.0, 1.0))
+
+func _set_fade_amount(value: float) -> void:
+	if _fade_rect != null:
+		_fade_rect.modulate.a = clampf(value, 0.0, 1.0)
+
+func _hide_fade_overlay() -> void:
+	if _fade_rect != null:
+		_fade_rect.modulate.a = 0.0
+		_fade_rect.visible = false
+
+func _prepare_rewind_reset_before_respawn() -> void:
+	GameState.reset_axiom_recording()
+	GameState.recording_enabled = false
+
+func _finalize_rewind_reset_after_respawn() -> void:
+	GameState.reset_axiom_recording()
+	GameState.recording_enabled = true
 
 func _blend_power_to_crt(enable_crt_after: bool) -> void:
 	_crt_enabled = enable_crt_after

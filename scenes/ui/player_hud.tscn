@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://hppn4sb4bmv2" path="res://scripts/ui/player_hud.gd" id="1_hud"]
 [ext_resource type="Script" uid="uid://uvs2ahcgel2m" path="res://scripts/ui/dig_circle.gd" id="2_dig"]
 [ext_resource type="Shader" uid="uid://c2eica5ena84e" path="res://shaders/glitch.gdshader" id="3_glitch"]
+[ext_resource type="FontFile" uid="uid://djt08l5gryxok" path="res://fonts/CatPentagram.ttf" id="4_game_font"]
 
 [sub_resource type="ShaderMaterial" id="1"]
 shader = ExtResource("3_glitch")
@@ -10,6 +11,12 @@ shader_parameter/glitch_intensity = 0.0
 shader_parameter/invert_amount = 0.0
 shader_parameter/vignette_strength = 0.0
 shader_parameter/screenshot_flash = 0.0
+shader_parameter/corner_roundness = 0.22
+shader_parameter/corner_softness = 0.028
+shader_parameter/content_fit = 0.92
+
+[sub_resource type="Theme" id="Theme_hud_font"]
+default_font = ExtResource("4_game_font")
 
 [sub_resource type="StyleBoxFlat" id="2"]
 bg_color = Color(0.04, 0.04, 0.06, 0.95)
@@ -45,25 +52,26 @@ offset_top = -30.0
 offset_right = 408.0
 offset_bottom = 112.0
 scale = Vector2(1.5, 1.5)
+theme = SubResource("Theme_hud_font")
 
 [node name="HealthLabel" type="Label" parent="StatusPanel" unique_id=844499459]
 layout_mode = 0
-offset_left = 14.0
-offset_top = 36.0
-offset_right = 170.0
-offset_bottom = 58.0
+offset_left = 20.666668
+offset_top = 29.333332
+offset_right = 176.66667
+offset_bottom = 69.33333
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 40
 text = "HEALTH"
 
 [node name="HealthValue" type="Label" parent="StatusPanel" unique_id=456003306]
 layout_mode = 0
-offset_left = 190.66667
-offset_top = 32.0
-offset_right = 344.6667
-offset_bottom = 63.0
+offset_left = 200.66667
+offset_top = 22.0
+offset_right = 354.6667
+offset_bottom = 66.0
 theme_override_colors/font_color = Color(1, 0.93, 0.5, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 44
 text = "100 / 100"
 horizontal_alignment = 2
 
@@ -101,22 +109,22 @@ color = Color(0.86, 0.22, 0.2, 0.98)
 
 [node name="EnergyLabel" type="Label" parent="StatusPanel" unique_id=461816157]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 104.0
-offset_right = 130.0
-offset_bottom = 122.0
+offset_left = 16.666666
+offset_top = 98.0
+offset_right = 130.66667
+offset_bottom = 125.0
 theme_override_colors/font_color = Color(1, 0.95, 0.66, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 26
 text = "ENERGY"
 
 [node name="EnergyValue" type="Label" parent="StatusPanel" unique_id=851917381]
 layout_mode = 0
-offset_left = 182.85715
-offset_top = 110.71429
-offset_right = 300.85715
-offset_bottom = 128.7143
+offset_left = 200.66667
+offset_top = 108.0
+offset_right = 318.6667
+offset_bottom = 135.0
 theme_override_colors/font_color = Color(0.93, 1, 0.98, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 26
 text = "100 / 100"
 horizontal_alignment = 2
 
@@ -158,6 +166,7 @@ offset_bottom = -48.0
 grow_horizontal = 2
 grow_vertical = 0
 scale = Vector2(1, 0.3)
+theme = SubResource("Theme_hud_font")
 
 [node name="RewindHint" type="Label" parent="TimelineBarContainer" unique_id=682546585]
 layout_mode = 1
@@ -170,7 +179,7 @@ offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.9, 0.85, 0.4, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 26
 text = "[Hold R] Past   [Hold F] Future   [X] Mark   [SPACE] JUMP"
 horizontal_alignment = 1
 
@@ -216,7 +225,7 @@ offset_top = 4.0
 offset_right = 64.0
 offset_bottom = 20.0
 theme_override_colors/font_color = Color(1, 0.95, 0.5, 1)
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 20
 text = "NOW"
 
 [node name="BossBar" type="Control" parent="." unique_id=132242774]
@@ -230,6 +239,7 @@ offset_top = 24.0
 offset_right = 250.0
 offset_bottom = 108.0
 grow_horizontal = 2
+theme = SubResource("Theme_hud_font")
 
 [node name="Back" type="ColorRect" parent="BossBar" unique_id=641826251]
 layout_mode = 0
@@ -248,7 +258,7 @@ offset_bottom = 28.0
 theme_override_colors/font_color = Color(1, 0.9, 0.74, 1)
 theme_override_colors/font_outline_color = Color(0.01, 0.01, 0.01, 0.9)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 40
 text = "AXIA"
 horizontal_alignment = 1
 
@@ -289,6 +299,7 @@ offset_right = 212.0
 offset_bottom = 188.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_hud_font")
 
 [node name="Track" type="ColorRect" parent="RewindStunContainer" unique_id=995691369]
 layout_mode = 0
@@ -312,7 +323,7 @@ offset_bottom = 20.0
 theme_override_colors/font_color = Color(1, 0.9, 0.82, 1)
 theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.9)
 theme_override_constants/outline_size = 7
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 32
 text = "SYSTEM OVERLOAD"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -329,10 +340,11 @@ offset_right = 170.0
 offset_bottom = 166.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_hud_font")
 theme_override_colors/font_color = Color(1, 0.94, 0.56, 1)
 theme_override_colors/font_outline_color = Color(0.01, 0.01, 0.01, 0.9)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 36
 text = "Press E to interact"
 horizontal_alignment = 1
 
@@ -348,10 +360,11 @@ offset_right = 22.0
 offset_bottom = 14.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_hud_font")
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 0.96)
 theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.88)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 40
 text = "+"
 horizontal_alignment = 1
 
@@ -367,6 +380,7 @@ offset_right = 294.0
 offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 0
+theme = SubResource("Theme_hud_font")
 theme_override_constants/separation = 16
 alignment = 1
 
@@ -397,7 +411,7 @@ offset_top = 14.0
 offset_right = 106.0
 offset_bottom = 30.0
 theme_override_colors/font_color = Color(1, 0.89, 0.34, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 28
 text = "SLOT 01"
 
 [node name="Label" type="Label" parent="InventoryBar/Slot1" unique_id=535350285]
@@ -407,7 +421,7 @@ offset_top = 36.0
 offset_right = 154.0
 offset_bottom = 60.0
 theme_override_colors/font_color = Color(0.94, 0.97, 0.99, 1)
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 38
 text = "EMPTY"
 
 [node name="Slot2" type="Control" parent="InventoryBar" unique_id=2036262513]
@@ -437,7 +451,7 @@ offset_top = 14.0
 offset_right = 106.0
 offset_bottom = 30.0
 theme_override_colors/font_color = Color(1, 0.89, 0.34, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 28
 text = "SLOT 02"
 
 [node name="Label" type="Label" parent="InventoryBar/Slot2" unique_id=1766480401]
@@ -447,7 +461,7 @@ offset_top = 36.0
 offset_right = 154.0
 offset_bottom = 60.0
 theme_override_colors/font_color = Color(0.94, 0.97, 0.99, 1)
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 38
 text = "EMPTY"
 
 [node name="Slot3" type="Control" parent="InventoryBar" unique_id=864482991]
@@ -477,7 +491,7 @@ offset_top = 14.0
 offset_right = 106.0
 offset_bottom = 30.0
 theme_override_colors/font_color = Color(1, 0.89, 0.34, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 28
 text = "SLOT 03"
 
 [node name="Label" type="Label" parent="InventoryBar/Slot3" unique_id=821137336]
@@ -487,7 +501,7 @@ offset_top = 36.0
 offset_right = 154.0
 offset_bottom = 60.0
 theme_override_colors/font_color = Color(0.94, 0.97, 0.99, 1)
-theme_override_font_sizes/font_size = 19
+theme_override_font_sizes/font_size = 38
 text = "EMPTY"
 
 [node name="DigProgress" type="Control" parent="." unique_id=1359921087]

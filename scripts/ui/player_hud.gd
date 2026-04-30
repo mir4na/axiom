@@ -213,7 +213,7 @@ func _update_mark_nodes() -> void:
 			var lbl = Label.new()
 			lbl.text = "×"
 			lbl.add_theme_color_override("font_color", Color(1, 0.4, 0.1, 1))
-			lbl.add_theme_font_size_override("font_size", 14)
+			lbl.add_theme_font_size_override("font_size", 28)
 			marks_container.add_child(lbl)
 			_mark_nodes[idx] = lbl
 
@@ -385,7 +385,7 @@ func set_crosshair_active(active: bool, is_dig: bool = false) -> void:
 		crosshair.add_theme_color_override("font_color", Color(1, 0.9, 0.2, 1))
 		if is_dig:
 			crosshair.text = "⊕"
-			crosshair.add_theme_font_size_override("font_size", 28)
+			crosshair.add_theme_font_size_override("font_size", 56)
 		else:
 			crosshair.text = "+"
 			crosshair.remove_theme_font_size_override("font_size")
@@ -488,6 +488,8 @@ func _setup_weapon_hud() -> void:
 	_ammo_container.offset_right = -24.0
 	_ammo_container.offset_bottom = -56.0
 	_ammo_container.visible = false
+	if prompt_label != null and prompt_label.theme != null:
+		_ammo_container.theme = prompt_label.theme
 	add_child(_ammo_container)
 
 	_ammo_back = ColorRect.new()
@@ -507,7 +509,7 @@ func _setup_weapon_hud() -> void:
 	_ammo_label.offset_bottom = -14.0
 	_ammo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_ammo_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_ammo_label.add_theme_font_size_override("font_size", 24)
+	_ammo_label.add_theme_font_size_override("font_size", 48)
 	_ammo_label.add_theme_color_override("font_color", Color(1.0, 0.94, 0.8, 1.0))
 	_ammo_label.add_theme_color_override("font_outline_color", Color(0.01, 0.01, 0.01, 0.9))
 	_ammo_label.add_theme_constant_override("outline_size", 8)

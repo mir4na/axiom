@@ -1,6 +1,10 @@
 [gd_scene format=3 uid="uid://dgkx1oi1302tr"]
 
 [ext_resource type="Script" uid="uid://dvi0lges4tuf6" path="res://scripts/ui/ending_board_text_overlay.gd" id="1_overlay_script"]
+[ext_resource type="FontFile" path="res://fonts/CatPentagram.ttf" id="2_game_font"]
+
+[sub_resource type="Theme" id="Theme_ending_board"]
+default_font = ExtResource("2_game_font")
 
 [node name="EndingBoardTextOverlay" type="Control" unique_id=522247561]
 layout_mode = 3
@@ -11,6 +15,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_overlay_script")
+theme = SubResource("Theme_ending_board")
 
 [node name="BoardAnchor" type="Control" parent="." unique_id=1659365421]
 anchors_preset = 0

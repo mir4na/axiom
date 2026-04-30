@@ -4,8 +4,8 @@
 [ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="2"]
 [ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/objects/surreal_platform.tscn" id="4"]
-[ext_resource type="PackedScene" path="res://scenes/objects/jumping_boots.tscn" id="5"]
-[ext_resource type="PackedScene" path="res://scenes/objects/dragon_guard.tscn" id="6"]
+[ext_resource type="PackedScene" uid="uid://bua3jyp416qe7" path="res://scenes/objects/jumping_boots.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://c843o1oyndtrj" path="res://scenes/objects/dragon_guard.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/objects/level4_gate.tscn" id="8"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="9"]
@@ -70,8 +70,85 @@ size = Vector3(3.2, 5.6, 3.2)
 [sub_resource type="BoxMesh" id="8"]
 size = Vector3(3.5, 3.5, 3.5)
 
+[sub_resource type="StandardMaterial3D" id="MatCourt"]
+albedo_color = Color(0.38, 0.24, 0.44, 1)
+roughness = 0.56
+emission_enabled = true
+emission = Color(0.6, 0.72, 1, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="BoxMesh" id="CourtMesh"]
+size = Vector3(17, 0.4, 9.5)
+
+[sub_resource type="StandardMaterial3D" id="MatCourtLine"]
+roughness = 0.18
+emission_enabled = true
+emission = Color(0.88, 0.88, 1, 1)
+emission_energy_multiplier = 3.2
+
+[sub_resource type="BoxMesh" id="CourtLineLong"]
+size = Vector3(17.1, 0.03, 0.14)
+
+[sub_resource type="BoxMesh" id="CourtLineMid"]
+size = Vector3(0.14, 0.03, 9.5)
+
+[sub_resource type="StandardMaterial3D" id="MatCarA"]
+albedo_color = Color(0.72, 0.18, 0.16, 1)
+metallic = 0.24
+roughness = 0.34
+
+[sub_resource type="BoxMesh" id="BoxMeshCarBody"]
+size = Vector3(4.2, 1.1, 2.2)
+
+[sub_resource type="BoxMesh" id="BoxMeshCarCabin"]
+size = Vector3(2.4, 0.9, 1.8)
+
+[sub_resource type="StandardMaterial3D" id="MatWheel"]
+albedo_color = Color(0.08, 0.08, 0.1, 1)
+roughness = 0.94
+
+[sub_resource type="CylinderMesh" id="WheelMesh"]
+top_radius = 0.52
+bottom_radius = 0.52
+height = 0.45
+
+[sub_resource type="StandardMaterial3D" id="MatCarB"]
+albedo_color = Color(0.2, 0.28, 0.66, 1)
+metallic = 0.2
+roughness = 0.38
+
+[sub_resource type="StandardMaterial3D" id="MatCreatureSkin"]
+albedo_color = Color(0.3, 0.14, 0.42, 1)
+roughness = 0.28
+emission_enabled = true
+emission = Color(0.72, 0.3, 0.96, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="SphereMesh" id="CreatureCoreMesh"]
+radius = 1.4
+height = 2.8
+
+[sub_resource type="StandardMaterial3D" id="MatCreatureEye"]
+roughness = 0.05
+emission_enabled = true
+emission = Color(0.42, 0.9, 1, 1)
+emission_energy_multiplier = 7.0
+
+[sub_resource type="SphereMesh" id="CreatureEyeMesh"]
+radius = 0.22
+height = 0.44
+
+[sub_resource type="CylinderMesh" id="TentacleMesh"]
+top_radius = 0.16
+bottom_radius = 0.23
+height = 2.8
+
 [node name="Level03" type="Node3D" unique_id=364480891]
 script = ExtResource("1")
+extra_float_mesh_count = 4680
+extra_float_prop_count = 10900
+surreal_field_center = Vector3(34, 30, -8)
+surreal_field_extent = Vector3(174, 87, 132)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=668653246]
 environment = SubResource("3")
@@ -109,10 +186,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 32.204937, 0)
 transform = Transform3D(2.8, 0, 0, 0, 1, 0, 0, 0, 2.8, 0, 32, 0)
 
 [node name="BootsPlatform" parent="World/Platforms" unique_id=1001763443 instance=ExtResource("4")]
-transform = Transform3D(3, 0, 0, 0, 1, 0, 0, 0, 3, 12, 29.6, -4)
+transform = Transform3D(3, 0, 0, 0, 1, 0, 0, 0, 3, 10.282573, 20.928116, -4)
 
 [node name="BootsHouse" parent="World/Platforms/BootsPlatform" unique_id=1286526512 instance=ExtResource("9")]
-transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 1.8, 0)
+transform = Transform3D(0.20000002, 0, 0, 0, 0.2, 0, 0, 0, 0.20000002, 1.2830572, 0.6494751, 0)
+
+[node name="JumpingBoots" parent="World/Platforms/BootsPlatform/BootsHouse" unique_id=444350027 instance=ExtResource("5")]
+transform = Transform3D(0.9659258, 0, -0.25881904, 0, 1, 0, 0.25881904, 0, 0.9659258, 0, 6.6, 0.4)
 
 [node name="BridgePlatforms" type="Node3D" parent="World/Platforms" unique_id=756291455]
 
@@ -144,9 +224,6 @@ transform = Transform3D(4.2, 0, 0, 0, 1, 0, 0, 0, 4.2, 56, 17, -14)
 
 [node name="FinalPlatform" parent="World/Platforms" unique_id=183987220 instance=ExtResource("4")]
 transform = Transform3D(5.5, 0, 0, 0, 1, 0, 0, 0, 5.5, 74, 25, -8)
-
-[node name="JumpingBoots" parent="World" unique_id=444350027 instance=ExtResource("5")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 31.1, -4)
 
 [node name="DragonGuard" parent="World" unique_id=735975463 instance=ExtResource("6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 18.654394, -11.486603)
@@ -181,6 +258,190 @@ mesh = SubResource("7")
 transform = Transform3D(0.9396926, -0.17101, 0.2961981, 0.34202015, 0.4698463, -0.81379765, 0, 0.8660254, 0.5, -40, 50, -34)
 material_override = SubResource("4")
 mesh = SubResource("8")
+
+[node name="InvertedHouseA" parent="World/SurrealShapes" unique_id=1796730722 groups=["surreal_float"] instance=ExtResource("9")]
+transform = Transform3D(0.8263445, -0.11613513, 0.33714595, -0.1252558, -0.89124125, 7.86805e-08, 0.33386484, -0.046921723, -0.83446544, -34, 24, 40)
+
+[node name="InvertedHouseB" parent="World/SurrealShapes" unique_id=1565081098 groups=["surreal_float"] instance=ExtResource("9")]
+transform = Transform3D(0.5456813, 0.05735336, -0.6093788, 0.08571334, -0.81550795, 7.168668e-08, -0.6060406, -0.06369748, -0.54868704, 40, 30, 58)
+
+[node name="InvertedHouseC" parent="World/SurrealShapes" unique_id=1079352265 groups=["surreal_float"] instance=ExtResource("9")]
+transform = Transform3D(-0.26382285, 0.056077216, -0.66757244, -0.14969642, -0.7042663, 6.29444e-08, -0.6529844, 0.13879614, 0.26971677, 6, 34, -60)
+
+[node name="FloatingCourt" type="Node3D" parent="World/SurrealShapes" unique_id=1913149150 groups=["surreal_float"]]
+transform = Transform3D(0.93660784, 0.16514921, -0.309017, 0.17364818, -0.9848077, 8.742278e-08, -0.30432233, -0.053660322, -0.95105654, -8, 19, 24)
+
+[node name="CourtBase" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCourt" unique_id=1969434905]
+material_override = SubResource("MatCourt")
+mesh = SubResource("CourtMesh")
+
+[node name="CourtLineN" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCourt" unique_id=25997066]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, -4.65)
+material_override = SubResource("MatCourtLine")
+mesh = SubResource("CourtLineLong")
+
+[node name="CourtLineS" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCourt" unique_id=1594547300]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, 4.65)
+material_override = SubResource("MatCourtLine")
+mesh = SubResource("CourtLineLong")
+
+[node name="CourtLineMid" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCourt" unique_id=599675123]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, 0)
+material_override = SubResource("MatCourtLine")
+mesh = SubResource("CourtLineMid")
+
+[node name="FloatingCarA" type="Node3D" parent="World/SurrealShapes" unique_id=34366516 groups=["surreal_float"]]
+transform = Transform3D(0.7686703, -0.3105629, 0.5591929, -0.3746066, -0.92718387, 8.742278e-08, 0.51847464, -0.20947742, -0.8290376, 15, 15, 16)
+
+[node name="Body" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarA" unique_id=528415890]
+material_override = SubResource("MatCarA")
+mesh = SubResource("BoxMeshCarBody")
+
+[node name="Cabin" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarA" unique_id=1575271252]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.95, -0.05)
+material_override = SubResource("MatCarA")
+mesh = SubResource("BoxMeshCarCabin")
+
+[node name="WheelFL" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarA" unique_id=718266299]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, -0.95)
+material_override = SubResource("MatWheel")
+mesh = SubResource("WheelMesh")
+
+[node name="WheelFR" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarA" unique_id=451928454]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, 0.95)
+material_override = SubResource("MatWheel")
+mesh = SubResource("WheelMesh")
+
+[node name="WheelBL" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarA" unique_id=150704363]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, -0.95)
+material_override = SubResource("MatWheel")
+mesh = SubResource("WheelMesh")
+
+[node name="WheelBR" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarA" unique_id=1277125898]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, 0.95)
+material_override = SubResource("MatWheel")
+mesh = SubResource("WheelMesh")
+
+[node name="FloatingCarB" type="Node3D" parent="World/SurrealShapes" unique_id=1860286153 groups=["surreal_float"]]
+transform = Transform3D(0.39132172, 0.09756739, -0.8268905, 0.22256815, -0.89267206, 8.0428954e-08, -0.80232835, -0.20004296, -0.40330148, -22, 20, 34)
+
+[node name="Body" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarB" unique_id=777449207]
+material_override = SubResource("MatCarB")
+mesh = SubResource("BoxMeshCarBody")
+
+[node name="Cabin" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarB" unique_id=1484489670]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.95, 0.04)
+material_override = SubResource("MatCarB")
+mesh = SubResource("BoxMeshCarCabin")
+
+[node name="WheelFL" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarB" unique_id=693601712]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, -0.95)
+material_override = SubResource("MatWheel")
+mesh = SubResource("WheelMesh")
+
+[node name="WheelFR" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarB" unique_id=2060731961]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -1.4, -0.7, 0.95)
+material_override = SubResource("MatWheel")
+mesh = SubResource("WheelMesh")
+
+[node name="WheelBL" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarB" unique_id=2143242220]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, -0.95)
+material_override = SubResource("MatWheel")
+mesh = SubResource("WheelMesh")
+
+[node name="WheelBR" type="MeshInstance3D" parent="World/SurrealShapes/FloatingCarB" unique_id=1276218323]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 1.45, -0.7, 0.95)
+material_override = SubResource("MatWheel")
+mesh = SubResource("WheelMesh")
+
+[node name="CreatureA" type="Node3D" parent="World/SurrealShapes" unique_id=1790303574 groups=["surreal_float"]]
+transform = Transform3D(0.92042863, -0.19264333, 0.3401465, 0.24059664, 0.96498036, -0.104528464, -0.30809796, 0.17804909, 0.9345449, 3.911686, 10, 12)
+
+[node name="Core" type="MeshInstance3D" parent="World/SurrealShapes/CreatureA" unique_id=1445370083]
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("CreatureCoreMesh")
+
+[node name="Eye" type="MeshInstance3D" parent="World/SurrealShapes/CreatureA" unique_id=1492685567]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 1.35)
+material_override = SubResource("MatCreatureEye")
+mesh = SubResource("CreatureEyeMesh")
+
+[node name="TentacleL" type="MeshInstance3D" parent="World/SurrealShapes/CreatureA" unique_id=725440784]
+transform = Transform3D(0.9702957, -0.2419219, 0, 0.22733222, 0.9117797, -0.34202012, 0.08274216, 0.33186066, 0.9396926, -0.88, -1.95, 0.16)
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("TentacleMesh")
+
+[node name="TentacleR" type="MeshInstance3D" parent="World/SurrealShapes/CreatureA" unique_id=1340954544]
+transform = Transform3D(0.9702957, 0.2419219, 0, -0.22733222, 0.9117797, -0.34202012, -0.08274216, 0.33186066, 0.9396926, 0.88, -1.95, 0.16)
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("TentacleMesh")
+
+[node name="CreatureB" type="Node3D" parent="World/SurrealShapes" unique_id=1141241112 groups=["surreal_float"]]
+transform = Transform3D(0.6297809, -0.022698365, -0.6142156, -0.17752753, 0.8352013, -0.21289127, 0.5884387, 0.27626708, 0.5931412, -12, 13, 30)
+
+[node name="Core" type="MeshInstance3D" parent="World/SurrealShapes/CreatureB" unique_id=1963464416]
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("CreatureCoreMesh")
+
+[node name="EyeL" type="MeshInstance3D" parent="World/SurrealShapes/CreatureB" unique_id=291995171]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.2, 1.3)
+material_override = SubResource("MatCreatureEye")
+mesh = SubResource("CreatureEyeMesh")
+
+[node name="EyeR" type="MeshInstance3D" parent="World/SurrealShapes/CreatureB" unique_id=1566766817]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.2, 1.3)
+material_override = SubResource("MatCreatureEye")
+mesh = SubResource("CreatureEyeMesh")
+
+[node name="TentacleL" type="MeshInstance3D" parent="World/SurrealShapes/CreatureB" unique_id=2143113049]
+transform = Transform3D(0.9135454, -0.40673664, 0, 0.38220742, 0.8584519, -0.34202012, 0.13911211, 0.31245092, 0.9396926, -1, -1.9, -0.25)
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("TentacleMesh")
+
+[node name="TentacleR" type="MeshInstance3D" parent="World/SurrealShapes/CreatureB" unique_id=808272483]
+transform = Transform3D(0.9135454, 0.40673664, 0, -0.38220742, 0.8584519, -0.34202012, -0.13911211, 0.31245092, 0.9396926, 1, -1.9, -0.25)
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("TentacleMesh")
+
+[node name="Debris01" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1374759601 groups=["surreal_float"]]
+transform = Transform3D(0.70971495, 0.31771687, 0.6287771, -0.11451972, 0.9326883, -0.34202012, -0.6951186, 0.1707294, 0.6983277, -18, 9, 16)
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("8")
+
+[node name="Debris02" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1995633760 groups=["surreal_float"]]
+transform = Transform3D(0.8518604, -0.46683878, 0.23747711, 0.43031704, 0.88228065, 0.190809, -0.29859853, -0.06035219, 0.95246863, 14, 15, 28)
+material_override = SubResource("MatCarA")
+mesh = SubResource("7")
+
+[node name="Debris03" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=2014509673 groups=["surreal_float"]]
+transform = Transform3D(0.8424622, 0.0363089, -0.5375307, -0.21623683, 0.9366246, -0.27563736, 0.49345642, 0.34844798, 0.7969221, -30, 12, 6)
+material_override = SubResource("MatCarB")
+mesh = SubResource("6")
+
+[node name="Debris04" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1051828186 groups=["surreal_float"]]
+transform = Transform3D(0.8698241, -0.10888742, 0.4811959, 0.18938674, 0.9743103, -0.12186935, -0.45556408, 0.19713703, 0.8681004, 32, 18, 12)
+material_override = SubResource("MatCourtLine")
+mesh = SubResource("5")
+
+[node name="Debris05" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=168922906 groups=["surreal_float"]]
+transform = Transform3D(0.74225515, 0.088068426, -0.66430515, 0.14959905, 0.9445311, 0.2923717, 0.6532056, -0.3163938, 0.6879081, 24, 11, -12)
+material_override = SubResource("MatCarA")
+mesh = SubResource("8")
+
+[node name="Debris06" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1553350662 groups=["surreal_float"]]
+transform = Transform3D(0.92037606, 0.382148, 0.08289003, -0.34082818, 0.8878877, -0.309017, -0.19168727, 0.2561606, 0.9474375, -12, 23, 38)
+material_override = SubResource("MatCarB")
+mesh = SubResource("7")
+
+[node name="Debris07" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1963604075 groups=["surreal_float"]]
+transform = Transform3D(0.42758685, 0.39944547, 0.8109333, -0.14504352, 0.91576874, -0.3746066, -0.8922622, 0.042556256, 0.44950762, -36, 20, -18)
+material_override = SubResource("MatCourtLine")
+mesh = SubResource("8")
+
+[node name="Debris08" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1377291193 groups=["surreal_float"]]
+transform = Transform3D(0.76216775, -0.35807008, 0.53933865, 0.3386916, 0.9305476, 0.1391731, -0.55171406, 0.07659622, 0.83050865, 6, 13, 44)
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("7")
 
 [node name="DragonRidePath" type="Node3D" parent="World" unique_id=1292534026]
 

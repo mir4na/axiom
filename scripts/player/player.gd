@@ -98,6 +98,7 @@ var _sfx_player: AudioStreamPlayer
 var _rewind_pointer_elapsed: float = 0.0
 var _rewind_overload_stun_active: bool = false
 var _rewind_overload_stun_remaining: float = 0.0
+var _suppress_space_jump_until_release: bool = false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -182,10 +183,14 @@ func _sync_hitboxes(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if cinematic_locked:
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
+			_suppress_space_jump_until_release = true
 		if _lightning_targeting:
 			_set_lightning_targeting(false)
 		return
 	if _rewind_overload_stun_active:
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
+			_suppress_space_jump_until_release = true
 		if _lightning_targeting:
 			_set_lightning_targeting(false)
 		return
@@ -198,6 +203,7 @@ func _input(event: InputEvent) -> void:
 	if GameState.rewind_mode_active:
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_SPACE:
+				_suppress_space_jump_until_release = true
 				GameState.deactivate_rewind_mode(true)
 				_play_sfx(sfx_rewind_exit)
 			elif event.keycode == KEY_X and _can_use_axiom():
@@ -247,6 +253,8 @@ func _input(event: InputEvent) -> void:
 				_fire_gun()
 
 func _physics_process(delta: float) -> void:
+	if _suppress_space_jump_until_release and not Input.is_key_pressed(KEY_SPACE):
+		_suppress_space_jump_until_release = false
 	if _rewind_overload_stun_active:
 		_rewind_overload_stun_remaining = maxf(0.0, _rewind_overload_stun_remaining - delta)
 		_update_rewind_overload_stun_hud()
@@ -417,7 +425,7 @@ func _handle_movement(delta: float) -> void:
 	else:
 		velocity.y = max(velocity.y - gravity * delta, -30.0)
 
-	if Input.is_key_pressed(KEY_SPACE) and is_on_floor() and not is_crouching:
+	if Input.is_key_pressed(KEY_SPACE) and is_on_floor() and not is_crouching and not _suppress_space_jump_until_release:
 		velocity.y = jump_power
 
 	move_and_slide()
@@ -566,10 +574,58 @@ func _spawn_drop_item(scene: PackedScene, dropped_item_id: String = "") -> void:
 	var dropped: Node3D = scene.instantiate() as Node3D
 	if dropped == null:
 		return
-	get_tree().root.add_child(dropped)
-	dropped.global_position = head.global_position - head.global_transform.basis.z * 1.5
+	var parent_node: Node = get_tree().current_scene
+	if parent_node == null:
+		parent_node = get_parent()
+	if parent_node == null:
+		return
+	parent_node.add_child(dropped)
+	var spawn_position: Vector3 = head.global_position - head.global_transform.basis.z * 1.35 + Vector3(0.0, 0.45, 0.0)
+	dropped.global_position = spawn_position
+	dropped.global_rotation = Vector3(0.0, global_rotation.y + PI * 0.5, 0.0)
 	if dropped_item_id != "" and _node_has_property(dropped, "key_id"):
 		dropped.set("key_id", dropped_item_id)
+	if _node_has_property(dropped, "is_dropped"):
+		dropped.set("is_dropped", false)
+	if dropped.has_method("set_interactable_enabled"):
+		dropped.call("set_interactable_enabled", true)
+	if dropped.has_method("set_pickup_enabled"):
+		dropped.call("set_pickup_enabled", true)
+	call_deferred("_drop_item_to_ground", dropped, spawn_position)
+
+func _drop_item_to_ground(dropped: Node3D, spawn_position: Vector3) -> void:
+	if dropped == null or not is_instance_valid(dropped):
+		return
+	if dropped is RigidBody3D:
+		var body: RigidBody3D = dropped as RigidBody3D
+		body.freeze = false
+		body.sleeping = false
+		body.linear_velocity = (-head.global_transform.basis.z * 2.1) + Vector3(0.0, -1.4, 0.0)
+		body.angular_velocity = Vector3(randf_range(-1.2, 1.2), randf_range(-2.6, 2.6), randf_range(-1.2, 1.2))
+		return
+	var target_position: Vector3 = _find_drop_landing_position(spawn_position)
+	var fall_distance: float = maxf(0.0, spawn_position.y - target_position.y)
+	var fall_duration: float = clampf(sqrt(fall_distance / 9.8) * 1.35, 0.14, 0.58)
+	var target_rotation: Vector3 = dropped.rotation_degrees + Vector3(randf_range(-10.0, 10.0), randf_range(50.0, 140.0), randf_range(-10.0, 10.0))
+	var drop_tween: Tween = create_tween().set_parallel(true)
+	drop_tween.tween_property(dropped, "global_position", target_position, fall_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	drop_tween.tween_property(dropped, "rotation_degrees", target_rotation, fall_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+func _find_drop_landing_position(origin: Vector3) -> Vector3:
+	var query_from: Vector3 = origin + Vector3(0.0, 4.0, 0.0)
+	var query_to: Vector3 = origin + Vector3(0.0, -34.0, 0.0)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(query_from, query_to)
+	query.exclude = [get_rid()]
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return origin + Vector3(0.0, -1.1, 0.0)
+	var hit_position: Vector3 = hit.get("position", origin)
+	var hit_normal: Vector3 = hit.get("normal", Vector3.UP).normalized()
+	if hit_normal.y < 0.5:
+		hit_normal = Vector3.UP
+	return hit_position + hit_normal * 0.09
 
 func _node_has_property(node: Object, property_name: String) -> bool:
 	for prop in node.get_property_list():
@@ -731,8 +787,8 @@ func _update_gun_view_model(delta: float) -> void:
 		return
 	var bob_x: float = sin(Time.get_ticks_msec() * 0.006) * 0.008
 	var bob_y: float = sin(Time.get_ticks_msec() * 0.0042) * 0.006
-	_gun_view_root.position = Vector3(0.28 + bob_x, -0.25 + bob_y + _gun_recoil * 0.04, -0.55 + _gun_recoil * 0.11)
-	_gun_view_root.rotation_degrees = Vector3(-2.0 - _gun_recoil * 8.0, -3.5, 0.0)
+	_gun_view_root.position = Vector3(0.24 + bob_x, -0.27 + bob_y + _gun_recoil * 0.028, -0.34 + _gun_recoil * 0.08)
+	_gun_view_root.rotation_degrees = Vector3(-7.5 - _gun_recoil * 6.2, -15.0, 0.0)
 
 func _get_gun_muzzle_world_position() -> Vector3:
 	if _gun_muzzle != null and _gun_view_root != null and _gun_view_root.visible:

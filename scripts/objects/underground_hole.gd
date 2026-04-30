@@ -11,6 +11,9 @@ signal descended
 var _highlight_enabled: bool = false
 var _persistent_highlight: bool = false
 
+func _screen_fx() -> CanvasLayer:
+	return get_node_or_null("/root/ScreenFX") as CanvasLayer
+
 func _ready() -> void:
 	_setup_aura_materials()
 	if _collision_shape != null and _collision_shape.disabled:
@@ -67,4 +70,9 @@ func interact() -> void:
 	GameState.unpause()
 	GameState.current_level_index = target_level_index
 	if target_level_index >= 0 and target_level_index < GameState.LEVELS.size():
-		get_tree().call_deferred("change_scene_to_file", GameState.LEVELS[target_level_index])
+		var target_path: String = GameState.LEVELS[target_level_index]
+		var screen_fx := _screen_fx()
+		if screen_fx != null and screen_fx.has_method("fade_to_scene"):
+			await screen_fx.fade_to_scene(target_path, true)
+		else:
+			get_tree().change_scene_to_file(target_path)

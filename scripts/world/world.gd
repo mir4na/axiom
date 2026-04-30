@@ -59,9 +59,13 @@ const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa07
 @export var sfx_sky_crack_start: AudioStream
 @export var sfx_sky_crack_grow: AudioStream
 @export var sfx_sky_crack_break: AudioStream
+@export var sfx_sky_cracking: AudioStream
 @export var sfx_board_activate: AudioStream
 @export var sfx_credits_start: AudioStream
 @export var sfx_ending_return_wake: AudioStream
+
+@export_group("Level Four Audio Flow")
+@export var level_four_bgm_fade_out_duration: float = 2.8
 
 @export_group("Ending Sky")
 @export_file("*.png", "*.jpg", "*.jpeg", "*.webp", "*.hdr", "*.exr") var ending_world_sky_path: String = ENDING_WORLD_SKY_PATH
@@ -146,6 +150,8 @@ var _level_two_portal: Node3D
 var _level_two_rose_focus: Node3D
 var _level_two_tunnel_blast_focus: Node3D
 var _level_two_portal_look_target: Node3D
+var _level_two_axia_cinematic_camera: Camera3D
+var _level_two_fall_death_zone: Area3D
 var _level_two_room3_sequence_running: bool = false
 var _level_two_room3_sequence_played: bool = false
 var _ending_mode_active: bool = false
@@ -154,6 +160,7 @@ var _ending_credits_running: bool = false
 var _ending_board
 var _ending_board_camera: Camera3D
 var _bgm_player: AudioStreamPlayer
+var _bgm_fade_tween: Tween
 var _sfx_player_2d: AudioStreamPlayer2D
 var _sky_crack_stage: int = 0
 var _arrival_glitch_audio_active: bool = false
@@ -201,7 +208,6 @@ func _ready() -> void:
 			player_hud.visible = true
 		return
 	if _is_level_four_scene():
-		_play_bgm_stream(bgm_level_four)
 		_create_intro_ui()
 		_create_intro_camera()
 		_reset_intro_view_state()
@@ -250,15 +256,47 @@ func _play_bgm_stream(stream: AudioStream) -> void:
 		return
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
 		return
+	if _bgm_fade_tween != null and _bgm_fade_tween.is_valid():
+		_bgm_fade_tween.kill()
+	_bgm_fade_tween = null
 	if _bgm_player.stream == stream and _bgm_player.playing:
 		return
+	_bgm_player.volume_db = 0.0
 	_bgm_player.stream = stream
 	_bgm_player.play()
 
 func _stop_bgm_stream() -> void:
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
 		return
+	if _bgm_fade_tween != null and _bgm_fade_tween.is_valid():
+		_bgm_fade_tween.kill()
+	_bgm_fade_tween = null
 	_bgm_player.stop()
+	_bgm_player.volume_db = 0.0
+
+func play_level_four_bgm() -> void:
+	if not _is_level_four_scene():
+		return
+	_play_bgm_stream(bgm_level_four)
+
+func fade_out_level_four_bgm() -> void:
+	if not _is_level_four_scene():
+		return
+	if _bgm_player == null or not is_instance_valid(_bgm_player):
+		return
+	if not _bgm_player.playing:
+		return
+	if _bgm_fade_tween != null and _bgm_fade_tween.is_valid():
+		_bgm_fade_tween.kill()
+	var fade_duration: float = maxf(level_four_bgm_fade_out_duration, 0.05)
+	_bgm_fade_tween = create_tween()
+	_bgm_fade_tween.tween_property(_bgm_player, "volume_db", -50.0, fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await _bgm_fade_tween.finished
+	if _bgm_player == null or not is_instance_valid(_bgm_player):
+		return
+	_bgm_player.stop()
+	_bgm_player.volume_db = 0.0
+	_bgm_fade_tween = null
 
 func _play_sfx_stream(stream: AudioStream) -> void:
 	if stream == null:
@@ -505,6 +543,9 @@ func _create_intro_ui() -> void:
 	_objective_tag = _objective_panel.get_node("Tag") as Label
 	_objective_label = _objective_panel.get_node("Text") as Label
 	_resize_objective_panel("OBJECTIVE")
+	var gameplay_font: Font = null
+	if _objective_label != null:
+		gameplay_font = _objective_label.get_theme_font("font")
 
 	_subtitle_label = Label.new()
 	_subtitle_label.anchor_left = 0.16
@@ -515,7 +556,9 @@ func _create_intro_ui() -> void:
 	_subtitle_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_subtitle_label.visible = false
-	_subtitle_label.add_theme_font_size_override("font_size", 28)
+	_subtitle_label.add_theme_font_size_override("font_size", 56)
+	if gameplay_font != null:
+		_subtitle_label.add_theme_font_override("font", gameplay_font)
 	_set_subtitle_palette(false)
 	_intro_ui.add_child(_subtitle_label)
 
@@ -528,7 +571,9 @@ func _create_intro_ui() -> void:
 
 	_hint_label = Label.new()
 	_hint_label.visible = false
-	_hint_label.add_theme_font_size_override("font_size", 20)
+	_hint_label.add_theme_font_size_override("font_size", 40)
+	if gameplay_font != null:
+		_hint_label.add_theme_font_override("font", gameplay_font)
 	_hint_label.add_theme_color_override("font_color", Color(0.92, 0.98, 0.86, 1.0))
 	_hint_label.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.02, 0.88))
 	_hint_label.add_theme_constant_override("outline_size", 10)
@@ -541,7 +586,9 @@ func _create_intro_ui() -> void:
 	_loading_label.anchor_bottom = 1.0
 	_loading_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_loading_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_loading_label.add_theme_font_size_override("font_size", 120)
+	_loading_label.add_theme_font_size_override("font_size", 240)
+	if gameplay_font != null:
+		_loading_label.add_theme_font_override("font", gameplay_font)
 	_loading_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
 	_loading_label.visible = false
 	_intro_ui.add_child(_loading_label)
@@ -717,15 +764,24 @@ func _set_intro_lock(locked: bool) -> void:
 		_intro_motion_time = 0.0
 		if player != null:
 			player.set_cinematic_lock(true)
+		_set_player_body_visible(false)
 		if player_hud != null:
 			player_hud.visible = false
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	else:
 		if player != null:
 			player.set_cinematic_lock(false)
+		_set_player_body_visible(true)
 		if player_hud != null:
 			player_hud.visible = true
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func _set_player_body_visible(visible: bool) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+	var skeleton_node: Node3D = player.get_node_or_null("root/Skeleton3D") as Node3D
+	if skeleton_node != null:
+		skeleton_node.visible = visible
 
 func _play_intro_sequence() -> void:
 	var intro_tree: SceneTree = get_tree()
@@ -764,6 +820,7 @@ func _play_level_two_intro() -> void:
 	await level_two_tree.process_frame
 	if player != null:
 		player.set_cinematic_lock(true)
+	_set_player_body_visible(false)
 	if player_hud != null:
 		player_hud.visible = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -772,6 +829,7 @@ func _play_level_two_intro() -> void:
 	await _set_cinematic_bars(false, 0.35)
 	if player != null:
 		player.set_cinematic_lock(false)
+	_set_player_body_visible(true)
 	if player_hud != null:
 		player_hud.visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -821,6 +879,8 @@ func _cache_level_two_targets() -> void:
 	_level_two_rose_focus = get_node_or_null("CutsceneMarkers/RoseFocus") as Node3D
 	_level_two_tunnel_blast_focus = get_node_or_null("CutsceneMarkers/TunnelBlastFocus") as Node3D
 	_level_two_portal_look_target = get_node_or_null("CutsceneMarkers/PortalLookTarget") as Node3D
+	_level_two_axia_cinematic_camera = get_node_or_null("CutsceneMarkers/AxiaCinematicCamera") as Camera3D
+	_level_two_fall_death_zone = get_node_or_null("LevelFallDeathZone") as Area3D
 	_level_two_enemy_nodes.clear()
 	for node_name in ["Enemy01", "Enemy02", "Enemy03"]:
 		var enemy_node: Node3D = get_node_or_null(node_name) as Node3D
@@ -836,7 +896,13 @@ func _cache_level_two_targets() -> void:
 		_level_two_room3_button.set("consume_required_item", true)
 
 	if _level_two_combat_trigger != null:
-		_level_two_combat_trigger.body_entered.connect(Callable(self, "_on_level_two_combat_trigger_entered"))
+		var combat_callable: Callable = Callable(self, "_on_level_two_combat_trigger_entered")
+		if not _level_two_combat_trigger.is_connected("body_entered", combat_callable):
+			_level_two_combat_trigger.body_entered.connect(combat_callable)
+	if _level_two_fall_death_zone != null:
+		var fall_callable: Callable = Callable(self, "_on_level_two_fall_death_zone_entered")
+		if not _level_two_fall_death_zone.is_connected("body_entered", fall_callable):
+			_level_two_fall_death_zone.body_entered.connect(fall_callable)
 	if _level_two_door != null and _level_two_door.has_signal("opened"):
 		_level_two_door.connect("opened", Callable(self, "_on_level_two_door_one_opened"))
 	if _level_two_room3_door != null and _level_two_room3_door.has_signal("opened"):
@@ -1031,6 +1097,12 @@ func _on_level_two_combat_trigger_entered(body: Node) -> void:
 		return
 	_start_level_two_enemy_encounter()
 
+func _on_level_two_fall_death_zone_entered(body: Node) -> void:
+	if body != player:
+		return
+	if player != null and player.has_method("take_damage"):
+		player.call("take_damage", 9999.0)
+
 func _is_player_inside_level_two_combat_trigger() -> bool:
 	if player == null or not is_instance_valid(player):
 		return false
@@ -1205,6 +1277,7 @@ func _play_level_two_room3_sequence() -> void:
 		GameState.cancel_rewind_mode()
 	if player != null:
 		player.set_cinematic_lock(true)
+	_set_player_body_visible(false)
 	if _level_two_rose != null and _level_two_rose.has_method("play_idle"):
 		_level_two_rose.call("play_idle")
 	_set_level_two_cinematic_ui(false)
@@ -1217,15 +1290,11 @@ func _play_level_two_room3_sequence() -> void:
 		return
 	var rose_target: Vector3 = _level_two_rose_focus.global_position if _level_two_rose_focus != null else ((_level_two_rose.global_position if _level_two_rose != null else Vector3(0.0, 1.5, 0.0)) + Vector3(0.0, 1.35, 0.0))
 	var player_view_transform: Transform3D = player_camera.global_transform if player_camera != null else _make_look_transform(rose_target + Vector3(0.0, 1.6, -5.0), rose_target)
-	var rose_align_transform: Transform3D = _make_look_transform(player_view_transform.origin, rose_target)
-	var rose_end_origin: Vector3 = player_view_transform.origin + rose_align_transform.basis.z * -0.12
-	var rose_start_transform: Transform3D = rose_align_transform
-	var rose_end_transform: Transform3D = _make_look_transform(rose_end_origin, rose_target)
+	var axia_camera_transform: Transform3D = _resolve_level_two_axia_camera_transform(player_view_transform, rose_target)
 	_intro_camera.global_transform = player_view_transform
 	_intro_camera.make_current()
-	await _play_camera_shot(player_view_transform, rose_start_transform, 1.05)
+	await _play_camera_shot(player_view_transform, axia_camera_transform, 1.05)
 	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(rose_target)
-	await _play_camera_shot(rose_start_transform, rose_end_transform, 2.9)
 	await _show_subtitle("Axia: Hey... so you finally opened it.", 2.4, "axia")
 	await _show_subtitle("Axia: This place gets weird every time you start second-guessing yourself.", 2.8, "axia")
 	await _show_subtitle("Axia: I can help you get through this part... and get you closer to what you're after.", 3.1, "axia")
@@ -1234,11 +1303,6 @@ func _play_level_two_room3_sequence() -> void:
 		flashlight_fx.queue_free()
 	await _play_level_two_rose_glitch_disappear()
 	var tunnel_anchor: Vector3 = _level_two_tunnel_blast_focus.global_position if _level_two_tunnel_blast_focus != null else ((_level_two_end_cap_near.global_position if _level_two_end_cap_near != null else (_level_two_exit_door.global_position if _level_two_exit_door != null else rose_target + Vector3(0.0, 0.0, 7.5))) + Vector3(0.0, 0.75, 0.0))
-	var tunnel_start_transform: Transform3D = rose_end_transform
-	var tunnel_end_transform: Transform3D = _make_look_transform(rose_end_origin, tunnel_anchor)
-	_intro_camera.global_transform = tunnel_start_transform
-	_intro_camera.make_current()
-	await _play_camera_shot(tunnel_start_transform, tunnel_end_transform, 1.7)
 	await _play_level_two_tunnel_breach_sequence(tunnel_anchor)
 	await _show_subtitle("Axia: There. Go on... the portal will take you through.", 2.7, "axia")
 	if _level_two_portal != null:
@@ -1247,22 +1311,31 @@ func _play_level_two_room3_sequence() -> void:
 			_level_two_portal.connect("player_entered", Callable(self, "_on_level_two_portal_entered"))
 		if _level_two_portal.has_method("play_open_sequence"):
 			_level_two_portal.call("play_open_sequence")
-		_intro_camera.global_transform = _make_look_transform(rose_end_origin, portal_target)
+		var portal_focus_transform: Transform3D = _make_look_transform(axia_camera_transform.origin, portal_target)
+		await _play_camera_shot(_intro_camera.global_transform, portal_focus_transform, 1.1)
 		await get_tree().create_timer(2.0).timeout
 	await _complete_level_two_room3_cutscene()
 
 func _complete_level_two_room3_cutscene() -> void:
 	await _set_cinematic_bars(false, 0.2)
-	if player_camera != null:
+	if _intro_camera != null and player_camera != null:
+		await _return_intro_camera_to_player(0.8)
+	elif player_camera != null:
 		player_camera.make_current()
 	if player != null:
 		player.set_cinematic_lock(false)
+	_set_player_body_visible(true)
 	if player_hud != null:
 		player_hud.visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_objective_state = "level2_portal"
 	_show_objective("Enter the portal")
 	_level_two_room3_sequence_running = false
+
+func _resolve_level_two_axia_camera_transform(fallback_start: Transform3D, focus_target: Vector3) -> Transform3D:
+	if _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera):
+		return _level_two_axia_cinematic_camera.global_transform
+	return _make_look_transform(fallback_start.origin, focus_target)
 
 func _set_level_two_cinematic_ui(visible: bool) -> void:
 	if player_hud != null:
@@ -1293,15 +1366,11 @@ func _finish_level_two_room3_sequence() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	if is_instance_valid(_level_two_portal) and _level_two_portal.has_method("play_close_sequence"):
 		await _level_two_portal.call("play_close_sequence")
-	if _fade_overlay != null:
-		_fade_overlay.visible = true
-		_fade_overlay.modulate.a = 0.0
-		var fade: Tween = create_tween()
-		fade.tween_property(_fade_overlay, "modulate:a", 1.0, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-		await fade.finished
 	GameState.current_level_index = 2
 	var screen_fx := _screen_fx()
-	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
+	if screen_fx != null and screen_fx.has_method("fade_to_scene"):
+		await screen_fx.fade_to_scene(LEVEL_THREE_SCENE_PATH, true)
+	elif screen_fx != null and screen_fx.has_method("reboot_to_scene"):
 		await screen_fx.reboot_to_scene(LEVEL_THREE_SCENE_PATH, true)
 	else:
 		get_tree().change_scene_to_file(LEVEL_THREE_SCENE_PATH)
@@ -1507,7 +1576,12 @@ func _restore_player_camera() -> void:
 func _blend_intro_camera(weight: float, start_transform: Transform3D, end_transform: Transform3D) -> void:
 	if _intro_camera == null:
 		return
-	_intro_camera.global_transform = start_transform.interpolate_with(end_transform, weight)
+	var clamped_weight: float = clampf(weight, 0.0, 1.0)
+	var blended_origin: Vector3 = start_transform.origin.lerp(end_transform.origin, clamped_weight)
+	var start_basis: Basis = start_transform.basis.orthonormalized()
+	var end_basis: Basis = end_transform.basis.orthonormalized()
+	var blended_basis: Basis = start_basis.slerp(end_basis, clamped_weight).orthonormalized()
+	_intro_camera.global_transform = Transform3D(blended_basis, blended_origin)
 
 func _tween_wake_overlay(target_alpha: float, duration: float) -> void:
 	if _wake_overlay == null or not (_wake_overlay.material is ShaderMaterial):
@@ -1932,6 +2006,13 @@ func _set_arrival_glitch_strength(value: float) -> void:
 	if _glitch_overlay != null and _glitch_overlay.material is ShaderMaterial:
 		_glitch_overlay.material.set_shader_parameter("glitch_strength", value)
 
+func play_sky_cracking_sfx() -> void:
+	if sfx_sky_cracking != null:
+		_play_sfx_stream(sfx_sky_cracking)
+		return
+	if sfx_sky_crack_start != null:
+		_play_sfx_stream(sfx_sky_crack_start)
+
 func _set_world_night_state() -> void:
 	var world_environment := get_node_or_null("WorldEnvironment") as WorldEnvironment
 	if world_environment != null and world_environment.environment != null and world_environment.environment.sky != null:
@@ -2226,7 +2307,7 @@ func _play_ending_board_cinematic() -> void:
 	_ending_board.set_footer_visible(false)
 	await _play_ending_board_overlay_text()
 	await get_tree().create_timer(ENDING_BOARD_HOLD_DURATION).timeout
-	await _fade_black(1.0, ENDING_BOARD_FADE_DURATION)
+	await _play_ending_board_to_credits_transition()
 	await _show_ending_credits_roll()
 	await _return_to_main_menu_after_credits()
 
@@ -2263,6 +2344,38 @@ func _play_ending_board_overlay_text() -> void:
 	if _ending_board_text_overlay.has_method("play_typewriter"):
 		await _ending_board_text_overlay.call("play_typewriter", ENDING_BOARD_TYPE_INTERVAL, ENDING_BOARD_LINE_PAUSE, ENDING_BOARD_FOOTER_PAUSE)
 
+func _play_ending_board_to_credits_transition() -> void:
+	if _wake_overlay != null:
+		_wake_overlay.visible = true
+		_wake_overlay.z_index = 110
+	if _fade_overlay != null:
+		_fade_overlay.z_index = 120
+		_fade_overlay.modulate.a = 0.0
+	_play_sfx_stream(sfx_fade_black)
+	var transition_tween := create_tween().set_parallel(true)
+	if _ending_board_text_overlay != null and is_instance_valid(_ending_board_text_overlay):
+		transition_tween.tween_property(_ending_board_text_overlay, "modulate:a", 0.0, ENDING_BOARD_FADE_DURATION * 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		transition_tween.parallel().tween_property(_ending_board_text_overlay, "scale", Vector2(1.028, 1.028), ENDING_BOARD_FADE_DURATION * 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if _wake_overlay != null and _wake_overlay.material is ShaderMaterial:
+		transition_tween.parallel().tween_method(_set_wake_blur_strength, _get_wake_blur_strength(), 3.6, ENDING_BOARD_FADE_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		transition_tween.parallel().tween_method(_set_wake_haze_strength, _get_wake_haze_strength(), 0.34, ENDING_BOARD_FADE_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		transition_tween.parallel().tween_method(_set_wake_desaturate_strength, _get_wake_desaturate_strength(), 0.28, ENDING_BOARD_FADE_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if _fade_overlay != null:
+		transition_tween.parallel().tween_property(_fade_overlay, "modulate:a", 1.0, ENDING_BOARD_FADE_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await transition_tween.finished
+	if _ending_board_text_overlay != null and is_instance_valid(_ending_board_text_overlay):
+		_ending_board_text_overlay.visible = false
+		_ending_board_text_overlay.modulate.a = 1.0
+		_ending_board_text_overlay.scale = Vector2.ONE
+	if _wake_overlay != null:
+		_set_wake_blur_strength(0.0)
+		_set_wake_haze_strength(0.0)
+		_set_wake_desaturate_strength(0.0)
+		_wake_overlay.visible = false
+		_wake_overlay.z_index = 0
+	if _fade_overlay != null:
+		_fade_overlay.z_index = 0
+
 func _show_ending_credits_roll() -> void:
 	if _intro_ui == null:
 		return
@@ -2285,7 +2398,7 @@ func _show_ending_credits_roll() -> void:
 	credit_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	credit_text.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	credit_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	credit_text.add_theme_font_size_override("font_size", 34)
+	credit_text.add_theme_font_size_override("font_size", 68)
 	credit_text.add_theme_color_override("font_color", Color(0.96, 0.96, 0.96, 1.0))
 	credit_text.text = "CREDITS\n\nAXIOM\n\nDesign, Programming, Art\nmir4na\n\nSpecial Thanks\nYou, for playing\n\nThank you for playing this game."
 	credit_text.custom_minimum_size = Vector2(viewport_size.x * 0.84, 1680.0)
@@ -2312,13 +2425,13 @@ func _set_sky_crack_intensity(value: float) -> void:
 	var intensity: float = clampf(value, 0.0, 1.0)
 	if intensity < 0.06:
 		_sky_crack_stage = 0
-	elif intensity >= 0.06 and intensity < 0.42 and _sky_crack_stage < 1:
+	elif intensity >= 0.06 and intensity < 0.42 and _sky_crack_stage < 1 and sfx_sky_cracking == null:
 		_sky_crack_stage = 1
 		_play_sfx_stream(sfx_sky_crack_start)
-	elif intensity >= 0.42 and intensity < 0.86 and _sky_crack_stage < 2:
+	elif intensity >= 0.42 and intensity < 0.86 and _sky_crack_stage < 2 and sfx_sky_cracking == null:
 		_sky_crack_stage = 2
 		_play_sfx_stream(sfx_sky_crack_grow)
-	elif intensity >= 0.86 and _sky_crack_stage < 3:
+	elif intensity >= 0.86 and _sky_crack_stage < 3 and sfx_sky_cracking == null:
 		_sky_crack_stage = 3
 		_play_sfx_stream(sfx_sky_crack_break)
 	if _sky_crack_overlay.material is ShaderMaterial:
@@ -2330,8 +2443,10 @@ func restart_current_level() -> void:
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
 		return
+	var requires_post_swap_record_reset: bool = _is_level_two_scene()
 	GameState.force_time_forward()
-	GameState.reset_axiom_recording()
+	if not requires_post_swap_record_reset:
+		GameState.reset_axiom_recording()
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
 	GameState.set_meta(LEVEL_FOUR_RETURN_WAKE_META, false)
 	if _is_level_one_scene():
@@ -2339,7 +2454,9 @@ func restart_current_level() -> void:
 	else:
 		GameState.full_reset_inventory()
 	var screen_fx := _screen_fx()
-	if screen_fx != null and screen_fx.has_method("respawn_to_scene"):
+	if screen_fx != null and screen_fx.has_method("death_respawn_to_scene"):
+		await screen_fx.death_respawn_to_scene(current_scene.scene_file_path, true, requires_post_swap_record_reset)
+	elif screen_fx != null and screen_fx.has_method("respawn_to_scene"):
 		await screen_fx.respawn_to_scene(current_scene.scene_file_path, true)
 	elif screen_fx != null and screen_fx.has_method("reboot_to_scene"):
 		await screen_fx.reboot_to_scene(current_scene.scene_file_path, true)

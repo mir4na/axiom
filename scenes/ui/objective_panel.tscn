@@ -1,5 +1,10 @@
 [gd_scene format=3 uid="uid://pvkn65meoxdw"]
 
+[ext_resource type="FontFile" uid="uid://djt08l5gryxok" path="res://fonts/CatPentagram.ttf" id="1_game_font"]
+
+[sub_resource type="Theme" id="Theme_objective"]
+default_font = ExtResource("1_game_font")
+
 [node name="ObjectivePanel" type="Control" unique_id=1361688194]
 clip_contents = true
 layout_mode = 3
@@ -8,6 +13,7 @@ offset_left = -472.0
 offset_top = 48.0
 offset_right = -28.0
 offset_bottom = 146.0
+theme = SubResource("Theme_objective")
 
 [node name="Back" type="ColorRect" parent="." unique_id=1274698830]
 layout_mode = 0
@@ -29,12 +35,12 @@ color = Color(0.24, 0.82, 1, 0.65)
 
 [node name="Tag" type="Label" parent="." unique_id=1023587779]
 layout_mode = 0
-offset_left = 22.0
-offset_top = 16.0
-offset_right = 160.0
-offset_bottom = 40.0
+offset_left = 19.0
+offset_top = 2.0
+offset_right = 157.0
+offset_bottom = 38.0
 theme_override_colors/font_color = Color(1, 0.93, 0.44, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 36
 text = "OBJECTIVE"
 
 [node name="Text" type="Label" parent="." unique_id=318050164]
@@ -46,5 +52,5 @@ offset_top = 44.0
 offset_right = -28.0
 offset_bottom = -12.0
 theme_override_colors/font_color = Color(0.97, 0.97, 0.98, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 44
 autowrap_mode = 3

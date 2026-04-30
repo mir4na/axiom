@@ -106,6 +106,9 @@ height = 6.0
 [sub_resource type="BoxShape3D" id="BoxShape3D_combat_trigger"]
 size = Vector3(8.5, 3.8, 30)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_level2_death"]
+size = Vector3(220, 2, 420)
+
 [node name="Level02" type="Node3D" unique_id=902830711]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=731031134]
@@ -201,6 +204,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.85, 166.2)
 
 [node name="PortalLookTarget" type="Marker3D" parent="World/CutsceneMarkers" unique_id=1827075421]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 166.8)
+
+[node name="AxiaCinematicCamera" type="Camera3D" parent="World/CutsceneMarkers" unique_id=1517746352]
+transform = Transform3D(-4.371139e-08, 3.821371e-15, 1, 8.742278e-08, 1, 0, 1, -8.742278e-08, 4.371139e-08, -0.8730335, 1.6532493, 160.35486)
+fov = 63.0
 
 [node name="Stall1" type="CSGCombiner3D" parent="World" unique_id=1332012744]
 use_collision = true
@@ -578,6 +585,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 1.811847, 23.114544)
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/CombatTrigger" unique_id=410271074]
 shape = SubResource("BoxShape3D_combat_trigger")
 
+[node name="LevelFallDeathZone" type="Area3D" parent="World" unique_id=410271084]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -7, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/LevelFallDeathZone" unique_id=410271085]
+shape = SubResource("BoxShape3D_level2_death")
+
 [node name="EnemySpawn1" type="Marker3D" parent="World" unique_id=410271075]
 transform = Transform3D(0.9848077, 0, -0.17364818, 0, 1, 0, 0.17364818, 0, 0.9848077, -0.5, 0.15, 25.713045)
 
@@ -623,9 +636,6 @@ transform = Transform3D(0.71515644, 0, -0.6989649, 0, 1, 0, 0.6989649, 0, 0.7151
 
 [node name="Portal" parent="World" unique_id=1045021187 instance=ExtResource("13_portal")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 170.57257)
-
-[node name="Ring" parent="World/Portal/Pivot" index="1"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.04)
 
 [node name="Player" parent="World" unique_id=1812883366 instance=ExtResource("2_player")]
 transform = Transform3D(-0.9932741, 0, -0.11578677, 0, 1, 0, 0.11578677, 0, -0.9932741, 0, 1.8458242, -25.466845)

@@ -1,34 +1,13 @@
 [gd_scene format=3 uid="uid://dei2dtsftmpyi"]
 
 [ext_resource type="Script" uid="uid://dt5pf52jmd8av" path="res://scripts/objects/gun_item.gd" id="1_gun"]
+[ext_resource type="PackedScene" path="res://assets/74-gun_dae/Gun_dae/Gun.dae" id="2_model"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_gun"]
-size = Vector3(0.56, 0.28, 0.3)
-
-[sub_resource type="BoxMesh" id="BoxMesh_slide"]
-size = Vector3(0.46, 0.11, 0.16)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
-albedo_color = Color(0.1, 0.1, 0.12, 1)
-metallic = 0.42
-roughness = 0.32
-
-[sub_resource type="BoxMesh" id="BoxMesh_frame"]
-size = Vector3(0.34, 0.08, 0.12)
-
-[sub_resource type="BoxMesh" id="BoxMesh_handle"]
-size = Vector3(0.09, 0.18, 0.085)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_handle"]
-albedo_color = Color(0.16, 0.1, 0.07, 1)
-metallic = 0.08
-roughness = 0.82
-
-[sub_resource type="BoxMesh" id="BoxMesh_trigger_guard"]
-size = Vector3(0.045, 0.06, 0.05)
+size = Vector3(0.9, 0.35, 0.35)
 
 [sub_resource type="BoxMesh" id="BoxMesh_aura"]
-size = Vector3(0.64, 0.34, 0.34)
+size = Vector3(1.0, 0.45, 0.45)
 
 [node name="GunItem" type="StaticBody3D" unique_id=1300717580]
 script = ExtResource("1_gun")
@@ -36,24 +15,11 @@ script = ExtResource("1_gun")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1261665220]
 shape = SubResource("BoxShape3D_gun")
 
-[node name="Slide" type="MeshInstance3D" parent="." unique_id=1798687905]
-mesh = SubResource("BoxMesh_slide")
-surface_material_override/0 = SubResource("StandardMaterial3D_body")
+[node name="ModelRoot" type="Node3D" parent="."]
+transform = Transform3D(0.9848078, 0, -0.1736482, 0, 1, 0, 0.1736482, 0, 0.9848078, 0, -0.07, 0)
 
-[node name="Frame" type="MeshInstance3D" parent="." unique_id=39395941]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.03, -0.05, 0.025)
-mesh = SubResource("BoxMesh_frame")
-surface_material_override/0 = SubResource("StandardMaterial3D_body")
-
-[node name="Handle" type="MeshInstance3D" parent="." unique_id=1799358517]
-transform = Transform3D(0.970296, 0.241922, 0, -0.241922, 0.970296, 0, 0, 0, 1, -0.1, -0.135, 0.03)
-mesh = SubResource("BoxMesh_handle")
-surface_material_override/0 = SubResource("StandardMaterial3D_handle")
-
-[node name="TriggerGuard" type="MeshInstance3D" parent="." unique_id=1391259498]
-transform = Transform3D(0.866025, 0.5, 0, -0.5, 0.866025, 0, 0, 0, 1, -0.01, -0.095, 0.02)
-mesh = SubResource("BoxMesh_trigger_guard")
-surface_material_override/0 = SubResource("StandardMaterial3D_body")
+[node name="Model" parent="ModelRoot" instance=ExtResource("2_model")]
+transform = Transform3D(0.11, 0, 0, 0, 0.11, 0, 0, 0, 0.11, 0, 0, 0)
 
 [node name="GunAura" type="MeshInstance3D" parent="." unique_id=1020300964]
 visible = false

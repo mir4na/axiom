@@ -19,6 +19,9 @@ signal destroyed(obstacle: Node3D)
 @onready var _corridor_light_a: OmniLight3D = get_node_or_null("CorridorLightA") as OmniLight3D
 @onready var _corridor_light_b: OmniLight3D = get_node_or_null("CorridorLightB") as OmniLight3D
 @onready var _corridor_light_c: OmniLight3D = get_node_or_null("CorridorLightC") as OmniLight3D
+@onready var _health_pivot: Node3D = get_node_or_null("HealthPivot") as Node3D
+@onready var _health_fill: MeshInstance3D = get_node_or_null("HealthPivot/Fill") as MeshInstance3D
+@onready var _health_back: MeshInstance3D = get_node_or_null("HealthPivot/Back") as MeshInstance3D
 
 var _health: float = 120.0
 var _cooldown_timer: float = 0.0
@@ -40,6 +43,7 @@ func _physics_process(delta: float) -> void:
 	_cleanup_projectiles()
 	_update_damage_flash(delta)
 	_update_corridor_lights(delta)
+	_update_health_bar_billboard()
 	if not _enabled or _destroyed:
 		return
 	if GameState.is_time_blocked():
@@ -70,6 +74,7 @@ func set_obstacle_enabled(enabled: bool) -> void:
 	if not enabled:
 		_clear_projectiles()
 	_set_corridor_lights_visible(enabled)
+	_update_health_bar()
 	set_highlight_enabled(_persistent_highlight)
 
 func reset_obstacle_state() -> void:
@@ -84,6 +89,7 @@ func reset_obstacle_state() -> void:
 		_core_material.emission = Color(0.24, 0.16, 0.08, 1.0)
 		_core_material.emission_energy_multiplier = 0.35
 	_clear_projectiles()
+	_update_health_bar()
 	set_obstacle_enabled(false)
 
 func take_damage(amount: float) -> void:
@@ -91,6 +97,7 @@ func take_damage(amount: float) -> void:
 		return
 	_health = maxf(0.0, _health - amount)
 	_flash_timer = 0.2
+	_update_health_bar()
 	if _health > 0.0:
 		return
 	_destroyed = true
@@ -110,6 +117,9 @@ func take_damage(amount: float) -> void:
 	if _aura_mesh != null:
 		explode.tween_property(_aura_mesh, "scale", Vector3.ONE * 2.2, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		explode.tween_property(_aura_mesh, "scale", Vector3.ZERO, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN).set_delay(0.16)
+	if _health_pivot != null:
+		explode.tween_property(_health_pivot, "scale", Vector3.ONE * 1.25, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		explode.tween_property(_health_pivot, "scale", Vector3.ZERO, 0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN).set_delay(0.16)
 	await explode.finished
 	emit_signal("destroyed", self)
 	queue_free()
@@ -239,6 +249,33 @@ func _update_damage_flash(delta: float) -> void:
 	_core_material.albedo_color = Color(0.26, 0.25, 0.24, 1.0).lerp(Color(0.9, 0.34, 0.18, 1.0), ratio)
 	_core_material.emission = Color(0.24, 0.16, 0.08, 1.0).lerp(Color(1.0, 0.34, 0.12, 1.0), ratio)
 	_core_material.emission_energy_multiplier = lerpf(0.35, 3.2, ratio)
+
+func _update_health_bar() -> void:
+	if _health_pivot != null:
+		_health_pivot.visible = _enabled and not _destroyed
+	if _health_back != null:
+		_health_back.visible = _enabled and not _destroyed
+	if _health_fill == null:
+		return
+	_health_fill.visible = _enabled and not _destroyed
+	var ratio: float = 0.0
+	if max_health > 0.001:
+		ratio = clampf(_health / max_health, 0.0, 1.0)
+	var fill_transform: Transform3D = _health_fill.transform
+	fill_transform.basis = Basis().scaled(Vector3(maxf(0.001, ratio), 1.0, 1.0))
+	fill_transform.origin.x = -0.55 + (ratio * 0.55)
+	_health_fill.transform = fill_transform
+
+func _update_health_bar_billboard() -> void:
+	if _health_pivot == null or not _health_pivot.visible:
+		return
+	var current_camera: Camera3D = get_viewport().get_camera_3d()
+	if current_camera == null:
+		return
+	var look_direction: Vector3 = (current_camera.global_position - _health_pivot.global_position).normalized()
+	if look_direction.length_squared() <= 0.0001:
+		return
+	_health_pivot.global_basis = Basis.looking_at(look_direction, Vector3.UP)
 
 func _update_corridor_lights(delta: float) -> void:
 	if not _enabled or _destroyed:

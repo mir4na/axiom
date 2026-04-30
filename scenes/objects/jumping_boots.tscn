@@ -1,40 +1,37 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://bua3jyp416qe7"]
 
-[ext_resource type="Script" path="res://scripts/objects/jumping_boots.gd" id="1"]
+[ext_resource type="Script" uid="uid://dq01v02klnt08" path="res://scripts/objects/jumping_boots.gd" id="1"]
+[ext_resource type="Mesh" uid="uid://cu3mkvnktkq36" path="res://assets/Boots_v1_L2.123cbd82c654-1147-4e50-bbfa-f56b50f4a3d3/12307_Boots_v1_l2.obj" id="2_model"]
 
 [sub_resource type="BoxShape3D" id="1"]
-size = Vector3(0.9, 0.4, 0.8)
+size = Vector3(1.2, 1.0, 1.2)
 
 [sub_resource type="BoxMesh" id="2"]
-size = Vector3(0.9, 0.4, 0.8)
+size = Vector3(1.45, 1.0, 1.45)
 
 [sub_resource type="BoxMesh" id="3"]
-size = Vector3(1.05, 0.52, 0.95)
+size = Vector3(0.001, 0.001, 0.001)
 
-[sub_resource type="StandardMaterial3D" id="4"]
-albedo_color = Color(0.12, 0.16, 0.24, 1)
-metallic = 0.18
-roughness = 0.32
-emission_enabled = true
-emission = Color(0.22, 0.72, 1, 1)
-emission_energy_multiplier = 1.3
-
-[node name="JumpingBoots" type="StaticBody3D"]
+[node name="JumpingBoots" type="StaticBody3D" unique_id=857059069]
 script = ExtResource("1")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=315324157]
 shape = SubResource("1")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-material_override = SubResource("4")
-mesh = SubResource("2")
-
-[node name="Aura" type="MeshInstance3D" parent="."]
 visible = false
 mesh = SubResource("3")
 
-[node name="Glow" type="OmniLight3D" parent="."]
+[node name="Model" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.032889243, 0, -0.011970705, 0, 0.035, 0, 0.011970705, 0, 0.032889243, 0, 0.65, 0)
+mesh = ExtResource("2_model")
+
+[node name="Aura" type="MeshInstance3D" parent="." unique_id=895836097]
+visible = false
+mesh = SubResource("2")
+
+[node name="Glow" type="OmniLight3D" parent="." unique_id=565632454]
 visible = false
 light_color = Color(0.22, 0.76, 1, 1)
 light_energy = 0.0
-omni_range = 4.8
+omni_range = 5.2

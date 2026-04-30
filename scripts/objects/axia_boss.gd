@@ -124,6 +124,7 @@ func _ready() -> void:
 		_rose.call("play_idle")
 	if _ash_effect != null:
 		_ash_effect.emitting = false
+		_ash_effect.visible = false
 	_setup_audio_player()
 	_set_visual_transparency(0.0)
 
@@ -704,6 +705,7 @@ func set_manifested(active: bool) -> void:
 		_aura_ring.visible = true
 	if _ash_effect != null:
 		_ash_effect.emitting = false
+		_ash_effect.visible = false
 
 func play_idle() -> void:
 	if _rose != null and _rose.has_method("play_idle"):
@@ -761,18 +763,7 @@ func _play_death_sequence() -> void:
 	_death_fall_velocity = 0.0
 	while _death_falling:
 		await get_tree().physics_frame
-	if _ash_effect != null:
-		var ash_position: Vector3 = global_position
-		if _rose != null and is_instance_valid(_rose):
-			ash_position = _rose.global_position
-			ash_position.y += 0.36
-		elif _ash_anchor != null:
-			ash_position = _ash_anchor.global_position
-		else:
-			ash_position.y += ash_spawn_height_offset
-		_ash_effect.global_position = ash_position
-		_ash_effect.restart()
-		_ash_effect.emitting = true
+	_spawn_detached_ash_effect(_resolve_ash_spawn_position())
 	var dissolve: Tween = create_tween().set_parallel(true)
 	dissolve.tween_method(_set_visual_transparency, 0.0, 1.0, death_dissolve_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	dissolve.parallel().tween_property(self, "scale", _self_initial_scale * death_dissolve_self_scale_multiplier, death_dissolve_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -782,6 +773,51 @@ func _play_death_sequence() -> void:
 	if _ash_effect != null:
 		await get_tree().create_timer(death_ash_cleanup_delay).timeout
 		_ash_effect.emitting = false
+
+func _resolve_ash_spawn_position() -> Vector3:
+	var ash_position: Vector3 = global_position
+	if _rose != null and is_instance_valid(_rose):
+		ash_position = _rose.global_position
+		ash_position.y += 0.36
+	elif _ash_anchor != null:
+		ash_position = _ash_anchor.global_position
+	else:
+		ash_position.y += ash_spawn_height_offset
+	return ash_position
+
+func _spawn_detached_ash_effect(ash_position: Vector3) -> void:
+	if _ash_effect == null:
+		return
+	var scene_tree: SceneTree = get_tree()
+	if scene_tree == null:
+		return
+	var effect_owner: Node = scene_tree.current_scene
+	if effect_owner == null:
+		effect_owner = get_parent()
+	if effect_owner == null:
+		return
+	var ash_instance: GPUParticles3D = _ash_effect.duplicate() as GPUParticles3D
+	if ash_instance == null:
+		_ash_effect.visible = true
+		_ash_effect.global_position = ash_position
+		_ash_effect.restart()
+		_ash_effect.emitting = true
+		return
+	ash_instance.name = "AxiaAshEffectRuntime"
+	ash_instance.emitting = false
+	ash_instance.one_shot = true
+	effect_owner.add_child(ash_instance)
+	ash_instance.global_position = ash_position
+	ash_instance.visible = true
+	ash_instance.restart()
+	ash_instance.emitting = true
+	if ash_instance.has_signal("finished"):
+		ash_instance.finished.connect(ash_instance.queue_free, CONNECT_ONE_SHOT)
+	else:
+		var cleanup_timer: SceneTreeTimer = scene_tree.create_timer(maxf(ash_instance.lifetime, 0.1) + 0.2)
+		cleanup_timer.timeout.connect(ash_instance.queue_free, CONNECT_ONE_SHOT)
+	_ash_effect.emitting = false
+	_ash_effect.visible = false
 
 func _get_die_animation_duration() -> float:
 	if _rose == null:
