@@ -769,16 +769,16 @@ func _play_house_split_glitch() -> void:
 		_world._glitch_overlay.modulate.a = 0.0
 	var glitch_in: Tween = _world.create_tween()
 	if _world._glitch_overlay != null:
-		glitch_in.tween_property(_world._glitch_overlay, "modulate:a", 0.78, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		glitch_in.parallel().tween_method(_world._set_arrival_glitch_strength, 0.0, 1.0, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		glitch_in.tween_property(_world._glitch_overlay, "modulate:a", 0.22, 0.36).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		glitch_in.parallel().tween_method(_world._set_arrival_glitch_strength, 0.0, 0.22, 0.36).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	if _broken_house_instance != null:
 		glitch_in.parallel().tween_method(Callable(_broken_house_instance, "set_split_weight"), 0.0, 1.0, 1.7).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await glitch_in.finished
 	await _world.get_tree().create_timer(0.72).timeout
 	var glitch_out: Tween = _world.create_tween()
 	if _world._glitch_overlay != null:
-		glitch_out.tween_property(_world._glitch_overlay, "modulate:a", 0.0, 0.58).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		glitch_out.parallel().tween_method(_world._set_arrival_glitch_strength, 1.0, 0.0, 0.58).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		glitch_out.tween_property(_world._glitch_overlay, "modulate:a", 0.0, 0.62).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		glitch_out.parallel().tween_method(_world._set_arrival_glitch_strength, 0.22, 0.0, 0.62).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await glitch_out.finished
 	if _world._glitch_overlay != null:
 		_world._glitch_overlay.visible = false

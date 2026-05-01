@@ -40,6 +40,7 @@ const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
 const ENDING_BOARD_TEXT_OVERLAY_SCENE := preload("res://scenes/ui/ending_board_text_overlay.tscn")
 const ENDING_CREDITS_OVERLAY_SCENE := preload("res://scenes/ui/ending_credits_overlay.tscn")
 const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
+const SHOVEL_SCENE := preload("res://scenes/objects/shovel.tscn")
 const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa071de8bc191c3b4bef00edda/AllSkyFree/AllSkyFree_Skyboxes/AllSky_Space_AnotherPlanet Equirect.png"
 
 @export_group("Audio Placeholder BGM")
@@ -109,6 +110,7 @@ var _window_target: Node3D
 var _sofa_interactable
 
 var _intro_ui: CanvasLayer
+var _cinematic_bars_ui: CanvasLayer
 var _intro_camera: Camera3D
 var _wake_overlay: ColorRect
 var _blink_overlay: ColorRect
@@ -557,6 +559,10 @@ func _create_intro_ui() -> void:
 	_intro_ui.layer = 20
 	add_child(_intro_ui)
 
+	_cinematic_bars_ui = CanvasLayer.new()
+	_cinematic_bars_ui.layer = 140
+	add_child(_cinematic_bars_ui)
+
 	_wake_overlay = ColorRect.new()
 	_wake_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var wake_shader := ShaderMaterial.new()
@@ -614,7 +620,7 @@ func _create_intro_ui() -> void:
 	_top_bar.visible = false
 	_top_bar.z_index = 180
 	_top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_intro_ui.add_child(_top_bar)
+	_cinematic_bars_ui.add_child(_top_bar)
 
 	_bottom_bar = ColorRect.new()
 	_bottom_bar.anchor_left = 0.0
@@ -629,7 +635,7 @@ func _create_intro_ui() -> void:
 	_bottom_bar.visible = false
 	_bottom_bar.z_index = 180
 	_bottom_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_intro_ui.add_child(_bottom_bar)
+	_cinematic_bars_ui.add_child(_bottom_bar)
 
 	_objective_panel = OBJECTIVE_PANEL_SCENE.instantiate() as Control
 	_objective_panel.anchor_left = 1.0
@@ -2056,6 +2062,7 @@ func _on_dig_spot_completed(_spot: Node3D) -> void:
 func _finish_world_phase() -> void:
 	if _objective_state != "dig":
 		return
+	_auto_drop_and_lock_shovel_after_bury()
 	_show_objective("%s %d/%d" % [_objective_text("dig", "Bury the old stuff"), _total_dig_spots, _total_dig_spots])
 	await _show_subtitle("That should take care of it. I need to sit down for a minute.", 2.6)
 	_objective_state = "rest"
@@ -2064,6 +2071,58 @@ func _finish_world_phase() -> void:
 		_sofa_interactable.set_interactable_enabled(true)
 	_update_objective_text()
 	await _show_subtitle("The sofa should be enough for a quick rest.", 2.5)
+
+func _auto_drop_and_lock_shovel_after_bury() -> void:
+	if not GameState.has_item("Shovel"):
+		return
+	GameState.consume_item("Shovel")
+	if SHOVEL_SCENE == null:
+		return
+	var dropped_shovel: Node3D = SHOVEL_SCENE.instantiate() as Node3D
+	if dropped_shovel == null:
+		return
+	if _node_has_property(dropped_shovel, "is_dropped"):
+		dropped_shovel.set("is_dropped", true)
+	add_child(dropped_shovel)
+	var spawn_position: Vector3 = Vector3.ZERO
+	if player != null and is_instance_valid(player):
+		spawn_position = player.global_position + player.global_transform.basis.z * 0.9 + Vector3(0.0, 0.35, 0.0)
+	elif shovel != null and is_instance_valid(shovel):
+		spawn_position = shovel.global_position + Vector3(0.0, 0.25, 0.0)
+	var landed_position: Vector3 = _find_drop_landing_position(spawn_position)
+	dropped_shovel.global_position = landed_position
+	dropped_shovel.global_rotation = Vector3(0.0, 0.0, 0.0)
+	if dropped_shovel.has_method("set_highlight_enabled"):
+		dropped_shovel.call("set_highlight_enabled", false)
+	if dropped_shovel is RigidBody3D:
+		var dropped_body: RigidBody3D = dropped_shovel as RigidBody3D
+		dropped_body.linear_velocity = Vector3.ZERO
+		dropped_body.angular_velocity = Vector3.ZERO
+		dropped_body.freeze = true
+		dropped_body.sleeping = true
+
+func _find_drop_landing_position(origin: Vector3) -> Vector3:
+	var query_from: Vector3 = origin + Vector3(0.0, 4.0, 0.0)
+	var query_to: Vector3 = origin + Vector3(0.0, -34.0, 0.0)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(query_from, query_to)
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	if player != null and is_instance_valid(player):
+		query.exclude = [player.get_rid()]
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return origin + Vector3(0.0, -1.1, 0.0)
+	var hit_position: Vector3 = hit.get("position", origin)
+	var hit_normal: Vector3 = hit.get("normal", Vector3.UP).normalized()
+	if hit_normal.y < 0.5:
+		hit_normal = Vector3.UP
+	return hit_position + hit_normal * 0.09
+
+func _node_has_property(node: Object, property_name: String) -> bool:
+	for prop in node.get_property_list():
+		if String(prop.get("name", "")) == property_name:
+			return true
+	return false
 
 func _play_rest_cinematic() -> void:
 	if _sofa_interactable != null:
