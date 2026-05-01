@@ -58,13 +58,17 @@ enum Stage {
 @onready var _dragon_intro_orbit_b: Marker3D = get_node_or_null("World/DragonEncounter/IntroOrbitB") as Marker3D
 @onready var _dragon_intro_orbit_c: Marker3D = get_node_or_null("World/DragonEncounter/IntroOrbitC") as Marker3D
 @onready var _dragon_intro_landing_marker: Marker3D = get_node_or_null("World/DragonEncounter/IntroLandingMarker") as Marker3D
+@onready var _dragon_ride_path_start: Marker3D = get_node_or_null("World/DragonRidePath/Start") as Marker3D
+@onready var _dragon_ride_path_mid: Marker3D = get_node_or_null("World/DragonRidePath/Mid") as Marker3D
+@onready var _dragon_ride_path_end: Marker3D = get_node_or_null("World/DragonRidePath/End") as Marker3D
+@onready var _dragon_ride_player_drop: Marker3D = get_node_or_null("World/DragonRidePath/PlayerDrop") as Marker3D
 
 @export var dragon_ride_speed: float = 23.0
 @export var dragon_ride_vertical_speed: float = 14.0
 @export var dragon_ride_turn_speed: float = 1.9
 @export var dragon_ride_boost_multiplier: float = 1.7
 @export var dragon_ride_accel: float = 3.8
-@export var dragon_ride_visual_yaw_offset_degrees: float = 0.0
+@export var dragon_ride_visual_yaw_offset_degrees: float = 180.0
 @export var dragon_takeoff_impulse: float = 8.0
 @export var dragon_idle_descent_speed: float = 2.2
 @export var dragon_ground_probe_height: float = 3.2
@@ -73,7 +77,6 @@ enum Stage {
 @export var dragon_cursor_steer_max_ray_distance: float = 300.0
 @export var dragon_cursor_deadzone: float = 0.08
 @export var dragon_cursor_horizontal_steer: float = 1.35
-@export var dragon_cursor_vertical_steer: float = 0.8
 @export var dragon_camera_anchor_position_smooth: float = 8.0
 @export var dragon_camera_anchor_rotation_smooth: float = 8.0
 @export var dragon_camera_look_distance: float = 32.0
@@ -101,6 +104,7 @@ var _dragon_ride_velocity: Vector3 = Vector3.ZERO
 var _dragon_flight_active: bool = false
 var _dragon_space_prev: bool = false
 var _dragon_ride_ready: bool = false
+var _dragon_flight_cinematic_running: bool = false
 var _dragon_ride_look_direction: Vector3 = Vector3.FORWARD
 var _dragon_runtime_camera_anchor: Node3D
 var _portal_transfer_running: bool = false
@@ -141,6 +145,8 @@ func _ready() -> void:
 		_dragon_guard.call("set_mount_enabled", false)
 	if _dragon_guard != null:
 		_dragon_arena_position = _dragon_guard.global_position
+		if _dragon_guard.has_method("set_visual_yaw_offset_degrees"):
+			_dragon_guard.call("set_visual_yaw_offset_degrees", dragon_ride_visual_yaw_offset_degrees)
 		if _dragon_guard.has_method("set_arch_markers"):
 			_dragon_guard.call("set_arch_markers", _dragon_arch_markers)
 		if _dragon_guard.has_method("reset_dragon_state"):
@@ -213,7 +219,7 @@ func _process(delta: float) -> void:
 	_floating_update_bucket = (_floating_update_bucket + 1) % slices
 
 func _physics_process(delta: float) -> void:
-	if _dragon_riding:
+	if _dragon_riding and not _dragon_flight_cinematic_running:
 		_update_dragon_ride(delta)
 
 func _collect_dragon_arch_markers() -> void:
@@ -960,13 +966,11 @@ func _on_dragon_ride_release_area_body_entered(body: Node) -> void:
 		return
 	if _stage == Stage.USE_GATE or _stage == Stage.DONE:
 		return
-	_stage = Stage.USE_GATE
-	if _level_gate != null and _level_gate.has_method("set_interactable_enabled"):
-		_level_gate.call("set_interactable_enabled", true)
-	if _player != null and _player.has_method("set_item_usage_locked"):
-		_player.call("set_item_usage_locked", false)
-	_show_objective("Insert the keycard into the portal box")
-	_show_subtitle("Reach the center box and insert your keycard.", 2.0)
+	_dragon_flight_cinematic_running = false
+	_release_dragon_ride()
+	if not _dragon_escape_running:
+		_dragon_escape_running = true
+		call_deferred("_fly_dragon_away")
 
 func _update_dragon_ride(delta: float) -> void:
 	if _dragon_guard == null or _player == null:
@@ -980,6 +984,8 @@ func _update_dragon_ride(delta: float) -> void:
 		_dragon_flight_active = true
 		_dragon_ride_ready = true
 		_dragon_ride_velocity.y = maxf(_dragon_ride_velocity.y, dragon_takeoff_impulse * 1.9)
+	elif space_just_pressed and _dragon_flight_active and _dragon_ride_ready:
+		_dragon_ride_velocity.y = maxf(_dragon_ride_velocity.y, dragon_takeoff_impulse)
 	if grounded and _dragon_flight_active and _dragon_ride_velocity.y <= 0.0:
 		_dragon_flight_active = false
 		_dragon_ride_ready = false
@@ -1007,10 +1013,9 @@ func _update_dragon_ride(delta: float) -> void:
 			_dragon_ride_look_direction = planar_direction
 	var target_vertical_velocity: float = 0.0
 	if _dragon_flight_active:
-		if not move_forward_pressed:
-			target_vertical_velocity = -dragon_idle_descent_speed
-		else:
-			target_vertical_velocity = clampf(-cursor_offset.y * dragon_ride_vertical_speed * dragon_cursor_vertical_steer, -dragon_ride_vertical_speed, dragon_ride_vertical_speed)
+		target_vertical_velocity = -dragon_idle_descent_speed
+		if space_pressed:
+			target_vertical_velocity = dragon_ride_vertical_speed
 	if not _dragon_flight_active or not _dragon_ride_ready:
 		planar_target_velocity = Vector3.ZERO
 		target_vertical_velocity = 0.0
@@ -1018,8 +1023,7 @@ func _update_dragon_ride(delta: float) -> void:
 	_dragon_ride_velocity = _dragon_ride_velocity.lerp(target_velocity, clampf(dragon_ride_accel * delta, 0.0, 1.0))
 	_dragon_guard.global_position += _dragon_ride_velocity * delta
 	if planar_direction.length_squared() > 0.0001:
-		var yaw_offset: float = deg_to_rad(dragon_ride_visual_yaw_offset_degrees)
-		var target_yaw: float = atan2(-planar_direction.x, -planar_direction.z) + yaw_offset
+		var target_yaw: float = atan2(-planar_direction.x, -planar_direction.z)
 		var turn_alpha: float = clampf(dragon_ride_turn_speed * delta, 0.0, 1.0)
 		_dragon_guard.rotation.y = lerp_angle(_dragon_guard.rotation.y, target_yaw, turn_alpha)
 	_update_dragon_ride_camera_anchor(delta)
@@ -1177,7 +1181,6 @@ func _on_inventory_changed() -> void:
 		if _dragon_guard != null and _dragon_guard.has_method("set_mount_enabled"):
 			_dragon_guard.call("set_mount_enabled", true)
 		_show_objective("Ride the dragon")
-		_show_subtitle("Interact with the dragon to start flying.", 2.0)
 		return
 	if _stage == Stage.USE_GATE and _level_gate != null and _level_gate.has_method("set_highlight_strength"):
 		_level_gate.call("set_highlight_strength", 0.95)
@@ -1228,6 +1231,7 @@ func _start_dragon_ride() -> void:
 		GameState.cancel_rewind_mode()
 	_ride_running = true
 	_dragon_riding = true
+	_dragon_flight_cinematic_running = true
 	_dragon_ride_velocity = Vector3.ZERO
 	_dragon_flight_active = false
 	_dragon_space_prev = false
@@ -1246,10 +1250,11 @@ func _start_dragon_ride() -> void:
 		initial_anchor_position = _dragon_camera_socket.global_position
 	_dragon_runtime_camera_anchor.global_position = initial_anchor_position
 	_update_dragon_ride_camera_anchor(1.0 / 60.0)
+	_player.set_cinematic_lock(true)
 	_player.set_mobility_lock(true)
 	_player.visible = false
 	if _player.has_method("set_look_input_locked"):
-		_player.call("set_look_input_locked", false)
+		_player.call("set_look_input_locked", true)
 	if _player.has_method("set_item_usage_locked"):
 		_player.call("set_item_usage_locked", true)
 	if _player.has_method("set_mount_riding"):
@@ -1257,19 +1262,108 @@ func _start_dragon_ride() -> void:
 	if _player.has_method("set_external_camera_anchor"):
 		_player.call("set_external_camera_anchor", _dragon_runtime_camera_anchor)
 	_sync_player_to_dragon_mount()
-	_show_objective("Fly to the portal platform")
-	_show_subtitle("Press Space to take off. Follow the trace to the portal area.", 2.6)
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	_show_objective("Dragon flight in progress")
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	call_deferred("_play_dragon_ride_cinematic_sequence")
+
+func _play_dragon_ride_cinematic_sequence() -> void:
+	if _player == null or _dragon_guard == null:
+		_dragon_flight_cinematic_running = false
+		_ride_running = false
+		_release_dragon_ride()
+		return
+	await _set_world_cinematic_bars(true, 0.32)
+	await _fade_world_black(1.0, 2.0)
+	var marker_start: Vector3 = _dragon_guard.global_position
+	if _dragon_ride_path_start != null and is_instance_valid(_dragon_ride_path_start):
+		marker_start = _dragon_ride_path_start.global_position
+	var marker_mid: Vector3 = marker_start + Vector3(14.0, 10.0, -10.0)
+	if _dragon_ride_path_mid != null and is_instance_valid(_dragon_ride_path_mid):
+		marker_mid = _dragon_ride_path_mid.global_position
+	var marker_end: Vector3 = marker_mid + Vector3(14.0, -4.0, 8.0)
+	if _dragon_ride_path_end != null and is_instance_valid(_dragon_ride_path_end):
+		marker_end = _dragon_ride_path_end.global_position
+	var release_target: Vector3 = marker_end
+	if _dragon_ride_player_drop != null and is_instance_valid(_dragon_ride_player_drop):
+		release_target = _dragon_ride_player_drop.global_position
+	_teleport_dragon_to_position(marker_start, marker_mid)
+	await _fade_world_black(0.0, 0.42)
+	await _fly_dragon_cinematic_segment(marker_mid, 2.6, 1.5)
+	await _fade_world_black(1.0, 2.0)
+	_teleport_dragon_to_position(marker_end, release_target)
+	await _fade_world_black(0.0, 0.42)
+	await _fly_dragon_cinematic_segment(release_target, 2.2, 0.45)
+	await _set_world_cinematic_bars(false, 0.26)
+	if _dragon_riding and _player != null:
+		_on_dragon_ride_release_area_body_entered(_player)
 	_ride_running = false
+
+func _teleport_dragon_to_position(position: Vector3, look_target: Vector3) -> void:
+	if _dragon_guard == null:
+		return
+	_dragon_guard.global_position = position
+	var flat_target: Vector3 = look_target
+	flat_target.y = position.y
+	if _dragon_guard.has_method("face_toward"):
+		_dragon_guard.call("face_toward", flat_target)
+	else:
+		_dragon_guard.look_at(flat_target, Vector3.UP)
+	var look_dir: Vector3 = flat_target - position
+	look_dir.y = 0.0
+	if look_dir.length_squared() > 0.0001:
+		_dragon_ride_look_direction = look_dir.normalized()
+	_sync_player_to_dragon_mount()
+	_update_dragon_ride_camera_anchor(1.0 / 60.0)
+
+func _fade_world_black(target_alpha: float, duration: float) -> void:
+	if _world == null or not _world.has_method("_fade_black"):
+		await get_tree().create_timer(maxf(0.01, duration)).timeout
+		return
+	await _world.call("_fade_black", target_alpha, duration)
+
+func _set_world_cinematic_bars(visible: bool, duration: float) -> void:
+	if _world == null or not _world.has_method("_set_cinematic_bars"):
+		return
+	await _world.call("_set_cinematic_bars", visible, duration)
+
+func _fly_dragon_cinematic_segment(target_position: Vector3, duration: float, arc_height: float = 0.0) -> void:
+	if _dragon_guard == null:
+		return
+	var start: Vector3 = _dragon_guard.global_position
+	var previous: Vector3 = start
+	var elapsed: float = 0.0
+	var total: float = maxf(0.05, duration)
+	while elapsed < total:
+		var delta: float = get_process_delta_time()
+		elapsed += delta
+		var t: float = clampf(elapsed / total, 0.0, 1.0)
+		var eased: float = 0.5 - cos(t * PI) * 0.5
+		var next_pos: Vector3 = start.lerp(target_position, eased)
+		if arc_height > 0.0:
+			next_pos.y += sin(t * PI) * arc_height
+		_set_dragon_fly_toward(next_pos)
+		var look_dir: Vector3 = next_pos - previous
+		look_dir.y = 0.0
+		if look_dir.length_squared() > 0.0001:
+			_dragon_ride_look_direction = look_dir.normalized()
+		_update_dragon_ride_camera_anchor(delta)
+		_sync_player_to_dragon_mount()
+		previous = next_pos
+		await get_tree().process_frame
+	_set_dragon_fly_toward(target_position)
+	_update_dragon_ride_camera_anchor(1.0 / 60.0)
+	_sync_player_to_dragon_mount()
 
 func _release_dragon_ride() -> void:
 	if not _dragon_riding:
 		return
 	_dragon_riding = false
+	_dragon_flight_cinematic_running = false
 	_dragon_ride_velocity = Vector3.ZERO
 	_dragon_flight_active = false
 	_dragon_ride_ready = false
 	if _player != null:
+		_player.set_cinematic_lock(false)
 		_player.set_mobility_lock(false)
 		_player.visible = true
 		if _player.has_method("set_look_input_locked"):

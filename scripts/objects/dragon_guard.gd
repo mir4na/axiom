@@ -52,6 +52,7 @@ var _fireball_sfx_fallback: AudioStreamPlayer
 var _arch_markers: Array[Node3D] = []
 var _last_arch_index: int = -1
 var _teleport_glitch_active: bool = false
+var _runtime_visual_yaw_offset_degrees: float = 0.0
 
 func _ready() -> void:
 	add_to_group("enemy")
@@ -70,6 +71,8 @@ func _ready() -> void:
 	if _fireball_sfx_player != null and sfx_fireball_cast != null:
 		_fireball_sfx_player.stream = sfx_fireball_cast
 	_setup_fireball_sfx_fallback()
+	_runtime_visual_yaw_offset_degrees = model_yaw_offset_degrees
+	_apply_visual_yaw_offset()
 
 func _physics_process(_delta: float) -> void:
 	if _dead:
@@ -175,6 +178,17 @@ func set_mount_enabled(enabled: bool) -> void:
 	else:
 		prompt_text = ""
 
+func set_visual_yaw_offset_degrees(value: float) -> void:
+	_runtime_visual_yaw_offset_degrees = value
+	_apply_visual_yaw_offset()
+
+func _apply_visual_yaw_offset() -> void:
+	if _model_root == null:
+		return
+	var visual_rotation: Vector3 = _model_root.rotation_degrees
+	visual_rotation.y = _runtime_visual_yaw_offset_degrees
+	_model_root.rotation_degrees = visual_rotation
+
 func interact() -> void:
 	if not _dead:
 		return
@@ -213,6 +227,7 @@ func _die() -> void:
 	if _model_root != null:
 		_model_root.rotation_degrees = Vector3.ZERO
 		_model_root.position = Vector3.ZERO
+		_apply_visual_yaw_offset()
 	play_idle_animation()
 	_update_health_visual()
 	_emit_health()
@@ -248,6 +263,7 @@ func reset_dragon_state() -> void:
 	if _model_root != null:
 		_model_root.rotation_degrees = Vector3.ZERO
 		_model_root.position = Vector3.ZERO
+		_apply_visual_yaw_offset()
 	if _glow != null:
 		_glow.light_color = Color(0.5, 0.3, 0.9, 1.0)
 		_glow.light_energy = 1.25
@@ -509,8 +525,6 @@ func face_toward(target: Vector3) -> void:
 	if to_target.length_squared() <= 0.0001:
 		return
 	look_at(target, Vector3.UP)
-	if absf(model_yaw_offset_degrees) > 0.001:
-		rotate_y(deg_to_rad(model_yaw_offset_degrees))
 
 func _play_attack_animation() -> void:
 	_play_animation_with_keywords(["attack", "bite", "claw"])

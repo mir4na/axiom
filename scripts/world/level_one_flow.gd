@@ -753,6 +753,7 @@ func play_axiom_equip_sequence() -> void:
 	await _world._show_subtitle("It's recording everything now.", 1.9)
 	await _world._return_intro_camera_to_player(0.95)
 	await _world._set_cinematic_bars(false, 0.32)
+	_world._play_level_one_post_split_bgm()
 	_begin_post_split_escape_phase()
 	_level_one_sequence_running = false
 

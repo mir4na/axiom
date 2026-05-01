@@ -73,6 +73,7 @@ const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa07
 @export var level_four_bgm_fade_out_duration: float = 2.8
 @export_group("Level One Audio Flow")
 @export var level_one_bgm_fade_out_duration: float = 2.0
+@export_range(0.0, 1.0, 0.01) var level_one_post_split_bgm_volume_scale: float = 0.5
 @export_group("BGM Mix")
 @export_range(0.0, 1.0, 0.01) var bgm_volume_scale: float = 0.6
 
@@ -300,7 +301,10 @@ func _play_bgm_stream(stream: AudioStream) -> void:
 	_bgm_player.play()
 
 func _target_bgm_volume_db() -> float:
-	var clamped_volume: float = clampf(bgm_volume_scale, 0.0, 1.0)
+	return _volume_scale_to_db(bgm_volume_scale)
+
+func _volume_scale_to_db(volume_scale: float) -> float:
+	var clamped_volume: float = clampf(volume_scale, 0.0, 1.0)
 	if clamped_volume <= 0.0001:
 		return -50.0
 	return linear_to_db(clamped_volume)
@@ -896,14 +900,12 @@ func _play_intro_sequence() -> void:
 	await _restore_player_camera()
 	_show_objective(_objective_text("shovel", "OBJECTIVE: Pick up the shovel"))
 	_objective_state = "shovel"
-	_play_level_one_awake_bgm()
 	await _show_subtitle("I should grab the shovel before I start digging.", 2.5)
 	_set_intro_lock(false)
 
 func _play_level_one_arrival() -> void:
 	if _level_one_flow != null:
 		await _level_one_flow.play_arrival()
-	_play_level_one_awake_bgm()
 
 func _play_level_two_intro() -> void:
 	var level_two_tree: SceneTree = get_tree()
@@ -2088,6 +2090,14 @@ func _play_level_one_awake_bgm() -> void:
 		return
 	_play_bgm_stream(bgm_level_one)
 
+func _play_level_one_post_split_bgm() -> void:
+	if not _is_level_one_scene():
+		return
+	_play_bgm_stream(bgm_level_one)
+	if _bgm_player == null or not is_instance_valid(_bgm_player):
+		return
+	_bgm_player.volume_db = _volume_scale_to_db(level_one_post_split_bgm_volume_scale)
+
 func _fade_out_level_one_bgm_for_loading() -> void:
 	if not _is_world_intro_scene():
 		await get_tree().create_timer(2.0).timeout
@@ -2683,7 +2693,7 @@ func _show_ending_credits_roll() -> void:
 	credit_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credit_text.add_theme_font_size_override("font_size", 68)
 	credit_text.add_theme_color_override("font_color", Color(0.96, 0.96, 0.96, 1.0))
-	credit_text.text = "CREDITS\n\nGame Designer, Programmer\nmir4na, codex, antigravity\n\nAssets\nCreators who published free models\n\nSound Effects and BGM\nCreators on YouTube\n\nAlso Thanks To\nGodot Engine\nGodot Community\nMixamo"
+	credit_text.text = "CREDITS\n\nGame Designer\nmir4na\n\nProgrammer\nmir4na, Codex, Antigravity\n\nAssets\nCreators who published free models\n\nSound Effects and BGM\nCreators on YouTube\n\nAlso Thanks To\nGodot Engine\nGodot Community\nMixamo"
 	credit_text.custom_minimum_size = Vector2(860.0, 1820.0)
 	credit_text.size = credit_text.custom_minimum_size
 	credits_root.add_child(credit_text)

@@ -13,12 +13,12 @@
 [ext_resource type="AudioStream" uid="uid://dcdxueaoxk7op" path="res://audio/bgm/level_1_before_disaster.mp3" id="11_bgm_level1"]
 [ext_resource type="AudioStream" uid="uid://unoa5a565im0" path="res://audio/bgm/level_2.mp3" id="12_bgm_level2"]
 [ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="13_bgm_level4"]
-[ext_resource type="AudioStream" uid="uid://lpnux3cfn4wu" path="res://audio/bgm/level_3.mp3" id="19_bgm_level3"]
 [ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="14_sfx_glitch"]
 [ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="15_sfx_sky_cracking"]
 [ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="16_enemy"]
 [ext_resource type="Script" uid="uid://4isofn1ndolb" path="res://scripts/objects/anomaly_sentry.gd" id="17_anomaly_sentry"]
 [ext_resource type="PackedScene" uid="uid://cti0gocu5al2o" path="res://scenes/objects/bow_item.tscn" id="18_bow_item"]
+[ext_resource type="AudioStream" uid="uid://lpnux3cfn4wu" path="res://audio/bgm/level_3.mp3" id="19_bgm_level3"]
 
 [sub_resource type="ProceduralSkyMaterial" id="1"]
 sky_top_color = Color(0.98, 0.99, 1, 1)
@@ -72,7 +72,7 @@ bottom_radius = 2.1
 height = 0.16
 
 [sub_resource type="BoxShape3D" id="ArenaWallCollisionSegmentShape"]
-size = Vector3(4.7, 2.8, 1.2)
+size = Vector3(4.7, 2.8, 0.68)
 
 [sub_resource type="StandardMaterial3D" id="MatArenaAccent"]
 albedo_color = Color(0.78, 0.72, 0.62, 1)
@@ -294,7 +294,6 @@ bgm_level_two = ExtResource("12_bgm_level2")
 bgm_level_three = ExtResource("19_bgm_level3")
 bgm_level_four = ExtResource("13_bgm_level4")
 bgm_ending_credits = ExtResource("13_bgm_level4")
-bgm_volume_scale = 0.6
 sfx_glitch_overlay = ExtResource("14_sfx_glitch")
 sfx_sky_cracking = ExtResource("15_sfx_sky_cracking")
 
@@ -364,10 +363,8 @@ mesh = SubResource("ArenaCenterMedallionMesh")
 
 [node name="ArenaWallRing" type="CSGCombiner3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=2139067895]
 transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 1.5, 0)
-use_collision = true
 
 [node name="OuterWall" type="CSGCylinder3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing" unique_id=1628394768]
-use_collision = true
 radius = 6.2
 height = 2.6
 sides = 40
@@ -375,7 +372,6 @@ material = SubResource("MatArenaStone")
 
 [node name="InnerCut" type="CSGCylinder3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing" unique_id=955527888]
 operation = 2
-use_collision = true
 radius = 5.52
 height = 2.9
 sides = 40
@@ -708,7 +704,7 @@ material_override = SubResource("MatRuinsStone")
 mesh = SubResource("RuinsShardMesh")
 
 [node name="DragonGuard" parent="World" unique_id=735975463 instance=ExtResource("6")]
-transform = Transform3D(-7.708599, 0, -10.467928, 0, 13, 0, 10.467928, 0, -7.708599, 27.719936, 20.286154, 143.03024)
+transform = Transform3D(-7.708599, 0, -10.467928, 0, 13, 0, 10.467928, 0, -7.708599, 27.67669, 20.233805, 143.1003)
 
 [node name="DragonKeycard" parent="World" unique_id=375519423 instance=ExtResource("7")]
 transform = Transform3D(2.35, 0, 0, 0, 2.35, 0, 0, 0, 2.35, 4.2002716, 18.364773, 134.52335)
@@ -1145,16 +1141,16 @@ mesh = SubResource("8")
 [node name="DragonRidePath" type="Node3D" parent="World" unique_id=1292534026]
 
 [node name="Start" type="Marker3D" parent="World/DragonRidePath" unique_id=1031007858]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 20.8, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 83.21419, 66.287605)
 
 [node name="Mid" type="Marker3D" parent="World/DragonRidePath" unique_id=721280988]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 35, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 134.9826, 130.0654, -136.01021)
 
 [node name="End" type="Marker3D" parent="World/DragonRidePath" unique_id=43358179]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 28.2, -8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 221.50766, 185.16814, -280.48047)
 
 [node name="PlayerDrop" type="Marker3D" parent="World/DragonRidePath" unique_id=452536603]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71, 27.2, -8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 276.6693, 251.6732, -355.62418)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=841029472]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.677142, 17.868427, 119.07306)
