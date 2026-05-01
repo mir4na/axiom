@@ -779,8 +779,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 376.04306, 181.9955, -446.921
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 21.44873, 0)
 shape = SubResource("Level3RideReleaseShape")
 
-[node name="Level4Gate" parent="World" unique_id=2147423050 instance=ExtResource("8")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 284.46567, 167.35, -359.0673)
+[node name="Level4Gate" parent="World/Platforms/RuinsPlatform" unique_id=2147423050 instance=ExtResource("8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.086, 0)
 
 [node name="LevelFallDeathZone" type="Area3D" parent="World" unique_id=959243451]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, -78.88209, -12)

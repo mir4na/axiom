@@ -39,7 +39,11 @@ enum Stage {
 @onready var _boots_trace_marker: Marker3D = get_node_or_null("World/Platforms/BootsTraceMarker") as Marker3D
 @onready var _dragon_guard = $World/DragonGuard
 @onready var _dragon_keycard = $World/DragonKeycard
-@onready var _level_gate = $World/Level4Gate
+@onready var _level_gate: Node3D = (
+	get_node_or_null("World/Platforms/RuinsPlatform/Level4Gate") as Node3D
+	if get_node_or_null("World/Platforms/RuinsPlatform/Level4Gate") != null
+	else get_node_or_null("World/Level4Gate") as Node3D
+)
 @onready var _bridge_root: Node3D = $World/Platforms/BridgePlatforms
 @onready var _surreal_shapes_root: Node3D = $World/SurrealShapes
 @onready var _fall_death_zone: Area3D = get_node_or_null("World/LevelFallDeathZone") as Area3D
@@ -1075,7 +1079,7 @@ func _get_dragon_cursor_direction(cursor_offset: Vector2 = Vector2.ZERO) -> Vect
 		return forward
 	return direction
 
-func _update_dragon_ride_camera_anchor(delta: float) -> void:
+func _update_dragon_ride_camera_anchor(delta: float, instant: bool = false) -> void:
 	if _dragon_runtime_camera_anchor == null or not is_instance_valid(_dragon_runtime_camera_anchor):
 		return
 	if _dragon_guard == null:
@@ -1083,7 +1087,7 @@ func _update_dragon_ride_camera_anchor(delta: float) -> void:
 	var desired_position: Vector3 = _dragon_guard.global_position + Vector3(0.0, 3.2, 0.0)
 	if _dragon_camera_socket != null and is_instance_valid(_dragon_camera_socket):
 		desired_position = _dragon_camera_socket.global_position
-	var pos_alpha: float = clampf(dragon_camera_anchor_position_smooth * delta, 0.0, 1.0)
+	var pos_alpha: float = 1.0 if instant else clampf(dragon_camera_anchor_position_smooth * delta, 0.0, 1.0)
 	_dragon_runtime_camera_anchor.global_position = _dragon_runtime_camera_anchor.global_position.lerp(desired_position, pos_alpha)
 	var look_direction: Vector3 = _dragon_ride_look_direction
 	if look_direction.length_squared() <= 0.0001:
@@ -1096,7 +1100,7 @@ func _update_dragon_ride_camera_anchor(delta: float) -> void:
 	look_direction = look_direction.normalized()
 	var look_target: Vector3 = _dragon_runtime_camera_anchor.global_position + look_direction * maxf(4.0, dragon_camera_look_distance)
 	var desired_basis: Basis = _dragon_runtime_camera_anchor.global_transform.looking_at(look_target, Vector3.UP).basis
-	var rot_alpha: float = clampf(dragon_camera_anchor_rotation_smooth * delta, 0.0, 1.0)
+	var rot_alpha: float = 1.0 if instant else clampf(dragon_camera_anchor_rotation_smooth * delta, 0.0, 1.0)
 	var smooth_basis: Basis = _dragon_runtime_camera_anchor.global_transform.basis.slerp(desired_basis, rot_alpha)
 	_dragon_runtime_camera_anchor.global_transform = Transform3D(smooth_basis.orthonormalized(), _dragon_runtime_camera_anchor.global_position)
 
@@ -1249,7 +1253,7 @@ func _start_dragon_ride() -> void:
 	if _dragon_camera_socket != null and is_instance_valid(_dragon_camera_socket):
 		initial_anchor_position = _dragon_camera_socket.global_position
 	_dragon_runtime_camera_anchor.global_position = initial_anchor_position
-	_update_dragon_ride_camera_anchor(1.0 / 60.0)
+	_update_dragon_ride_camera_anchor(1.0 / 60.0, true)
 	_player.set_cinematic_lock(true)
 	_player.set_mobility_lock(true)
 	_player.visible = false
@@ -1313,7 +1317,7 @@ func _teleport_dragon_to_position(position: Vector3, look_target: Vector3) -> vo
 	if look_dir.length_squared() > 0.0001:
 		_dragon_ride_look_direction = look_dir.normalized()
 	_sync_player_to_dragon_mount()
-	_update_dragon_ride_camera_anchor(1.0 / 60.0)
+	_update_dragon_ride_camera_anchor(1.0 / 60.0, true)
 
 func _fade_world_black(target_alpha: float, duration: float) -> void:
 	if _world == null or not _world.has_method("_fade_black"):
@@ -1460,7 +1464,7 @@ func _transition_to_level_four() -> void:
 			(hud_variant as CanvasLayer).call("hide_boss_bar")
 	GameState.current_level_index = 3
 	if screen_fx != null and screen_fx.has_method("fade_to_scene"):
-		await screen_fx.fade_to_scene(LEVEL_FOUR_SCENE_PATH, true, 0.34, 0.36, 0.08, Color(1.0, 1.0, 1.0, 1.0))
+		await screen_fx.fade_to_scene(LEVEL_FOUR_SCENE_PATH, true, 0.95, 1.1, 0.25, Color(1.0, 1.0, 1.0, 1.0))
 	elif screen_fx != null and screen_fx.has_method("reboot_to_scene"):
 		await screen_fx.reboot_to_scene(LEVEL_FOUR_SCENE_PATH, true)
 	else:

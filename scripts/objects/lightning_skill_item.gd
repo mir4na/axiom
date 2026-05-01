@@ -39,12 +39,12 @@ func _process(delta: float) -> void:
 	if not _landing_ready:
 		return
 	var pulse: float = sin(_pulse_time * 3.2) * 0.5 + 0.5
-	if _trace_beam != null:
+	if _trace_beam != null and is_instance_valid(_trace_beam):
 		_trace_beam.visible = true
 		if _trace_beam.material_override is ShaderMaterial:
 			var trace_mat: ShaderMaterial = _trace_beam.material_override as ShaderMaterial
 			trace_mat.set_shader_parameter("alpha_boost", lerpf(0.62, 1.08, pulse))
-	if _trail != null:
+	if _trail != null and is_instance_valid(_trail):
 		_trail.visible = true
 		if _trail.material_override is ShaderMaterial:
 			var trail_mat: ShaderMaterial = _trail.material_override as ShaderMaterial
@@ -55,9 +55,9 @@ func _process(delta: float) -> void:
 	if _core != null and _core.material_override is StandardMaterial3D:
 		var core_mat: StandardMaterial3D = _core.material_override as StandardMaterial3D
 		core_mat.emission_energy_multiplier = lerpf(2.8, 4.8, pulse)
-	if _aura != null:
+	if _aura != null and is_instance_valid(_aura):
 		_aura.visible = true
-	if _aura != null and _aura.material_override is ShaderMaterial:
+	if _aura != null and is_instance_valid(_aura) and _aura.material_override is ShaderMaterial:
 		var aura_mat: ShaderMaterial = _aura.material_override as ShaderMaterial
 		aura_mat.set_shader_parameter("highlight_strength", lerpf(1.2, 2.0, pulse))
 		aura_mat.set_shader_parameter("glow_color", Color(0.07, 0.07, 0.1, 1.0))
@@ -73,13 +73,13 @@ func interact() -> void:
 		_collision.disabled = true
 	_persistent_highlight = false
 	set_highlight_enabled(false)
-	if _trace_beam != null:
+	if _trace_beam != null and is_instance_valid(_trace_beam):
 		_trace_beam.visible = false
-	if _trail != null:
+	if _trail != null and is_instance_valid(_trail):
 		_trail.visible = false
 	if _light != null:
 		_light.visible = false
-	if _aura != null:
+	if _aura != null and is_instance_valid(_aura):
 		_aura.visible = false
 	_play_pickup_feedback()
 	var tween: Tween = create_tween().set_parallel(true)
@@ -107,7 +107,7 @@ func set_highlight_strength(strength: float) -> void:
 	_apply_highlight(strength)
 
 func _apply_highlight(strength: float) -> void:
-	if _aura != null and _aura.material_override is ShaderMaterial:
+	if _aura != null and is_instance_valid(_aura) and _aura.material_override is ShaderMaterial:
 		_aura.material_override.set_shader_parameter("highlight_strength", strength)
 		_aura.material_override.set_shader_parameter("glow_color", Color(0.2, 0.24, 0.32, 1.0))
 	if _light != null:
@@ -117,7 +117,7 @@ func _setup_aura_materials() -> void:
 	var shader: Shader = load("res://shaders/objective_highlight.gdshader") as Shader
 	if shader == null:
 		return
-	if _aura != null:
+	if _aura != null and is_instance_valid(_aura):
 		var material := ShaderMaterial.new()
 		material.shader = shader
 		material.set_shader_parameter("glow_color", Color(0.2, 0.24, 0.32, 1.0))
@@ -132,9 +132,9 @@ func _play_starfall_arrival() -> void:
 	_landing_ready = false
 	var landing_position: Vector3 = global_position
 	global_position = landing_position + Vector3(0.0, 15.5, 0.0)
-	if _trail != null:
+	if _trail != null and is_instance_valid(_trail):
 		_trail.visible = true
-	if _trace_beam != null:
+	if _trace_beam != null and is_instance_valid(_trace_beam):
 		_trace_beam.visible = true
 		if _trace_beam.material_override is ShaderMaterial:
 			_trace_beam.material_override.set_shader_parameter("alpha_boost", 1.25)
@@ -147,19 +147,23 @@ func _play_starfall_arrival() -> void:
 	fall.tween_property(self, "global_position", landing_position, 0.8).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	fall.parallel().tween_property(self, "scale", Vector3.ONE * 1.12, 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await fall.finished
+	if not is_inside_tree():
+		return
 	_play_landing_thud()
 	_spawn_dark_impact_pulse(landing_position)
 	_emit_ground_impact_particles(landing_position)
 	var impact: Tween = create_tween().set_parallel(true)
 	impact.tween_property(self, "scale", Vector3.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	if _light != null:
+	if _light != null and is_instance_valid(_light):
 		impact.parallel().tween_property(_light, "light_energy", 1.8, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	if _trace_beam != null and _trace_beam.material_override is ShaderMaterial:
+	if _trace_beam != null and is_instance_valid(_trace_beam) and _trace_beam.material_override is ShaderMaterial:
 		impact.parallel().tween_property(_trace_beam.material_override, "shader_parameter/alpha_boost", 0.5, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await impact.finished
-	if _trail != null and _trail.material_override is ShaderMaterial:
+	if not is_inside_tree():
+		return
+	if _trail != null and is_instance_valid(_trail) and _trail.material_override is ShaderMaterial:
 		(_trail.material_override as ShaderMaterial).set_shader_parameter("alpha_boost", 0.48)
-	if _trace_beam != null:
+	if _trace_beam != null and is_instance_valid(_trace_beam):
 		_trace_beam.visible = true
 		if _trace_beam.material_override is ShaderMaterial:
 			(_trace_beam.material_override as ShaderMaterial).set_shader_parameter("alpha_boost", 0.75)
