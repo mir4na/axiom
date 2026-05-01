@@ -175,6 +175,7 @@ var _level_two_fireball_axiom_hint_shown: bool = false
 var _ending_mode_active: bool = false
 var _ending_cinematic_running: bool = false
 var _ending_credits_running: bool = false
+var _restart_in_progress: bool = false
 var _ending_board
 var _ending_board_camera: Camera3D
 var _bgm_player: AudioStreamPlayer
@@ -2749,10 +2750,15 @@ func _set_sky_crack_intensity(value: float) -> void:
 	_sky_crack_overlay.visible = intensity > 0.001
 
 func restart_current_level() -> void:
+	if _restart_in_progress:
+		return
+	_restart_in_progress = true
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
+		_restart_in_progress = false
 		return
 	var requires_post_swap_record_reset: bool = true
+	GameState.unpause()
 	GameState.reset_world_state()
 	GameState.force_time_forward()
 	GameState.reset_axiom_recording()

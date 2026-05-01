@@ -260,8 +260,6 @@ func _prepare_state() -> void:
 	GameState.axiom_equipped = true
 	GameState.recording_enabled = true
 	GameState.set_rewind_disabled(false)
-	_ensure_item_in_inventory("Gun")
-	_select_item("Gun")
 	if _world.player_hud != null and _world.player_hud.has_method("hide_boss_bar"):
 		_world.player_hud.call("hide_boss_bar")
 	_world._show_objective(CENTER_OBJECTIVE)
@@ -729,14 +727,6 @@ func _raycast_drop_surface(origin: Vector3) -> Vector3:
 	if typeof(position_value) == TYPE_VECTOR3:
 		return position_value as Vector3
 	return Vector3(origin.x, -1000.0, origin.z)
-
-func _ensure_item_in_inventory(item_id: String) -> void:
-	if GameState.has_item(item_id):
-		return
-	GameState.add_item_first_free_slot(item_id)
-
-func _select_item(item_id: String) -> void:
-	GameState.select_item(item_id)
 
 func get_threat_warning_intensity() -> float:
 	return _enrage_warning_intensity
