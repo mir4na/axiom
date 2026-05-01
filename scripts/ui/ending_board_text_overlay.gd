@@ -12,10 +12,13 @@ func _ready() -> void:
 	visible = false
 	_reset_labels()
 
-func set_content(line_1: String, line_2: String, line_3: String, _footer: String) -> void:
+func set_content(line_1: String, line_2: String, line_3: String, footer: String) -> void:
 	_line_1_text = line_1
 	_line_2_text = line_2
 	_line_3_text = line_3
+	var footer_text := footer.strip_edges()
+	if not footer_text.is_empty():
+		_line_3_text = "%s\n\n%s" % [_line_3_text, footer_text]
 	_reset_labels()
 
 func reset_content() -> void:
