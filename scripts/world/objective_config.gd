@@ -1,7 +1,7 @@
 extends Node
 
 @export var shovel_objective: String = "Pick up the shovel"
-@export var dig_objective: String = "Bury the old stuff"
+@export var dig_objective: String = "Press E to bury"
 @export var rest_objective: String = "Rest on the sofa"
 @export var check_outside_objective: String = "Check outside"
 @export var guest_key_objective: String = "Take the key from the kitchen"

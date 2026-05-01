@@ -8,6 +8,7 @@ const POWER_TO_CRT_BLEND_DURATION := 0.24
 const LEVEL_FADE_OUT_DURATION := 0.32
 const LEVEL_FADE_IN_DURATION := 0.34
 const LEVEL_FADE_HOLD_DURATION := 0.04
+const MAIN_MENU_SCENE_PATH := "res://scenes/ui/main_menu.tscn"
 
 var _boot_backdrop: ColorRect
 var _crt_rect: ColorRect
@@ -45,6 +46,7 @@ func reboot_to_scene(path: String, enable_crt_after: bool = true) -> void:
 	var power_off: Tween = create_tween()
 	power_off.tween_method(_set_power_amount, 1.0, 0.0, POWER_OFF_DURATION).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	await power_off.finished
+	_prepare_scene_swap(path)
 	get_tree().change_scene_to_file(path)
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -74,6 +76,7 @@ func death_respawn_to_scene(path: String, enable_crt_after: bool = true, reset_r
 	var power_off: Tween = create_tween()
 	power_off.tween_method(_set_power_amount, 1.0, 0.0, POWER_OFF_DURATION).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	await power_off.finished
+	_prepare_scene_swap(path)
 	get_tree().change_scene_to_file(path)
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -99,7 +102,8 @@ func fade_to_scene(
 	enable_crt_after: bool = true,
 	fade_out_duration: float = LEVEL_FADE_OUT_DURATION,
 	fade_in_duration: float = LEVEL_FADE_IN_DURATION,
-	hold_duration: float = LEVEL_FADE_HOLD_DURATION
+	hold_duration: float = LEVEL_FADE_HOLD_DURATION,
+	fade_color: Color = Color.BLACK
 ) -> void:
 	if _boot_running:
 		return
@@ -108,6 +112,7 @@ func fade_to_scene(
 	_hide_boot_overlay()
 	_apply_crt_state(_crt_enabled)
 	if _fade_rect != null:
+		_fade_rect.color = fade_color
 		_fade_rect.visible = true
 		_set_fade_amount(0.0)
 	var fade_out: Tween = create_tween()
@@ -115,12 +120,14 @@ func fade_to_scene(
 	await fade_out.finished
 	if hold_duration > 0.0:
 		await get_tree().create_timer(hold_duration, true, false, true).timeout
+	_prepare_scene_swap(path)
 	get_tree().change_scene_to_file(path)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_crt_enabled = enable_crt_after
 	_apply_crt_state(enable_crt_after)
 	if _fade_rect != null:
+		_fade_rect.color = fade_color
 		_fade_rect.visible = true
 		_set_fade_amount(1.0)
 	var fade_in: Tween = create_tween()
@@ -140,6 +147,7 @@ func _power_on_to_scene(path: String, black_duration: float, enable_crt_after: b
 	if _power_rect != null:
 		_power_rect.visible = false
 	await get_tree().create_timer(black_duration, true, false, true).timeout
+	_prepare_scene_swap(path)
 	get_tree().change_scene_to_file(path)
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -224,6 +232,10 @@ func _hide_fade_overlay() -> void:
 func _prepare_rewind_reset_before_respawn() -> void:
 	GameState.reset_axiom_recording()
 	GameState.recording_enabled = false
+
+func _prepare_scene_swap(path: String) -> void:
+	if path == MAIN_MENU_SCENE_PATH and GameState != null and GameState.has_method("reset_for_main_menu"):
+		GameState.reset_for_main_menu()
 
 func _finalize_rewind_reset_after_respawn() -> void:
 	GameState.reset_axiom_recording()

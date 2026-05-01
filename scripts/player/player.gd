@@ -114,6 +114,8 @@ var _rewind_overload_enabled: bool = true
 var _suppress_space_jump_until_release: bool = false
 var _item_usage_locked: bool = false
 var _look_input_locked: bool = false
+var _external_camera_anchor: Node3D
+var _mount_riding: bool = false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -156,6 +158,9 @@ func _sync_hitboxes(delta: float) -> void:
 		var bone_pose = skeleton.get_bone_global_pose(attach.bone_idx)
 		var t: Transform3D = skeleton.global_transform * bone_pose
 		hitbox.global_transform = Transform3D(t.basis.orthonormalized(), t.origin)
+	if _external_camera_anchor != null and is_instance_valid(_external_camera_anchor):
+		camera.global_transform = _external_camera_anchor.global_transform
+		return
 	# Advanced anti-clip camera logic using Sphere Cast (thick ray)
 	# Decouple raw target from raw bone to completely negate side-to-side animation jitter tracking
 	var current_offset = _camera_origin_offset
@@ -287,6 +292,11 @@ func _physics_process(delta: float) -> void:
 		_update_rewind_overload_stun_hud()
 		if _rewind_overload_stun_remaining <= 0.0:
 			_end_rewind_overload_stun()
+	if _mount_riding:
+		velocity = Vector3.ZERO
+		_sync_hitboxes(delta)
+		_update_hud_status()
+		return
 	if health > 0.0 and health < max_health:
 		_health_regen_timer += delta
 		while _health_regen_timer >= 1.0:
@@ -480,7 +490,7 @@ func _handle_attack_movement(delta: float) -> void:
 func _handle_interaction(delta: float) -> void:
 	if not interaction_ray:
 		return
-	var collider = interaction_ray.get_collider()
+	var collider: Node3D = _get_interaction_target()
 	if collider and collider.has_method("interact"):
 		var p_text = collider.get("prompt_text")
 		if typeof(p_text) == TYPE_STRING:
@@ -538,6 +548,35 @@ func _handle_interaction(delta: float) -> void:
 		hud.hide_prompt()
 		hud.set_dig_progress(0, false)
 		hud.set_crosshair_active(false)
+
+func _get_interaction_target() -> Node3D:
+	if interaction_ray == null or not is_instance_valid(interaction_ray):
+		return null
+	var from: Vector3 = interaction_ray.global_position
+	var to: Vector3 = interaction_ray.to_global(interaction_ray.target_position)
+	var excludes: Array[RID] = []
+	excludes.append(get_rid())
+	for rid in _self_melee_exclude:
+		excludes.append(rid)
+	for _i in range(12):
+		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(from, to)
+		query.exclude = excludes
+		query.collide_with_bodies = interaction_ray.collide_with_bodies
+		query.collide_with_areas = interaction_ray.collide_with_areas
+		var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+		if hit.is_empty():
+			return null
+		var collider_variant: Variant = hit.get("collider", null)
+		if collider_variant == null or not (collider_variant is Node):
+			return null
+		var node: Node = collider_variant as Node
+		if node is Node3D and node.has_method("interact"):
+			return node as Node3D
+		if collider_variant is CollisionObject3D:
+			excludes.append((collider_variant as CollisionObject3D).get_rid())
+			continue
+		return null
+	return null
 
 func _update_hud_status() -> void:
 	if hud == null:
@@ -908,6 +947,7 @@ func _setup_bow_view_model() -> void:
 	if bow_view_scene == null:
 		return
 	_bow_view_root = bow_view_scene.instantiate() as Node3D
+	_bow_view_root.scale = Vector3.ONE * 2.2
 	_bow_view_root.visible = false
 	camera.add_child(_bow_view_root)
 	_bow_muzzle = _bow_view_root.get_node_or_null("Muzzle") as Node3D
@@ -929,8 +969,8 @@ func _update_bow_view_model(_delta: float) -> void:
 		return
 	var bob_x: float = sin(Time.get_ticks_msec() * 0.006) * 0.008
 	var bob_y: float = sin(Time.get_ticks_msec() * 0.0042) * 0.006
-	_bow_view_root.position = Vector3(-0.24 - bob_x, -0.27 + bob_y + _bow_recoil * 0.028, -0.34 + _bow_recoil * 0.08)
-	_bow_view_root.rotation_degrees = Vector3(-7.5 - _bow_recoil * 6.2, 15.0, 0.0)
+	_bow_view_root.position = Vector3(0.18 + bob_x, -0.24 + bob_y + _bow_recoil * 0.03, -0.28 + _bow_recoil * 0.08)
+	_bow_view_root.rotation_degrees = Vector3(-8.0 - _bow_recoil * 6.2, -13.0, 0.0)
 
 func _get_bow_muzzle_world_position() -> Vector3:
 	if _bow_muzzle != null and _bow_view_root != null and _bow_view_root.visible:
@@ -1328,6 +1368,18 @@ func set_item_usage_locked(active: bool) -> void:
 func set_look_input_locked(active: bool) -> void:
 	_look_input_locked = active
 
+func set_external_camera_anchor(anchor: Node) -> void:
+	_external_camera_anchor = anchor as Node3D
+	if _external_camera_anchor != null and is_instance_valid(_external_camera_anchor):
+		camera.global_transform = _external_camera_anchor.global_transform
+		camera.current = true
+		camera.make_current()
+
+func set_mount_riding(active: bool) -> void:
+	_mount_riding = active
+	if active:
+		velocity = Vector3.ZERO
+
 func set_time_stop_active(active: bool, world_origin: Vector3 = Vector3.ZERO, expand_duration: float = 1.0) -> void:
 	_time_stop_active = active
 	if active and _lightning_targeting:
@@ -1358,9 +1410,11 @@ func set_cinematic_pose(target_position: Vector3, target_yaw: float, target_pitc
 func take_damage(amount: float) -> void:
 	health = maxf(0.0, health - amount)
 	_play_sfx(sfx_player_hurt)
+	var world := get_parent()
+	if world != null and world.has_method("play_hit_glitch"):
+		world.call_deferred("play_hit_glitch", 0.34, 0.11)
 	_update_hud_status()
 	if health <= 0.0:
-		var world := get_parent()
 		if world != null and world.has_method("restart_current_level"):
 			world.call_deferred("restart_current_level")
 

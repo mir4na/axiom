@@ -60,6 +60,5 @@ func restart_level() -> void:
 	_load_current_level()
 
 func go_to_main_menu() -> void:
-	GameState.unpause()
-	GameState.reset_level_index()
+	GameState.reset_for_main_menu()
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")

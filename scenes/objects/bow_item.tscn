@@ -4,7 +4,7 @@
 [ext_resource type="ArrayMesh" uid="uid://wkaliyqnpnh6" path="res://assets/f6k1sql6xr7k-Bow/BOW AND ARROW/OBJ/BOW AND ARROW.obj" id="2_bow_mesh"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_bow"]
-size = Vector3(1, 0.45, 0.45)
+size = Vector3(0.85791016, 1.4113281, 0.45)
 
 [sub_resource type="BoxMesh" id="BoxMesh_bow_aura"]
 size = Vector3(1.2, 0.55, 0.55)
@@ -13,10 +13,11 @@ size = Vector3(1.2, 0.55, 0.55)
 script = ExtResource("1_bow")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=966705881]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1340332, 0.3246094, 1.0143914)
 shape = SubResource("BoxShape3D_bow")
 
 [node name="ModelRoot" type="Node3D" parent="." unique_id=1555672322]
-transform = Transform3D(0.030909628, 0, -0.0054503204, 0.00095465075, 0.031357434, 0.0054146675, 0.005366123, -0.0054977676, 0.030431964, 0, -0.02, 0)
+transform = Transform3D(0.18545777, 0, -0.032701924, 0.0057279044, 0.18814461, 0.032488003, 0.032196738, -0.032986604, 0.18259178, 0, -0.02, 0)
 
 [node name="Model" type="MeshInstance3D" parent="ModelRoot" unique_id=1880263112]
 mesh = ExtResource("2_bow_mesh")

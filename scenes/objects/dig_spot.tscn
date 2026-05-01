@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://df54f57tnrpkk"]
 
 [ext_resource type="Script" uid="uid://4yx61nu18is" path="res://scripts/objects/dig_spot.gd" id="1_dig"]
+[ext_resource type="AudioStream" path="res://audio/sfx/burying.mp3" id="2_sfx_burying"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_1"]
 height = 0.2
@@ -11,6 +12,7 @@ albedo_color = Color(0.3, 0.15, 0.05, 1)
 
 [node name="DigSpot" type="StaticBody3D" unique_id=1331906931]
 script = ExtResource("1_dig")
+sfx_burying = ExtResource("2_sfx_burying")
 
 [node name="Collision" type="CollisionShape3D" parent="." unique_id=1733022758]
 shape = SubResource("CylinderShape3D_1")
@@ -19,3 +21,10 @@ shape = SubResource("CylinderShape3D_1")
 radius = 0.8
 height = 0.1
 material = SubResource("MatDirt")
+
+[node name="BurySFX" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("2_sfx_burying")
+volume_db = -5.0
+max_distance = 18.0
+unit_size = 2.8
+max_polyphony = 1

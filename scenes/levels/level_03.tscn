@@ -10,7 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/objects/level4_gate.tscn" id="8"]
 [ext_resource type="PackedScene" uid="uid://niy2fkul0yy2" path="res://scenes/objects/house.tscn" id="9"]
 [ext_resource type="Shader" uid="uid://saoeakkn2rnt" path="res://shaders/surreal_white_surface.gdshader" id="10"]
-[ext_resource type="AudioStream" uid="uid://cxshusirauqx4" path="res://audio/bgm/level_1_before_disaster.mp3" id="11_bgm_level1"]
+[ext_resource type="AudioStream" uid="uid://dcdxueaoxk7op" path="res://audio/bgm/level_1_before_disaster.mp3" id="11_bgm_level1"]
 [ext_resource type="AudioStream" uid="uid://unoa5a565im0" path="res://audio/bgm/level_2.mp3" id="12_bgm_level2"]
 [ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="13_bgm_level4"]
 [ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="14_sfx_glitch"]
@@ -645,7 +645,7 @@ shape = SubResource("ArenaButtressCollisionShape")
 transform = Transform3D(5.5, 0, 0, 0, 1, 0, 0, 0, 5.5, 74, 25, -8)
 
 [node name="RuinsPlatform" parent="World/Platforms" unique_id=2026567978 instance=ExtResource("4")]
-transform = Transform3D(6.6, 0, 0, 0, 1, 0, 0, 0, 6.6, 377.22852, 166.35518, -447.47708)
+transform = Transform3D(6.6, 0, 0, 0, 1, 0, 0, 0, 6.6, 285.31116, 166.264, -355.95502)
 
 [node name="Ruins" type="Node3D" parent="World/Platforms/RuinsPlatform" unique_id=652105667]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
@@ -709,7 +709,7 @@ mesh = SubResource("RuinsShardMesh")
 transform = Transform3D(-7.708599, 0, -10.467928, 0, 13, 0, 10.467928, 0, -7.708599, 27.719936, 20.286154, 143.03024)
 
 [node name="DragonKeycard" parent="World" unique_id=375519423 instance=ExtResource("7")]
-transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 4.2002716, 18.364773, 134.52335)
+transform = Transform3D(2.35, 0, 0, 0, 2.35, 0, 0, 0, 2.35, 4.2002716, 18.364773, 134.52335)
 key_id = "key_3"
 use_any_free_slot = true
 auto_select_after_pickup = true
@@ -732,6 +732,32 @@ fov = 62.0
 
 [node name="DragonSpawnMarker" type="Marker3D" parent="World/DragonEncounter" unique_id=1025876110]
 transform = Transform3D(0.9063078, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.9063078, 27.72, 20.28, 143)
+
+[node name="ArchMarkers" type="Node3D" parent="World/DragonEncounter" unique_id=1700387011]
+
+[node name="Arch01" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1024589001]
+transform = Transform3D(0.9063078, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.9063078, 27.72, 20.28, 143)
+
+[node name="Arch02" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=594339667]
+transform = Transform3D(0.81915206, 0, 0.57357645, 0, 1, 0, -0.57357645, 0, 0.81915206, 6.087, 20.28, 150.887)
+
+[node name="Arch03" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1834952095]
+transform = Transform3D(-0.9999716, 0, 0.0075223446, 0, 1, 0, -0.0075223446, 0, -0.9999716, -14.049, 20.28, 141.941)
+
+[node name="Arch04" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=359751114]
+transform = Transform3D(0.42261827, 0, 0.9063078, 0, 1, 0, -0.9063078, 0, 0.42261827, -22.487, 20.28, 121.838)
+
+[node name="Arch05" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1013929584]
+transform = Transform3D(0.17364818, 0, 0.9848077, 0, 1, 0, -0.9848077, 0, 0.17364818, -14.084, 20.28, 101.714)
+
+[node name="Arch06" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=737756712]
+transform = Transform3D(-0.17364818, 0, 0.9848077, 0, 1, 0, -0.9848077, 0, -0.17364818, 6.042304, 20.28, 92.508156)
+
+[node name="Arch07" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1351779776]
+transform = Transform3D(-0.42261827, 0, 0.9063078, 0, 1, 0, -0.9063078, 0, -0.42261827, 34.438156, 20.28, 121.614136)
+
+[node name="Arch08" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1684363827]
+transform = Transform3D(-0.64278764, 0, 0.76604444, 0, 1, 0, -0.76604444, 0, -0.64278764, 27.163227, 20.28, 100.58036)
 
 [node name="IntroOrbitA" type="Marker3D" parent="World/DragonEncounter" unique_id=1774242152]
 transform = Transform3D(0.9961947, 0, 0.087155744, 0, 1, 0, -0.087155744, 0, 0.9961947, 11.8, 34.274178, 126.2)
@@ -756,7 +782,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 21.44873, 0)
 shape = SubResource("Level3RideReleaseShape")
 
 [node name="Level4Gate" parent="World" unique_id=2147423050 instance=ExtResource("8")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 138, 36.25, -72)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 284.46567, 167.35, -359.0673)
 
 [node name="LevelFallDeathZone" type="Area3D" parent="World" unique_id=959243451]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, -78.88209, -12)

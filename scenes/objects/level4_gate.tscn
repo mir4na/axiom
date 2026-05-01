@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/objects/level4_gate.gd" id="1"]
 
@@ -13,12 +13,63 @@ size = Vector3(2.9, 2.9, 2.9)
 
 [sub_resource type="StandardMaterial3D" id="4"]
 transparency = 1
-albedo_color = Color(0.18, 0.7, 0.82, 0.85)
-metallic = 0.18
-roughness = 0.14
+albedo_color = Color(0.05, 0.05, 0.08, 0.94)
+metallic = 0.36
+roughness = 0.52
 emission_enabled = true
-emission = Color(0.35, 0.94, 1, 1)
-emission_energy_multiplier = 4.0
+emission = Color(0.16, 0.1, 0.26, 1)
+emission_energy_multiplier = 1.45
+
+[sub_resource type="TorusMesh" id="5"]
+inner_radius = 1.45
+outer_radius = 1.62
+rings = 36
+ring_segments = 24
+
+[sub_resource type="StandardMaterial3D" id="6"]
+transparency = 1
+albedo_color = Color(0.14, 0.06, 0.2, 0.86)
+metallic = 0.08
+roughness = 0.32
+emission_enabled = true
+emission = Color(0.2, 0.08, 0.3, 1)
+emission_energy_multiplier = 2.4
+
+[sub_resource type="CylinderShape3D" id="7"]
+radius = 1.85
+height = 2.6
+
+[sub_resource type="StandardMaterial3D" id="8"]
+albedo_color = Color(0.08, 0.08, 0.12, 1)
+metallic = 0.28
+roughness = 0.64
+emission_enabled = true
+emission = Color(0.1, 0.08, 0.16, 1)
+emission_energy_multiplier = 0.42
+
+[sub_resource type="BoxMesh" id="9"]
+size = Vector3(3.3, 0.18, 0.18)
+
+[sub_resource type="BoxMesh" id="10"]
+size = Vector3(0.18, 2.9, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="11"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.3, 0.16, 0.42, 0.88)
+emission_enabled = true
+emission = Color(0.3, 0.16, 0.42, 1)
+emission_energy_multiplier = 2.8
+
+[sub_resource type="SphereMesh" id="12"]
+radius = 0.42
+height = 0.84
+
+[sub_resource type="TorusMesh" id="13"]
+inner_radius = 1.82
+outer_radius = 1.95
+rings = 36
+ring_segments = 22
 
 [node name="Level4Gate" type="StaticBody3D"]
 script = ExtResource("1")
@@ -34,6 +85,81 @@ mesh = SubResource("2")
 mesh = SubResource("3")
 
 [node name="Glow" type="OmniLight3D" parent="."]
-light_color = Color(0.36, 0.97, 1, 1)
-light_energy = 2.3
+light_color = Color(0.3, 0.16, 0.46, 1)
+light_energy = 1.7
 omni_range = 10.5
+
+[node name="FrameNorth" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9990482, -0.043619387, 0, 0.043619387, 0.9990482, 0, 1.42, -1.62)
+material_override = SubResource("8")
+mesh = SubResource("9")
+
+[node name="FrameSouth" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9990482, -0.043619387, 0, 0.043619387, 0.9990482, 0, 1.42, 1.62)
+material_override = SubResource("8")
+mesh = SubResource("9")
+
+[node name="FrameWest" type="MeshInstance3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -1.62, 1.42, 0)
+material_override = SubResource("8")
+mesh = SubResource("9")
+
+[node name="FrameEast" type="MeshInstance3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 1.62, 1.42, 0)
+material_override = SubResource("8")
+mesh = SubResource("9")
+
+[node name="FramePillarNW" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9998477, -0.017452406, 0, 0.017452406, 0.9998477, 0, 0, 0, 1, -1.62, 0.06, -1.62)
+material_override = SubResource("8")
+mesh = SubResource("10")
+
+[node name="FramePillarNE" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9998477, -0.017452406, 0, 0.017452406, 0.9998477, 0, 0, 0, 1, 1.62, 0.06, -1.62)
+material_override = SubResource("8")
+mesh = SubResource("10")
+
+[node name="FramePillarSW" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9998477, -0.017452406, 0, 0.017452406, 0.9998477, 0, 0, 0, 1, -1.62, 0.06, 1.62)
+material_override = SubResource("8")
+mesh = SubResource("10")
+
+[node name="FramePillarSE" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9998477, -0.017452406, 0, 0.017452406, 0.9998477, 0, 0, 0, 1, 1.62, 0.06, 1.62)
+material_override = SubResource("8")
+mesh = SubResource("10")
+
+[node name="VoidCore" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.92, 0, 0, 0, 0.92, 0, 0, 0, 0.92, 0, 0.18, 0)
+material_override = SubResource("11")
+mesh = SubResource("12")
+
+[node name="HaloUpper" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 1.64, 0)
+material_override = SubResource("11")
+mesh = SubResource("13")
+
+[node name="HaloLower" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, -1.52, 0)
+material_override = SubResource("11")
+mesh = SubResource("13")
+
+[node name="PortalRing" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, -1.08, 0)
+visible = false
+material_override = SubResource("6")
+mesh = SubResource("5")
+
+[node name="PortalArea" type="Area3D" parent="."]
+monitoring = false
+monitorable = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PortalArea"]
+shape = SubResource("7")
+
+[node name="PortalDarkGlow" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.7, 0)
+visible = false
+light_color = Color(0.2, 0.08, 0.3, 1)
+light_energy = 0.0
+omni_range = 10.8

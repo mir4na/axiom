@@ -49,33 +49,18 @@ func set_interactable_enabled(enabled: bool) -> void:
 func set_highlight_enabled(enabled: bool) -> void:
 	_highlight_enabled = (enabled or _persistent_highlight) and visible and not _picked_up
 	if _bow_aura != null:
-		_bow_aura.visible = _highlight_enabled
+		_bow_aura.visible = false
 	if _glow_light != null:
-		_glow_light.visible = _highlight_enabled
-	if not _highlight_enabled:
-		_apply_highlight(0.0)
+		_glow_light.visible = false
 
 func set_highlight_strength(strength: float) -> void:
-	if not _highlight_enabled:
-		return
-	_apply_highlight(strength)
+	pass
 
 func _apply_highlight(strength: float) -> void:
-	if _bow_aura != null and _bow_aura.material_override is ShaderMaterial:
-		_bow_aura.material_override.set_shader_parameter("highlight_strength", strength)
-		_bow_aura.material_override.set_shader_parameter("glow_color", Color(0.2, 0.8, 1.0, 1.0))
-	if _glow_light != null:
-		_glow_light.light_energy = 0.8 + strength * 2.4
+	pass
 
 func _setup_aura_materials() -> void:
-	var shader: Shader = load("res://shaders/objective_highlight.gdshader") as Shader
-	if shader == null:
-		return
 	if _bow_aura != null:
-		var material := ShaderMaterial.new()
-		material.shader = shader
-		material.set_shader_parameter("glow_color", Color(0.2, 0.8, 1.0, 1.0))
-		_bow_aura.material_override = material
 		_bow_aura.visible = false
 	if _glow_light != null:
 		_glow_light.visible = false

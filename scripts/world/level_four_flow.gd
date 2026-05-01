@@ -113,11 +113,11 @@ func play_intro_sequence() -> void:
 	await _world._fade_black(1.0, 0.32)
 	_prepare_player_look_down_pose()
 	await _show_player_line("No. I am not staying here.", 2.0)
-	if _world != null and _world.has_method("play_level_four_bgm"):
-		_world.call("play_level_four_bgm")
 	await _show_player_line("The real world is hard... but that is where things actually mean something.", 2.8)
 	var final_focus: Node3D = _boss if _boss != null and is_instance_valid(_boss) else (_axia_focus if _axia_focus != null else _combat_focus)
 	await _show_player_line("I still want to go back. I still want to keep moving.", 2.5)
+	if _world != null and _world.has_method("play_level_four_bgm"):
+		_world.call("play_level_four_bgm")
 	await _show_axia_line("Then prove it.", 2.1)
 	await _reveal_player_view_to_marker(final_focus, 1.15, 0.52)
 	await _world._set_cinematic_bars(false, 0.3)

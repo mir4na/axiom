@@ -27,6 +27,8 @@ const ENDING_BOARD_LINE_PAUSE := 0.26
 const ENDING_BOARD_FOOTER_PAUSE := 0.36
 const ENDING_BOARD_HOLD_DURATION := 5.0
 const ENDING_BOARD_FADE_DURATION := 2.6
+const CAMERA_FOV_MIN := 1.0
+const CAMERA_FOV_MAX := 179.0
 const OBJECTIVE_PANEL_MIN_HEIGHT := 98.0
 const OBJECTIVE_PANEL_TEXT_TOP := 44.0
 const OBJECTIVE_PANEL_TEXT_BOTTOM_PADDING := 12.0
@@ -45,6 +47,7 @@ const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa07
 @export var bgm_level_two: AudioStream
 @export var bgm_level_three: AudioStream
 @export var bgm_level_four: AudioStream
+@export var bgm_last_scene: AudioStream
 @export var bgm_ending_credits: AudioStream
 
 @export_group("Audio Placeholder SFX Global")
@@ -67,6 +70,8 @@ const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa07
 
 @export_group("Level Four Audio Flow")
 @export var level_four_bgm_fade_out_duration: float = 2.8
+@export_group("Level One Audio Flow")
+@export var level_one_bgm_fade_out_duration: float = 2.0
 
 @export_group("Ending Sky")
 @export_file("*.png", "*.jpg", "*.jpeg", "*.webp", "*.hdr", "*.exr") var ending_world_sky_path: String = ENDING_WORLD_SKY_PATH
@@ -115,6 +120,7 @@ var _loading_label: Label
 var _top_bar: ColorRect
 var _bottom_bar: ColorRect
 var _cinematic_bars_tween: Tween
+var _hit_glitch_tween: Tween
 var _cinematic_bars_ticket: int = 0
 var _objective_tween: Tween
 var _objective_transition_serial: int = 0
@@ -183,7 +189,6 @@ func _ready() -> void:
 	_setup_audio_players()
 	_apply_player_spawn()
 	if _is_level_one_scene():
-		_play_bgm_stream(bgm_level_one)
 		_create_intro_ui()
 		_create_intro_camera()
 		_level_one_flow = LEVEL_ONE_FLOW.new(self)
@@ -195,7 +200,6 @@ func _ready() -> void:
 			call_deferred("_play_level_one_arrival")
 		return
 	if _is_level_two_scene():
-		_play_bgm_stream(bgm_level_two)
 		_create_intro_ui()
 		_create_intro_camera()
 		_cache_level_two_targets()
@@ -268,7 +272,15 @@ func _setup_audio_players() -> void:
 func _play_bgm_stream(stream: AudioStream) -> void:
 	if stream == null:
 		return
-	var allow_bgm: bool = false
+	var allow_bgm: bool = (
+		stream == bgm_world_intro
+		or stream == bgm_level_one
+		or stream == bgm_level_two
+		or stream == bgm_level_three
+		or stream == bgm_level_four
+		or stream == bgm_last_scene
+		or stream == bgm_ending_credits
+	)
 	if not allow_bgm:
 		return
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
@@ -276,11 +288,25 @@ func _play_bgm_stream(stream: AudioStream) -> void:
 	if _bgm_fade_tween != null and _bgm_fade_tween.is_valid():
 		_bgm_fade_tween.kill()
 	_bgm_fade_tween = null
+	_set_bgm_stream_loop_enabled(stream)
 	if _bgm_player.stream == stream and _bgm_player.playing:
 		return
 	_bgm_player.volume_db = 0.0
 	_bgm_player.stream = stream
 	_bgm_player.play()
+
+func _set_bgm_stream_loop_enabled(stream: AudioStream) -> void:
+	if stream == null:
+		return
+	if stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = true
+		return
+	if stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
+		return
+	if stream is AudioStreamWAV:
+		(stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
+		return
 
 func _stop_bgm_stream() -> void:
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
@@ -860,12 +886,14 @@ func _play_intro_sequence() -> void:
 	await _restore_player_camera()
 	_show_objective(_objective_text("shovel", "OBJECTIVE: Pick up the shovel"))
 	_objective_state = "shovel"
+	_play_level_one_awake_bgm()
 	await _show_subtitle("I should grab the shovel before I start digging.", 2.5)
 	_set_intro_lock(false)
 
 func _play_level_one_arrival() -> void:
 	if _level_one_flow != null:
 		await _level_one_flow.play_arrival()
+	_play_level_one_awake_bgm()
 
 func _play_level_two_intro() -> void:
 	var level_two_tree: SceneTree = get_tree()
@@ -887,6 +915,7 @@ func _play_level_two_intro() -> void:
 	if player_hud != null:
 		player_hud.visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	_play_bgm_stream(bgm_level_two)
 	_show_objective("Take the keycard to open door 1")
 
 func _play_level_one_guest_door_reveal_cinematic() -> void:
@@ -1916,7 +1945,7 @@ func _update_objective_text() -> void:
 	if _objective_state == "shovel":
 		_show_objective(_objective_text("shovel", "Pick up the shovel"))
 	elif _objective_state == "dig":
-		_show_objective("%s %d/%d" % [_objective_text("dig", "Bury the old stuff"), _completed_dig_spots, _total_dig_spots])
+		_show_objective("%s %d/%d" % [_objective_text("dig", "Press E to bury"), _completed_dig_spots, _total_dig_spots])
 	elif _objective_state == "rest":
 		_show_objective(_objective_text("rest", "Rest on the sofa"))
 	elif _objective_panel != null:
@@ -2027,7 +2056,7 @@ func _play_rest_cinematic() -> void:
 	await _drop_to_sofa_pov()
 	await _show_subtitle("I just need to close my eyes for a moment.", 2.1)
 	await _fade_black(1.0, 1.6)
-	await get_tree().create_timer(2).timeout
+	await _fade_out_level_one_bgm_for_loading()
 	await _play_loading_dots()
 	_set_world_night_state()
 	_activate_window_camera()
@@ -2041,6 +2070,35 @@ func _play_rest_cinematic() -> void:
 	_set_subtitle_palette(false)
 	GameState.set_meta(LEVEL_ONE_WHITE_META, true)
 	get_tree().change_scene_to_file(LEVEL_ONE_SCENE_PATH)
+
+func _play_level_one_awake_bgm() -> void:
+	if not _is_level_one_scene() and not _is_world_intro_scene():
+		return
+	_play_bgm_stream(bgm_level_one)
+
+func _fade_out_level_one_bgm_for_loading() -> void:
+	if not _is_world_intro_scene():
+		await get_tree().create_timer(2.0).timeout
+		return
+	await _fade_out_current_bgm(maxf(0.1, level_one_bgm_fade_out_duration))
+
+func _fade_out_current_bgm(duration: float) -> void:
+	if _bgm_player == null or not is_instance_valid(_bgm_player):
+		await get_tree().create_timer(maxf(0.01, duration)).timeout
+		return
+	if not _bgm_player.playing:
+		await get_tree().create_timer(maxf(0.01, duration)).timeout
+		return
+	if _bgm_fade_tween != null and _bgm_fade_tween.is_valid():
+		_bgm_fade_tween.kill()
+	_bgm_fade_tween = create_tween()
+	_bgm_fade_tween.tween_property(_bgm_player, "volume_db", -50.0, maxf(0.05, duration)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await _bgm_fade_tween.finished
+	if _bgm_player == null or not is_instance_valid(_bgm_player):
+		return
+	_bgm_player.stop()
+	_bgm_player.volume_db = 0.0
+	_bgm_fade_tween = null
 
 func _activate_window_camera() -> void:
 	if _intro_camera == null:
@@ -2147,6 +2205,32 @@ func _set_arrival_glitch_strength(value: float) -> void:
 		_arrival_glitch_audio_active = false
 	if _glitch_overlay != null and _glitch_overlay.material is ShaderMaterial:
 		_glitch_overlay.material.set_shader_parameter("glitch_strength", value)
+
+func _set_glitch_strength_silent(value: float) -> void:
+	if _glitch_overlay != null and _glitch_overlay.material is ShaderMaterial:
+		_glitch_overlay.material.set_shader_parameter("glitch_strength", value)
+
+func play_hit_glitch(intensity: float = 0.34, duration: float = 0.11) -> void:
+	if _glitch_overlay == null or _transition_started:
+		return
+	if _hit_glitch_tween != null:
+		_hit_glitch_tween.kill()
+	_set_glitch_strength_silent(0.0)
+	_glitch_overlay.visible = true
+	_glitch_overlay.modulate.a = 0.0
+	var peak_alpha: float = clampf(intensity * 0.58, 0.08, 0.35)
+	var peak_strength: float = clampf(intensity, 0.1, 0.75)
+	var half_duration: float = maxf(0.04, duration * 0.5)
+	_hit_glitch_tween = create_tween().set_parallel(true)
+	_hit_glitch_tween.tween_property(_glitch_overlay, "modulate:a", peak_alpha, half_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_hit_glitch_tween.tween_method(_set_glitch_strength_silent, 0.0, peak_strength, half_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await _hit_glitch_tween.finished
+	_hit_glitch_tween = create_tween().set_parallel(true)
+	_hit_glitch_tween.tween_property(_glitch_overlay, "modulate:a", 0.0, half_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_hit_glitch_tween.tween_method(_set_glitch_strength_silent, peak_strength, 0.0, half_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await _hit_glitch_tween.finished
+	_set_glitch_strength_silent(0.0)
+	_glitch_overlay.visible = false
 
 func play_sky_cracking_sfx() -> void:
 	if sfx_sky_cracking != null:
@@ -2336,7 +2420,7 @@ func _play_level_four_return_wake_sequence() -> void:
 	if _intro_camera == null:
 		_ending_cinematic_running = false
 		_set_intro_lock(false)
-		_show_ending_board()
+		_start_ending_credits_without_board()
 		return
 	var wake_eye: Vector3 = _player_spawn_position + Vector3(0.0, 1.02, 0.04)
 	var wake_focus: Vector3 = wake_eye + Vector3(0.0, 2.85, 0.1)
@@ -2361,10 +2445,33 @@ func _play_level_four_return_wake_sequence() -> void:
 	await _show_subtitle("Am I dreaming?", 1.8, "")
 	if player != null:
 		player.visible = true
+	_play_bgm_stream(_get_last_scene_bgm_stream())
 	await _return_intro_camera_to_player(0.9)
 	_set_intro_lock(false)
 	_ending_cinematic_running = false
-	_show_ending_board()
+	_start_ending_credits_without_board()
+
+func _get_last_scene_bgm_stream() -> AudioStream:
+	if bgm_last_scene != null:
+		return bgm_last_scene
+	return bgm_ending_credits
+
+func _start_ending_credits_without_board() -> void:
+	_set_ending_board_active(false, false)
+	_hide_objective(false)
+	if _hint_marker != null:
+		_hint_marker.visible = false
+	if _hint_label != null:
+		_hint_label.visible = false
+	_ending_cinematic_running = true
+	_ending_credits_running = true
+	_set_intro_lock(true)
+	if player_hud != null:
+		player_hud.visible = false
+	await _set_cinematic_bars(true, 0.3)
+	await _play_ending_board_to_credits_transition()
+	await _show_ending_credits_roll()
+	await _return_to_main_menu_after_credits()
 
 func _cache_ending_board_node() -> void:
 	if _ending_board == null or not is_instance_valid(_ending_board):
@@ -2443,12 +2550,13 @@ func _play_ending_board_cinematic() -> void:
 		if _ending_board_text_overlay.has_method("reset_content"):
 			_ending_board_text_overlay.call("reset_content")
 	var start_transform: Transform3D = player_camera.global_transform if player_camera != null else _intro_camera.global_transform
-	var start_fov: float = player_camera.fov if player_camera != null else _intro_camera.fov
+	var raw_start_fov: float = player_camera.fov if player_camera != null else _intro_camera.fov
+	var start_fov: float = _sanitize_camera_fov(raw_start_fov, 70.0)
 	var end_transform: Transform3D = _resolve_ending_board_camera_transform(start_transform)
 	var end_fov: float = _resolve_ending_board_camera_fov(start_fov)
 	_intro_camera.global_transform = start_transform
 	_intro_camera.make_current()
-	_intro_camera.fov = start_fov
+	_intro_camera.fov = _sanitize_camera_fov(start_fov, 70.0)
 	await _set_cinematic_bars(true, 0.35)
 	var camera_tween := create_tween().set_parallel(true)
 	camera_tween.tween_method(_blend_intro_camera.bind(start_transform, end_transform), 0.0, 1.0, ENDING_BOARD_CAMERA_SHOT_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -2486,8 +2594,17 @@ func _resolve_ending_board_camera_transform(fallback_start: Transform3D) -> Tran
 
 func _resolve_ending_board_camera_fov(fallback_fov: float) -> float:
 	if _ending_board_camera != null and is_instance_valid(_ending_board_camera):
-		return _ending_board_camera.fov
-	return fallback_fov
+		return _sanitize_camera_fov(_ending_board_camera.fov, fallback_fov)
+	return _sanitize_camera_fov(fallback_fov, 70.0)
+
+func _sanitize_camera_fov(value: float, fallback_value: float = 70.0) -> float:
+	var fallback := fallback_value
+	if fallback != fallback or abs(fallback) == INF:
+		fallback = 70.0
+	var resolved := value
+	if resolved != resolved or abs(resolved) == INF:
+		resolved = fallback
+	return clampf(resolved, CAMERA_FOV_MIN, CAMERA_FOV_MAX)
 
 func _play_ending_board_overlay_text() -> void:
 	if _ending_board_text_overlay == null or not is_instance_valid(_ending_board_text_overlay):
@@ -2530,7 +2647,8 @@ func _play_ending_board_to_credits_transition() -> void:
 func _show_ending_credits_roll() -> void:
 	if _intro_ui == null:
 		return
-	_play_bgm_stream(bgm_ending_credits)
+	if _bgm_player == null or not is_instance_valid(_bgm_player) or not _bgm_player.playing:
+		_play_bgm_stream(_get_last_scene_bgm_stream())
 	_play_sfx_stream(sfx_credits_start)
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	var credits_root := Control.new()
@@ -2583,10 +2701,10 @@ func _show_ending_credits_roll() -> void:
 	credits_root.queue_free()
 
 func _return_to_main_menu_after_credits() -> void:
+	GameState.reset_for_main_menu()
 	var screen_fx := _screen_fx()
 	if screen_fx != null and screen_fx.has_method("set_gameplay_filter_enabled"):
 		screen_fx.set_gameplay_filter_enabled(false)
-	_stop_bgm_stream()
 	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
 		await screen_fx.reboot_to_scene(MAIN_MENU_SCENE_PATH, true)
 	else:

@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://b5l1buxicxxq5"]
 
 [ext_resource type="Script" uid="uid://br738ge8fh8ny" path="res://scripts/objects/electric_orb.gd" id="1_orb_script"]
+[ext_resource type="PackedScene" uid="uid://bg60n6r4wjurm" path="res://assets/fireball-vfx/source/fireballvfx.fbx" id="2_fireball_model"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_orb"]
-radius = 2.9
+radius = 3.416922
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fireball"]
 albedo_color = Color(1, 0.38, 0.16, 1)
@@ -19,6 +20,7 @@ height = 1.24
 [node name="ElectricOrb" type="CharacterBody3D" unique_id=1151066551]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9710767, 0)
 script = ExtResource("1_orb_script")
+fireball_visual_scene = ExtResource("2_fireball_model")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=488463843]
 shape = SubResource("SphereShape3D_orb")

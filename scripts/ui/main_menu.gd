@@ -7,9 +7,7 @@ func _screen_fx() -> CanvasLayer:
 	return get_node_or_null("/root/ScreenFX") as CanvasLayer
 
 func _ready() -> void:
-	GameState.reset_level_index()
-	GameState.reset_world_state()
-	GameState.reset_progression()
+	GameState.reset_for_main_menu()
 	var screen_fx := _screen_fx()
 	if screen_fx != null:
 		screen_fx.set_gameplay_filter_enabled(false)

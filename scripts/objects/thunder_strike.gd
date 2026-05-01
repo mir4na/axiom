@@ -14,6 +14,7 @@ extends Node3D
 @onready var trail: MeshInstance3D = $SwordRoot/Trail
 @onready var flash: OmniLight3D = $Flash
 @onready var ground_flash: MeshInstance3D = $GroundFlash
+@onready var impact_sfx: AudioStreamPlayer3D = $ImpactSFX
 
 var _sword_mats: Array[ShaderMaterial] = []
 var _trail_mat: ShaderMaterial
@@ -74,6 +75,8 @@ func play(height: float, radius: float) -> void:
 	if flash != null:
 		drop.parallel().tween_property(flash, "light_energy", 9.5, drop_duration * 0.55)
 	await drop.finished
+	if impact_sfx != null:
+		impact_sfx.play()
 	if _ground_mat != null:
 		_ground_mat.set_shader_parameter("intensity", 1.0)
 		_ground_mat.set_shader_parameter("expansion", 0.0)

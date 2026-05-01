@@ -379,3 +379,26 @@ func clear_rewind_timeline(timeline_value: float = 0.0) -> void:
 	history_index = -1
 	mark_indices.clear()
 	timeline_position = timeline_value
+
+func reset_for_main_menu() -> void:
+	unpause()
+	reset_level_index()
+	reset_world_state()
+	time_direction = TIME_FORWARD
+	is_scrubbing_past = false
+	recording_enabled = true
+	rewind_mode_active = false
+	rewind_disabled = false
+	clear_rewind_timeline(0.0)
+	slots = ["", "", ""]
+	selected_slot = 0
+	axiom_equipped = false
+	axiom_unlocked = false
+	if has_method("get_meta_list"):
+		for key in get_meta_list():
+			remove_meta(StringName(key))
+	inventory_changed.emit()
+	axiom_equipped_changed.emit()
+	rewind_mode_changed.emit(false)
+	time_direction_changed.emit(time_direction)
+	ui_updated.emit()

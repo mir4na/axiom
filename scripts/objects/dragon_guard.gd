@@ -8,20 +8,17 @@ const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 const FIREBALL_SCENE := preload("res://scenes/objects/electric_orb.tscn")
 
 @export var max_health: float = 100.0
-@export var attack_cycle_cooldown: float = 12.0
-@export var fireball_burst_duration: float = 4.0
+@export var attack_cycle_cooldown: float = 10.0
+@export var fireball_burst_duration: float = 5.0
 @export var fireball_burst_interval: float = 0.45
 @export var fireball_damage: float = 25.0
 @export var fireball_speed: float = 14.0
 @export var fireball_radius: float = 1.0
 @export var fireball_spawn_height: float = 1.85
-@export var meteor_rain_duration: float = 2.8
-@export var meteor_rain_interval: float = 0.24
-@export var meteor_rain_radius: float = 9.5
-@export var meteor_spawn_height: float = 20.0
-@export var meteor_fall_speed: float = 18.0
-@export var meteor_damage: float = 25.0
-@export var meteor_radius: float = 1.1
+@export var fireball_target_height: float = 1.05
+@export var fireball_aim_lead_factor: float = 0.92
+@export var fireball_vertical_clamp: float = 0.08
+@export var arch_shift_duration: float = 0.38
 @export var gun_hit_damage: float = 2.0
 @export var bow_hit_damage: float = 8.0
 @export var hit_flash_duration: float = 0.16
@@ -52,6 +49,9 @@ var _hit_flash_timer: Timer
 var _active_fireballs: Array[Node3D] = []
 var _combat_anchor_position: Vector3 = Vector3.ZERO
 var _fireball_sfx_fallback: AudioStreamPlayer
+var _arch_markers: Array[Node3D] = []
+var _last_arch_index: int = -1
+var _teleport_glitch_active: bool = false
 
 func _ready() -> void:
 	add_to_group("enemy")
@@ -73,6 +73,8 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	if _dead:
+		if _mount_enabled:
+			return
 		if _player != null and is_instance_valid(_player):
 			_face_player()
 		return
@@ -82,8 +84,6 @@ func _physics_process(_delta: float) -> void:
 		_player = get_tree().get_first_node_in_group("player") as CharacterBody3D
 	if _player == null:
 		return
-	if visible:
-		global_position = _combat_anchor_position
 	_face_player()
 	_cleanup_fireballs()
 	if _attack_sequence_running:
@@ -261,61 +261,31 @@ func _run_attack_cycle() -> void:
 	if _dead or not visible:
 		_attack_sequence_running = false
 		return
-	var skill_index: int = _skill_cycle_step % 3
 	_play_attack_animation()
-	await get_tree().create_timer(0.3).timeout
-	match skill_index:
-		0, 1:
-			await _cast_fireball_burst_skill()
-		2:
-			await _cast_meteor_rain_skill()
+	await get_tree().create_timer(0.22).timeout
+	await _cast_fireball_cycle()
+	await _shift_to_next_arch()
 	_skill_cycle_step += 1
 	_attack_sequence_running = false
 	_cooldown_timer = maxf(0.0, attack_cycle_cooldown)
 
-func _cast_fireball_burst_skill() -> void:
-	var duration: float = maxf(0.2, fireball_burst_duration)
+func _cast_fireball_cycle() -> void:
+	var burst_duration: float = maxf(0.1, fireball_burst_duration)
 	var interval: float = maxf(0.08, fireball_burst_interval)
 	var elapsed: float = 0.0
-	var shot_timer: float = interval
-	while elapsed < duration:
+	while elapsed < burst_duration:
 		if _dead or not visible or not is_inside_tree():
 			break
 		if GameState.is_time_blocked():
 			if not await _await_next_frame_safe():
 				break
 			continue
-		var delta: float = get_process_delta_time()
-		elapsed += delta
-		shot_timer += delta
-		if shot_timer >= interval:
-			shot_timer = 0.0
-			_spawn_fireball_at_player()
-		if not await _await_next_frame_safe():
+		_spawn_fireball_at_player()
+		var wait_time: float = minf(interval, burst_duration - elapsed)
+		if wait_time <= 0.0:
 			break
-
-func _cast_meteor_rain_skill() -> void:
-	_spawn_upward_cast_fireball()
-	await get_tree().create_timer(0.55).timeout
-	var duration: float = maxf(0.25, meteor_rain_duration)
-	var interval: float = maxf(0.08, meteor_rain_interval)
-	var elapsed: float = 0.0
-	var shot_timer: float = 0.0
-	while elapsed < duration:
-		if _dead or not visible or not is_inside_tree():
-			break
-		if GameState.is_time_blocked():
-			if not await _await_next_frame_safe():
-				break
-			continue
-		var delta: float = get_process_delta_time()
-		elapsed += delta
-		shot_timer += delta
-		if shot_timer >= interval:
-			shot_timer = 0.0
-			_spawn_meteor_rain_fireball()
-		if not await _await_next_frame_safe():
-			break
+		await get_tree().create_timer(wait_time).timeout
+		elapsed += wait_time
 
 func _await_next_frame_safe() -> bool:
 	var tree: SceneTree = get_tree()
@@ -330,12 +300,20 @@ func _spawn_fireball_at_player() -> void:
 	_play_fireball_sfx()
 	var forward: Vector3 = -global_transform.basis.z
 	var spawn_position: Vector3 = global_position + Vector3(0.0, fireball_spawn_height, 0.0) + forward * 1.3
-	var target_position: Vector3 = _player.global_position + Vector3(0.0, 1.0, 0.0)
-	var direction: Vector3 = target_position - spawn_position
-	direction.y = 0.0
+	var target_position: Vector3 = _player.global_position + Vector3(0.0, fireball_target_height, 0.0)
+	var player_velocity: Vector3 = _player.velocity
+	var distance_to_target: float = spawn_position.distance_to(target_position)
+	var estimated_travel_time: float = 0.0
+	if fireball_speed > 0.001:
+		estimated_travel_time = distance_to_target / fireball_speed
+	estimated_travel_time = clampf(estimated_travel_time * fireball_aim_lead_factor, 0.0, 1.25)
+	target_position += player_velocity * estimated_travel_time
+	var direction: Vector3 = (target_position - spawn_position).normalized()
 	if direction.length_squared() <= 0.0001:
-		direction = forward
-	_spawn_configured_fireball(spawn_position, direction.normalized(), fireball_speed, fireball_damage, fireball_radius)
+		direction = forward.normalized()
+	direction.y = clampf(direction.y, -fireball_vertical_clamp, fireball_vertical_clamp)
+	direction = direction.normalized()
+	_spawn_configured_fireball(spawn_position, direction, fireball_speed, fireball_damage, fireball_radius)
 
 func _spawn_upward_cast_fireball() -> void:
 	_play_fireball_sfx()
@@ -381,17 +359,6 @@ func _setup_fireball_sfx_fallback() -> void:
 		_fireball_sfx_fallback.stream = sfx_fireball_cast
 	add_child(_fireball_sfx_fallback)
 
-func _spawn_meteor_rain_fireball() -> void:
-	if _player == null or not is_instance_valid(_player):
-		return
-	var center: Vector3 = _player.global_position
-	var offset_x: float = randf_range(-meteor_rain_radius, meteor_rain_radius)
-	var offset_z: float = randf_range(-meteor_rain_radius, meteor_rain_radius)
-	var target: Vector3 = center + Vector3(offset_x, 0.8, offset_z)
-	var spawn_position: Vector3 = target + Vector3(randf_range(-1.2, 1.2), meteor_spawn_height, randf_range(-1.2, 1.2))
-	var direction: Vector3 = (target - spawn_position).normalized()
-	_spawn_configured_fireball(spawn_position, direction, meteor_fall_speed, meteor_damage, meteor_radius)
-
 func _spawn_configured_fireball(spawn_position: Vector3, direction: Vector3, speed_value: float, damage_value: float, radius_value: float) -> void:
 	if FIREBALL_SCENE == null:
 		return
@@ -411,9 +378,86 @@ func _spawn_configured_fireball(spawn_position: Vector3, direction: Vector3, spe
 		use_direction = Vector3.FORWARD
 	if projectile.has_method("configure_orb"):
 		projectile.call("configure_orb", use_direction.normalized(), speed_value, damage_value, radius_value)
+	if projectile.has_method("set_ground_impact_enabled"):
+		projectile.call("set_ground_impact_enabled", false)
+	if projectile.has_method("set_world_hit_source"):
+		projectile.call("set_world_hit_source", self)
 	if projectile.has_signal("finished"):
 		projectile.connect("finished", Callable(self, "_on_fireball_finished"))
 	_active_fireballs.append(projectile)
+
+func set_arch_markers(markers: Array) -> void:
+	_arch_markers.clear()
+	for marker_variant in markers:
+		if marker_variant is Node3D and is_instance_valid(marker_variant as Node3D):
+			_arch_markers.append(marker_variant as Node3D)
+	_last_arch_index = -1
+
+func _shift_to_next_arch() -> void:
+	if _arch_markers.is_empty():
+		return
+	var candidates: Array[int] = []
+	for i in range(_arch_markers.size()):
+		var marker: Node3D = _arch_markers[i]
+		if marker == null or not is_instance_valid(marker):
+			continue
+		if _arch_markers.size() > 1 and i == _last_arch_index:
+			continue
+		candidates.append(i)
+	if candidates.is_empty():
+		return
+	var pick_index: int = candidates[randi() % candidates.size()]
+	var target_marker: Node3D = _arch_markers[pick_index]
+	if target_marker == null or not is_instance_valid(target_marker):
+		return
+	_last_arch_index = pick_index
+	var target_position: Vector3 = target_marker.global_position
+	_combat_anchor_position = target_position
+	await _play_arch_shift_glitch(target_position)
+
+func _play_arch_shift_glitch(target_position: Vector3) -> void:
+	if _teleport_glitch_active:
+		global_position = target_position
+		return
+	_teleport_glitch_active = true
+	var overlay_cache: Dictionary = {}
+	for mesh in _glitch_meshes:
+		if mesh == null or not is_instance_valid(mesh):
+			continue
+		var mesh_id: int = mesh.get_instance_id()
+		overlay_cache[mesh_id] = mesh.material_overlay
+		var mat := ShaderMaterial.new()
+		mat.shader = SPATIAL_GLITCH_SHADER
+		mat.set_shader_parameter("glitch_speed", 24.0)
+		mat.set_shader_parameter("glitch_intensity", 2.9)
+		mat.set_shader_parameter("base_color", Vector3(0.3, 0.95, 1.0))
+		mat.set_shader_parameter("emission_energy", 8.0)
+		mat.set_shader_parameter("rim_strength", 3.7)
+		mat.set_shader_parameter("pulse_strength", 1.9)
+		mat.set_shader_parameter("stripe_density", 86.0)
+		mat.set_shader_parameter("alpha_flicker", 0.34)
+		mesh.material_overlay = mat
+	await get_tree().create_timer(0.06).timeout
+	visible = false
+	await get_tree().create_timer(0.05).timeout
+	global_position = target_position
+	visible = true
+	if _player != null and is_instance_valid(_player):
+		_face_player()
+	if _model_root != null and is_instance_valid(_model_root):
+		for _i in range(3):
+			_model_root.position = Vector3(randf_range(-0.08, 0.08), randf_range(-0.05, 0.05), randf_range(-0.08, 0.08))
+			await get_tree().process_frame
+		_model_root.position = Vector3.ZERO
+	for mesh in _glitch_meshes:
+		if mesh == null or not is_instance_valid(mesh):
+			continue
+		var mesh_id: int = mesh.get_instance_id()
+		if overlay_cache.has(mesh_id):
+			mesh.material_overlay = overlay_cache[mesh_id] as Material
+		else:
+			mesh.material_overlay = null
+	_teleport_glitch_active = false
 
 func _on_fireball_finished(projectile: Node3D) -> void:
 	var index: int = _active_fireballs.find(projectile)

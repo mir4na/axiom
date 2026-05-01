@@ -9,6 +9,7 @@ const ORB_SCALE := 1.5
 @export var lifetime: float = 16.0
 @export var radius: float = 1.25
 @export var fireball_visual_scene: PackedScene
+@export var world_hit_grace_duration: float = 0.12
 
 @onready var _collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 @onready var _visual_root: Node3D = get_node_or_null("VisualRoot") as Node3D
@@ -22,6 +23,9 @@ var _phase: float = 0.0
 var _base_visual_scale: Vector3 = Vector3.ONE
 var _radius_visual_scale: float = 1.0
 var _model_instance: Node3D
+var _ground_impact_enabled: bool = false
+var _world_hit_grace_left: float = 0.0
+var _world_hit_source_rid: RID = RID()
 
 func _ready() -> void:
 	_life_left = lifetime
@@ -41,9 +45,19 @@ func configure_orb(direction: Vector3, speed_value: float, damage_value: float, 
 	radius = radius_value
 	_life_left = lifetime
 	_phase = randf() * TAU
+	_world_hit_grace_left = maxf(0.0, world_hit_grace_duration)
 	if _velocity.length_squared() > 0.0001:
 		look_at(global_position + _velocity.normalized(), Vector3.UP)
 	_apply_radius()
+
+func set_ground_impact_enabled(enabled: bool) -> void:
+	_ground_impact_enabled = enabled
+
+func set_world_hit_source(source: CollisionObject3D) -> void:
+	if source == null or not is_instance_valid(source):
+		_world_hit_source_rid = RID()
+		return
+	_world_hit_source_rid = source.get_rid()
 
 func force_despawn() -> void:
 	if not _active:
@@ -59,7 +73,14 @@ func _physics_process(delta: float) -> void:
 		return
 	if GameState.is_time_blocked():
 		return
-	global_position += _velocity * delta
+	if _world_hit_grace_left > 0.0:
+		_world_hit_grace_left = maxf(0.0, _world_hit_grace_left - delta)
+	var previous_position: Vector3 = global_position
+	var next_position: Vector3 = previous_position + _velocity * delta
+	if _ground_impact_enabled and _world_hit_grace_left <= 0.0:
+		if _try_hit_world(previous_position, next_position):
+			return
+	global_position = next_position
 	_phase = wrapf(_phase + delta * 7.4, 0.0, TAU)
 	if _visual_root != null:
 		var pulse: float = 0.9 + (sin(_phase * 1.7) * 0.5 + 0.5) * 0.24
@@ -72,6 +93,32 @@ func _physics_process(delta: float) -> void:
 	_life_left = maxf(0.0, _life_left - delta)
 	if _life_left <= 0.0:
 		force_despawn()
+
+func _try_hit_world(from: Vector3, to: Vector3) -> bool:
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(from, to)
+	query.exclude = [get_rid()]
+	if _world_hit_source_rid.is_valid():
+		query.exclude.append(_world_hit_source_rid)
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return false
+	var collider_variant: Variant = hit.get("collider", null)
+	if collider_variant is Node and (collider_variant as Node).is_in_group("player"):
+		var collider_node: Node = collider_variant as Node
+		if collider_node.has_method("take_damage"):
+			collider_node.call("take_damage", damage)
+		_active = false
+		var hit_position_player: Vector3 = hit.get("position", global_position)
+		global_position = hit_position_player
+		_orb_explode()
+		return true
+	_active = false
+	var hit_position: Vector3 = hit.get("position", global_position)
+	global_position = hit_position
+	_orb_explode()
+	return true
 
 func get_distance_to_point(point: Vector3) -> float:
 	return global_position.distance_to(point)

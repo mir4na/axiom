@@ -36,6 +36,9 @@ transform = Transform3D(0.34, 0, 0, 0, 0.34, 0, 0, 0, 0.34, 0, 0, 0)
 [node name="RideSocket" type="Marker3D" parent="ModelRoot" unique_id=2006711510]
 transform = Transform3D(0.9961947, -0.087155744, 0, 0.087155744, 0.9961947, 0, 0, 0, 1, 0, 2.2, -0.3)
 
+[node name="RideCameraSocket" type="Marker3D" parent="ModelRoot"]
+transform = Transform3D(1, 0, 0, 0, 0.98162717, 0.190809, 0, -0.190809, 0.98162717, 0, 3.18, 1.55)
+
 [node name="Glow" type="OmniLight3D" parent="." unique_id=1520844128]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6, 0)
 light_color = Color(0.5, 0.3, 0.9, 1)
