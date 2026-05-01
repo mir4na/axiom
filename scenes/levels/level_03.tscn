@@ -788,64 +788,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, -78.88209, -12)
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/LevelFallDeathZone" unique_id=1738846207]
 shape = SubResource("Level3FallDeathShape")
 
-[node name="BoundedBox" type="Node3D" parent="World" unique_id=484254138]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 22, -8)
-
-[node name="WallNorth" type="StaticBody3D" parent="World/BoundedBox" unique_id=2089305126]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -520)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallNorth" unique_id=1950110177]
-shape = SubResource("Level3VerticalBlockerShape")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallNorth" unique_id=1134682581]
-visible = false
-material_override = SubResource("MatArenaStone")
-mesh = SubResource("Level3VerticalBlockerMesh")
-
-[node name="WallSouth" type="StaticBody3D" parent="World/BoundedBox" unique_id=1390595452]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 520)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallSouth" unique_id=1196763104]
-shape = SubResource("Level3VerticalBlockerShape")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallSouth" unique_id=511543066]
-visible = false
-material_override = SubResource("MatArenaStone")
-mesh = SubResource("Level3VerticalBlockerMesh")
-
-[node name="WallEast" type="StaticBody3D" parent="World/BoundedBox" unique_id=1655392387]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 520, 0, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallEast" unique_id=943764736]
-shape = SubResource("Level3VerticalBlockerShape")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallEast" unique_id=40237817]
-visible = false
-material_override = SubResource("MatArenaStone")
-mesh = SubResource("Level3VerticalBlockerMesh")
-
-[node name="WallWest" type="StaticBody3D" parent="World/BoundedBox" unique_id=1584386096]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -520, 0, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallWest" unique_id=1283695851]
-shape = SubResource("Level3VerticalBlockerShape")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallWest" unique_id=2083733939]
-visible = false
-material_override = SubResource("MatArenaStone")
-mesh = SubResource("Level3VerticalBlockerMesh")
-
-[node name="WallTop" type="StaticBody3D" parent="World/BoundedBox" unique_id=1201095731]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 220, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallTop" unique_id=1680268187]
-shape = SubResource("Level3BoundedTopShape")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallTop" unique_id=689244133]
-visible = false
-material_override = SubResource("MatArenaStone")
-mesh = SubResource("Level3BoundedTopMesh")
-
 [node name="AnomalyEncounter" type="Node3D" parent="World" unique_id=206546344]
 
 [node name="Trigger" type="Area3D" parent="World/AnomalyEncounter" unique_id=1089246160]
