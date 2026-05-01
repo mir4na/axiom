@@ -6,6 +6,7 @@ extends Node3D
 @export var fall_duration: float = 0.5
 @export var fall_height: float = 14.0
 @export var meteor_scale: float = 1.0
+@export var sfx_impact_explosion: AudioStream
 
 @onready var _telegraph: MeshInstance3D = $Telegraph
 @onready var _meteor_root: Node3D = $MeteorRoot
@@ -13,6 +14,7 @@ extends Node3D
 @onready var _meteor_shard_a: MeshInstance3D = $MeteorRoot/ShardA
 @onready var _meteor_shard_b: MeshInstance3D = $MeteorRoot/ShardB
 @onready var _light: OmniLight3D = $Light
+@onready var _impact_sfx: AudioStreamPlayer3D = $ImpactSFX
 
 var _player: CharacterBody3D
 var _target_position: Vector3 = Vector3.ZERO
@@ -28,6 +30,8 @@ func _ready() -> void:
 	_telegraph.visible = false
 	_meteor_root.visible = false
 	_light.visible = false
+	if _impact_sfx != null and sfx_impact_explosion != null:
+		_impact_sfx.stream = sfx_impact_explosion
 
 func configure_attack(target_position: Vector3, player_ref: CharacterBody3D, damage_value: float, radius_value: float, warning_value: float, fall_value: float, show_telegraph_value: bool = true, scale_value: float = 1.0) -> void:
 	_target_position = target_position
@@ -99,6 +103,7 @@ func _start_fall() -> void:
 func _impact() -> void:
 	_impact_done = true
 	_active = false
+	_play_impact_sfx()
 	if _player != null and is_instance_valid(_player):
 		var player_distance: float = _player.global_position.distance_to(_target_position)
 		if player_distance <= radius and _player.has_method("take_damage"):
@@ -114,6 +119,16 @@ func _impact() -> void:
 		fade.tween_property(_light, "light_energy", 0.0, 0.22).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await _await_tween_with_time_control(fade)
 	queue_free()
+
+func _play_impact_sfx() -> void:
+	if _impact_sfx == null:
+		return
+	if sfx_impact_explosion != null and _impact_sfx.stream != sfx_impact_explosion:
+		_impact_sfx.stream = sfx_impact_explosion
+	if _impact_sfx.stream == null:
+		return
+	_impact_sfx.pitch_scale = randf_range(0.96, 1.04)
+	_impact_sfx.play()
 
 func _is_time_state_blocked() -> bool:
 	return GameState.is_paused or GameState.time_direction != GameState.TIME_FORWARD or GameState.is_scrubbing_past

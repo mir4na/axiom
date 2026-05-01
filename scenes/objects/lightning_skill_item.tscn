@@ -1,7 +1,8 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/objects/lightning_skill_item.gd" id="1_item"]
 [ext_resource type="Shader" path="res://shaders/lightning_drop_trace.gdshader" id="2_trace"]
+[ext_resource type="AudioStream" path="res://audio/sfx/sword-thud.mp3" id="3_sfx_sword_thud"]
 
 [sub_resource type="SphereShape3D" id="SphereShape_item"]
 radius = 0.48
@@ -41,8 +42,32 @@ top_radius = 0.22
 bottom_radius = 0.36
 height = 24.0
 
+[sub_resource type="Gradient" id="ImpactGradient"]
+offsets = PackedFloat32Array(0, 0.2, 0.7, 1)
+colors = PackedColorArray(0.05, 0.05, 0.06, 0, 0.2, 0.22, 0.28, 0.88, 0.08, 0.09, 0.12, 0.54, 0.03, 0.03, 0.04, 0)
+
+[sub_resource type="GradientTexture1D" id="ImpactGradientTex"]
+gradient = SubResource("ImpactGradient")
+
+[sub_resource type="ParticleProcessMaterial" id="ImpactParticlesMat"]
+direction = Vector3(0, 1, 0)
+spread = 46.0
+initial_velocity_min = 1.1
+initial_velocity_max = 3.1
+angular_velocity_min = -6.0
+angular_velocity_max = 6.0
+gravity = Vector3(0, -2.6, 0)
+scale_min = 0.06
+scale_max = 0.16
+color = Color(0.18, 0.2, 0.26, 0.92)
+color_ramp = SubResource("ImpactGradientTex")
+
+[sub_resource type="QuadMesh" id="ImpactQuadMesh"]
+size = Vector2(0.12, 0.12)
+
 [node name="LightningSkillItem" type="StaticBody3D"]
 script = ExtResource("1_item")
+sfx_landing_thud = ExtResource("3_sfx_sword_thud")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("SphereShape_item")
@@ -72,3 +97,20 @@ visible = false
 light_color = Color(0.08, 0.1, 0.14, 1)
 light_energy = 0.0
 omni_range = 10.0
+
+[node name="ImpactParticles" type="GPUParticles3D" parent="."]
+visible = false
+emitting = false
+amount = 54
+lifetime = 0.75
+one_shot = true
+preprocess = 0.05
+process_material = SubResource("ImpactParticlesMat")
+draw_pass_1 = SubResource("ImpactQuadMesh")
+
+[node name="LandingSFX" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("3_sfx_sword_thud")
+volume_db = -1.5
+max_distance = 96.0
+unit_size = 3.0
+max_polyphony = 4

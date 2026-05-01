@@ -27,6 +27,7 @@ extends CharacterBody3D
 @export var sfx_gun_fire: AudioStream
 @export var sfx_gun_reload: AudioStream
 @export var sfx_bow_fire: AudioStream
+@export var sfx_jump_boots_jump: AudioStream
 @export var sfx_lightning_target_enter: AudioStream
 @export var sfx_lightning_cast: AudioStream
 @export var sfx_player_hurt: AudioStream
@@ -91,7 +92,7 @@ var _gun_range: float = 52.0
 var _gun_recoil: float = 0.0
 var _bow_damage: float = 8.0
 var _bow_range: float = 58.0
-var _bow_shot_cooldown: float = 0.6
+var _bow_shot_cooldown: float = 0.5
 var _bow_shot_timer: float = 0.0
 var _bow_recoil: float = 0.0
 var mobility_locked: bool = false
@@ -105,12 +106,14 @@ var _lightning_target_trace: MeshInstance3D
 var _lightning_target_camera: Camera3D
 var _time_stop_active: bool = false
 var _sfx_player: AudioStreamPlayer
+var _sfx_reload_player: AudioStreamPlayer
 var _rewind_pointer_elapsed: float = 0.0
 var _rewind_overload_stun_active: bool = false
 var _rewind_overload_stun_remaining: float = 0.0
 var _rewind_overload_enabled: bool = true
 var _suppress_space_jump_until_release: bool = false
 var _item_usage_locked: bool = false
+var _look_input_locked: bool = false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -242,6 +245,8 @@ func _input(event: InputEvent) -> void:
 				hud.show_mark_screenshot_effect()
 
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+		if _look_input_locked:
+			return
 		if GameState.time_direction == 1 and GameState.is_scrubbing_past:
 			GameState.prune_timeline()
 		rotate_y(deg_to_rad(-event.relative.x * mouse_sensitivity))
@@ -452,6 +457,8 @@ func _handle_movement(delta: float) -> void:
 
 	if Input.is_key_pressed(KEY_SPACE) and is_on_floor() and not is_crouching and not _suppress_space_jump_until_release:
 		velocity.y = jump_power
+		if GameState.has_selected_item("JumpBoots"):
+			_play_sfx(sfx_jump_boots_jump)
 
 	move_and_slide()
 	
@@ -707,16 +714,30 @@ func _setup_audio_player() -> void:
 	_sfx_player.bus = "Master"
 	_sfx_player.autoplay = false
 	add_child(_sfx_player)
+	_sfx_reload_player = AudioStreamPlayer.new()
+	_sfx_reload_player.name = "PlayerSFXReload"
+	_sfx_reload_player.bus = "Master"
+	_sfx_reload_player.autoplay = false
+	add_child(_sfx_reload_player)
 
 func _play_sfx(stream: AudioStream) -> void:
 	if stream == null:
 		return
-	if stream != sfx_gun_fire and stream != sfx_bow_fire:
+	if stream != sfx_gun_fire and stream != sfx_bow_fire and stream != sfx_gun_reload and stream != sfx_jump_boots_jump and stream != sfx_lightning_target_enter and stream != sfx_lightning_cast and stream != sfx_player_hurt and stream != sfx_rewind_enter and stream != sfx_rewind_exit:
 		return
 	if _sfx_player == null or not is_instance_valid(_sfx_player):
 		return
 	_sfx_player.stream = stream
 	_sfx_player.play()
+
+func _play_reload_sfx() -> void:
+	if sfx_gun_reload == null:
+		return
+	if _sfx_reload_player == null or not is_instance_valid(_sfx_reload_player):
+		return
+	_sfx_reload_player.stream = sfx_gun_reload
+	_sfx_reload_player.pitch_scale = randf_range(0.98, 1.02)
+	_sfx_reload_player.play()
 
 func _has_gun_selected() -> bool:
 	return GameState.has_selected_item("Gun")
@@ -741,10 +762,13 @@ func _can_use_bow() -> bool:
 func _can_reload_gun() -> bool:
 	return _has_gun_selected() and not _item_usage_locked and not _gun_reloading and _gun_ammo < _gun_clip_size and not cinematic_locked and not GameState.is_time_blocked()
 
+func set_bow_shot_cooldown(value: float) -> void:
+	_bow_shot_cooldown = maxf(0.05, value)
+
 func _start_gun_reload() -> void:
 	if not _can_reload_gun():
 		return
-	_play_sfx(sfx_gun_reload)
+	_play_reload_sfx()
 	_gun_reloading = true
 	_gun_reload_timer = _gun_reload_duration
 
@@ -903,10 +927,10 @@ func _update_bow_view_model(_delta: float) -> void:
 	_bow_view_root.visible = active
 	if not active:
 		return
-	var bob_x: float = sin(Time.get_ticks_msec() * 0.0048) * 0.006
-	var bob_y: float = sin(Time.get_ticks_msec() * 0.0036) * 0.005
-	_bow_view_root.position = Vector3(0.19 + bob_x, -0.29 + bob_y + _bow_recoil * 0.026, -0.31 + _bow_recoil * 0.05)
-	_bow_view_root.rotation_degrees = Vector3(-4.8 - _bow_recoil * 5.2, -17.0, 0.0)
+	var bob_x: float = sin(Time.get_ticks_msec() * 0.006) * 0.008
+	var bob_y: float = sin(Time.get_ticks_msec() * 0.0042) * 0.006
+	_bow_view_root.position = Vector3(-0.24 - bob_x, -0.27 + bob_y + _bow_recoil * 0.028, -0.34 + _bow_recoil * 0.08)
+	_bow_view_root.rotation_degrees = Vector3(-7.5 - _bow_recoil * 6.2, 15.0, 0.0)
 
 func _get_bow_muzzle_world_position() -> Vector3:
 	if _bow_muzzle != null and _bow_view_root != null and _bow_view_root.visible:
@@ -914,7 +938,7 @@ func _get_bow_muzzle_world_position() -> Vector3:
 	var forward: Vector3 = -camera.global_transform.basis.z.normalized()
 	var right: Vector3 = camera.global_transform.basis.x.normalized()
 	var up: Vector3 = camera.global_transform.basis.y.normalized()
-	return camera.global_position + forward * 0.46 + right * 0.08 - up * 0.04
+	return camera.global_position + forward * 0.46 - right * 0.08 - up * 0.04
 
 func _get_gun_muzzle_world_position() -> Vector3:
 	if _gun_muzzle != null and _gun_view_root != null and _gun_view_root.visible:
@@ -1085,6 +1109,8 @@ func _set_lightning_targeting(active: bool) -> void:
 	_lightning_target_root.visible = active
 	if _lightning_target_trace != null and is_instance_valid(_lightning_target_trace):
 		_lightning_target_trace.visible = active and _lightning_target_valid
+	if hud != null and hud.has_method("set_sword_skill_topdown_overlay_active"):
+		hud.call("set_sword_skill_topdown_overlay_active", active)
 	if active:
 		if Input.get_mouse_mode() != Input.MOUSE_MODE_VISIBLE:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -1298,6 +1324,9 @@ func set_mobility_lock(active: bool) -> void:
 
 func set_item_usage_locked(active: bool) -> void:
 	_item_usage_locked = active
+
+func set_look_input_locked(active: bool) -> void:
+	_look_input_locked = active
 
 func set_time_stop_active(active: bool, world_origin: Vector3 = Vector3.ZERO, expand_duration: float = 1.0) -> void:
 	_time_stop_active = active

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/objects/axia_fall_attack.gd" id="1_script"]
 [ext_resource type="Shader" path="res://shaders/axia_energy.gdshader" id="2_shader"]
+[ext_resource type="AudioStream" path="res://audio/sfx/explosion.mp3" id="3_sfx_explosion"]
 
 [sub_resource type="ShaderMaterial" id="TelegraphMat"]
 shader = ExtResource("2_shader")
@@ -35,6 +36,7 @@ size = Vector3(0.22, 0.82, 0.22)
 
 [node name="AxiaFallAttack" type="Node3D"]
 script = ExtResource("1_script")
+sfx_impact_explosion = ExtResource("3_sfx_explosion")
 
 [node name="Telegraph" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0)
@@ -61,3 +63,10 @@ mesh = SubResource("ShardMesh")
 light_color = Color(0.42, 0.08, 0.14, 1)
 light_energy = 0.0
 omni_range = 8.0
+
+[node name="ImpactSFX" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("3_sfx_explosion")
+volume_db = -2.0
+max_distance = 120.0
+unit_size = 3.0
+max_polyphony = 4

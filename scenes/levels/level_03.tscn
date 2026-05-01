@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://boiwq5gf777ux" path="res://scripts/world/level_three_surreal.gd" id="1"]
 [ext_resource type="Script" uid="uid://cjgnkwuq11v34" path="res://scripts/world/world.gd" id="2"]
 [ext_resource type="PackedScene" uid="uid://chacrc38nmcij" path="res://scenes/player/player.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://scenes/objects/surreal_platform.tscn" id="4"]
+[ext_resource type="PackedScene" uid="uid://bflgtwo1ixlco" path="res://scenes/objects/surreal_platform.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://bua3jyp416qe7" path="res://scenes/objects/jumping_boots.tscn" id="5"]
 [ext_resource type="PackedScene" uid="uid://c843o1oyndtrj" path="res://scenes/objects/dragon_guard.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/objects/key_item.tscn" id="7"]
@@ -17,7 +17,7 @@
 [ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="15_sfx_sky_cracking"]
 [ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="16_enemy"]
 [ext_resource type="Script" uid="uid://4isofn1ndolb" path="res://scripts/objects/anomaly_sentry.gd" id="17_anomaly_sentry"]
-[ext_resource type="PackedScene" path="res://scenes/objects/bow_item.tscn" id="18_bow_item"]
+[ext_resource type="PackedScene" uid="uid://cti0gocu5al2o" path="res://scenes/objects/bow_item.tscn" id="18_bow_item"]
 
 [sub_resource type="ProceduralSkyMaterial" id="1"]
 sky_top_color = Color(0.98, 0.99, 1, 1)
@@ -70,6 +70,9 @@ top_radius = 1.95
 bottom_radius = 2.1
 height = 0.16
 
+[sub_resource type="BoxShape3D" id="ArenaWallCollisionSegmentShape"]
+size = Vector3(4.7, 2.8, 1.2)
+
 [sub_resource type="StandardMaterial3D" id="MatArenaAccent"]
 albedo_color = Color(0.78, 0.72, 0.62, 1)
 metallic = 0.02
@@ -91,10 +94,20 @@ bottom_radius = 0.32
 height = 3.8
 radial_segments = 10
 
+[sub_resource type="CylinderShape3D" id="ArenaColumnCollisionShape"]
+height = 3.8
+radius = 0.32
+
 [sub_resource type="BoxMesh" id="ArenaArchBeamMesh"]
 size = Vector3(1.7, 0.42, 0.64)
 
+[sub_resource type="BoxShape3D" id="ArenaArchCollisionShape"]
+size = Vector3(1.7, 0.42, 0.64)
+
 [sub_resource type="BoxMesh" id="ArenaButtressMesh"]
+size = Vector3(0.95, 1.08, 1.3)
+
+[sub_resource type="BoxShape3D" id="ArenaButtressCollisionShape"]
 size = Vector3(0.95, 1.08, 1.3)
 
 [sub_resource type="StandardMaterial3D" id="MatRuinsStone"]
@@ -108,24 +121,34 @@ size = Vector3(4.6, 3.4, 0.6)
 [sub_resource type="BoxMesh" id="RuinsColumnMesh"]
 size = Vector3(1.05, 4.8, 1.05)
 
-[sub_resource type="BoxShape3D" id="10"]
-size = Vector3(8, 4, 8)
+[sub_resource type="BoxMesh" id="RuinsShardMesh"]
+size = Vector3(1.3, 4.6, 1)
 
-[sub_resource type="CylinderShape3D" id="11"]
-height = 24.0
-radius = 8.5
+[sub_resource type="CylinderShape3D" id="10"]
+height = 6.0
+radius = 2.213379
+
+[sub_resource type="CylinderShape3D" id="Level3RideReleaseShape"]
+height = 68.89746
+radius = 16.595703
 
 [sub_resource type="BoxShape3D" id="Level3FallDeathShape"]
 size = Vector3(1200, 42, 1200)
 
-[sub_resource type="BoxShape3D" id="9"]
-size = Vector3(12, 4.5, 12)
-
 [sub_resource type="BoxShape3D" id="Level3VerticalBlockerShape"]
-size = Vector3(3.2, 11.0, 1.4)
+size = Vector3(1040, 440, 16)
 
 [sub_resource type="BoxMesh" id="Level3VerticalBlockerMesh"]
-size = Vector3(3.2, 11.0, 1.4)
+size = Vector3(1040, 440, 16)
+
+[sub_resource type="BoxShape3D" id="Level3BoundedTopShape"]
+size = Vector3(1040, 16, 1040)
+
+[sub_resource type="BoxMesh" id="Level3BoundedTopMesh"]
+size = Vector3(1040, 16, 1040)
+
+[sub_resource type="BoxShape3D" id="9"]
+size = Vector3(12, 4.5, 12)
 
 [sub_resource type="ShaderMaterial" id="4"]
 render_priority = 0
@@ -171,6 +194,9 @@ size = Vector3(17.1, 0.03, 0.14)
 
 [sub_resource type="BoxMesh" id="CourtLineMid"]
 size = Vector3(0.14, 0.03, 9.5)
+
+[sub_resource type="BoxShape3D" id="CourtBaseCollisionShape"]
+size = Vector3(17, 0.4, 9.5)
 
 [sub_resource type="StandardMaterial3D" id="MatCarA"]
 albedo_color = Color(0.72, 0.18, 0.16, 1)
@@ -222,6 +248,10 @@ height = 0.44
 top_radius = 0.16
 bottom_radius = 0.23
 height = 2.8
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_ghs8o"]
+height = 0.48632813
+radius = 27.964844
 
 [node name="Level03" type="Node3D" unique_id=364480891]
 script = ExtResource("1")
@@ -280,17 +310,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 32.204937, 0)
 [node name="SpawnPlatform" parent="World/Platforms" unique_id=388563077 instance=ExtResource("4")]
 transform = Transform3D(2.8, 0, 0, 0, 1, 0, 0, 0, 2.8, 0, 32, 0)
 
-[node name="BootsPlatform" parent="World/Platforms" unique_id=1001763443 instance=ExtResource("4")]
-transform = Transform3D(3, 0, 0, 0, 1, 0, 0, 0, 3, 10.282573, 20.928116, -4)
+[node name="BootsHouse" parent="World/Platforms" unique_id=1286526512 instance=ExtResource("9")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 1.6654396, 5.3668823, -19.741705)
 
-[node name="BootsHouse" parent="World/Platforms/BootsPlatform" unique_id=1286526512 instance=ExtResource("9")]
-transform = Transform3D(0.20000002, 0, 0, 0, 0.2, 0, 0, 0, 0.20000002, 1.2830572, 0.6494751, 0)
+[node name="JumpingBoots" parent="World/Platforms/BootsHouse" unique_id=444350027 instance=ExtResource("5")]
+transform = Transform3D(0.9659259, 0, -0.25881907, 0.25669062, 0.12798202, 0.9579824, 0.033124186, -0.99177647, 0.123621136, 0, 6.5999994, 0.4000001)
 
-[node name="JumpingBoots" parent="World/Platforms/BootsPlatform/BootsHouse" unique_id=444350027 instance=ExtResource("5")]
-transform = Transform3D(0.9659258, 0, -0.25881904, 0, 1, 0, 0.25881904, 0, 0.9659258, 0, 6.6, 0.4)
-
-[node name="BootsTraceMarker" type="Marker3D" parent="World/Platforms/BootsPlatform" unique_id=1760253384]
-transform = Transform3D(1, 0, 0, 0, 0.98768836, -0.15643448, 0, 0.15643448, 0.98768836, 0.2, 2.75, 0.9)
+[node name="BootsTraceMarker" type="Marker3D" parent="World/Platforms" unique_id=1760253384]
+transform = Transform3D(0.99999994, 0, 0, 0, 0.9876883, -0.15643446, 0, 0.15643446, 0.9876883, 1.4995689, 9.971352, -20.052118)
 
 [node name="BridgePlatforms" type="Node3D" parent="World/Platforms" unique_id=756291455]
 
@@ -318,7 +345,7 @@ transform = Transform3D(2.4, 0, 0, 0, 1, 0, 0, 0, 2.4, 46, 19.5, -14)
 visible = false
 
 [node name="DragonPlatform" parent="World/Platforms" unique_id=1060336020 instance=ExtResource("4")]
-transform = Transform3D(4.2, 0, 0, 0, 1, 0, 0, 0, 4.2, 56, 17, -14)
+transform = Transform3D(4.2, 0, 0, 0, 1, 0, 0, 0, 4.2, 6.253708, 17, 121.36737)
 
 [node name="DragonArena" type="Node3D" parent="World/Platforms/DragonPlatform" unique_id=1176054983]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, 0)
@@ -338,6 +365,7 @@ transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.
 use_collision = true
 
 [node name="OuterWall" type="CSGCylinder3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing" unique_id=1628394768]
+use_collision = true
 radius = 6.2
 height = 2.6
 sides = 40
@@ -345,9 +373,60 @@ material = SubResource("MatArenaStone")
 
 [node name="InnerCut" type="CSGCylinder3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing" unique_id=955527888]
 operation = 2
+use_collision = true
 radius = 5.52
 height = 2.9
 sides = 40
+
+[node name="CollisionRing" type="Node3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing" unique_id=202267612]
+
+[node name="WallSegN" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing" unique_id=1860251309]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -5.86)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing/WallSegN" unique_id=349541322]
+shape = SubResource("ArenaWallCollisionSegmentShape")
+
+[node name="WallSegNE" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing" unique_id=2033699948]
+transform = Transform3D(0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, 0.70710677, 4.14, 0, -4.14)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing/WallSegNE" unique_id=947835281]
+shape = SubResource("ArenaWallCollisionSegmentShape")
+
+[node name="WallSegE" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing" unique_id=686634607]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 5.86, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing/WallSegE" unique_id=171693218]
+shape = SubResource("ArenaWallCollisionSegmentShape")
+
+[node name="WallSegSE" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing" unique_id=1461149129]
+transform = Transform3D(-0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, -0.70710677, 4.14, 0, 4.14)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing/WallSegSE" unique_id=1135400852]
+shape = SubResource("ArenaWallCollisionSegmentShape")
+
+[node name="WallSegS" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing" unique_id=1544168931]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 5.86)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing/WallSegS" unique_id=1136669546]
+shape = SubResource("ArenaWallCollisionSegmentShape")
+
+[node name="WallSegSW" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing" unique_id=1958687542]
+transform = Transform3D(-0.70710677, 0, -0.70710677, 0, 1, 0, 0.70710677, 0, -0.70710677, -4.14, 0, 4.14)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing/WallSegSW" unique_id=2054475170]
+shape = SubResource("ArenaWallCollisionSegmentShape")
+
+[node name="WallSegW" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing" unique_id=1432074869]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -5.86, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing/WallSegW" unique_id=2122187556]
+shape = SubResource("ArenaWallCollisionSegmentShape")
+
+[node name="WallSegNW" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing" unique_id=1764690720]
+transform = Transform3D(0.70710677, 0, -0.70710677, 0, 1, 0, 0.70710677, 0, 0.70710677, -4.14, 0, -4.14)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing/CollisionRing/WallSegNW" unique_id=1842959675]
+shape = SubResource("ArenaWallCollisionSegmentShape")
 
 [node name="StepRingA" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=1216372862]
 transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.38, 0)
@@ -367,106 +446,206 @@ transform = Transform3D(1, 0, 0, 0, 0.997564, -0.06975647, 0, 0.06975647, 0.9975
 material_override = SubResource("MatArenaAccent")
 mesh = SubResource("ArenaColumnMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnN" unique_id=1448132923]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnN/Collider" unique_id=658301547]
+shape = SubResource("ArenaColumnCollisionShape")
+
 [node name="ColumnNE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1325085744]
 transform = Transform3D(0.70710677, 0, 0.70710677, 0.04932528, 0.997564, -0.04932528, -0.7053844, 0.06975647, 0.7053844, 4.77, 2.05, -4.77)
 material_override = SubResource("MatArenaAccent")
 mesh = SubResource("ArenaColumnMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnNE" unique_id=1903901480]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnNE/Collider" unique_id=1200256361]
+shape = SubResource("ArenaColumnCollisionShape")
 
 [node name="ColumnE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=124375398]
 transform = Transform3D(0.017452383, 0, -0.9998477, -0.06974585, 0.997564, -0.0012179748, 0.99741215, 0.06975647, 0.017409906, 6.75, 2.05, 0)
 material_override = SubResource("MatArenaAccent")
 mesh = SubResource("ArenaColumnMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnE" unique_id=1307632915]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnE/Collider" unique_id=862799820]
+shape = SubResource("ArenaColumnCollisionShape")
+
 [node name="ColumnSE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=620638012]
 transform = Transform3D(-0.70710677, 0, 0.70710677, 0.04932528, 0.997564, 0.04932528, -0.7053844, 0.06975647, -0.7053844, 4.77, 2.05, 4.77)
 material_override = SubResource("MatArenaAccent")
 mesh = SubResource("ArenaColumnMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnSE" unique_id=2051990028]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnSE/Collider" unique_id=636023908]
+shape = SubResource("ArenaColumnCollisionShape")
 
 [node name="ColumnS" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=2059931734]
 transform = Transform3D(-1, 0, -8.742278e-08, -6.099934e-09, 0.997564, 0.06975647, 8.720978e-08, 0.06975647, -0.997564, 0, 2.05, 6.75)
 material_override = SubResource("MatArenaAccent")
 mesh = SubResource("ArenaColumnMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnS" unique_id=1385425625]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnS/Collider" unique_id=1659845839]
+shape = SubResource("ArenaColumnCollisionShape")
+
 [node name="ColumnSW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=98025217]
 transform = Transform3D(-0.7071067, 0, -0.7071068, -0.049325295, 0.997564, 0.049325284, 0.70538443, 0.06975647, -0.7053843, -4.77, 2.05, 4.77)
 material_override = SubResource("MatArenaAccent")
 mesh = SubResource("ArenaColumnMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnSW" unique_id=1103288848]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnSW/Collider" unique_id=2069758200]
+shape = SubResource("ArenaColumnCollisionShape")
 
 [node name="ColumnW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1403237357]
 transform = Transform3D(-0.017452544, 0, 0.99984765, 0.06974584, 0.997564, 0.0012179861, -0.99741215, 0.06975647, -0.017410068, -6.75, 2.05, 0)
 material_override = SubResource("MatArenaAccent")
 mesh = SubResource("ArenaColumnMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnW" unique_id=1140312289]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnW/Collider" unique_id=1294259689]
+shape = SubResource("ArenaColumnCollisionShape")
+
 [node name="ColumnNW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=704501318]
 transform = Transform3D(0.7071068, 0, -0.7071067, -0.049325284, 0.997564, -0.049325295, 0.7053843, 0.06975647, 0.70538443, -4.77, 2.05, -4.77)
 material_override = SubResource("MatArenaAccent")
 mesh = SubResource("ArenaColumnMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnNW" unique_id=5273278]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ColumnNW/Collider" unique_id=142076539]
+shape = SubResource("ArenaColumnCollisionShape")
 
 [node name="ArchN" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1944465569]
 transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 4.08, -6.75)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaArchBeamMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchN" unique_id=81479967]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchN/Collider" unique_id=1257977712]
+shape = SubResource("ArenaArchCollisionShape")
+
 [node name="ArchNE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=171957863]
 transform = Transform3D(0.70710677, 0, 0.70710677, 0.024677671, 0.99939084, -0.024677671, -0.70667595, 0.034899496, 0.70667595, 4.77, 4.08, -4.77)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchNE" unique_id=1938674035]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchNE/Collider" unique_id=1319982715]
+shape = SubResource("ArenaArchCollisionShape")
 
 [node name="ArchE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=2132752472]
 transform = Transform3D(0, 0, -1, -0.034899496, 0.99939084, 0, 0.99939084, 0.034899496, 0, 6.75, 4.08, 0)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaArchBeamMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchE" unique_id=1852585863]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchE/Collider" unique_id=637431721]
+shape = SubResource("ArenaArchCollisionShape")
+
 [node name="ArchSE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=34518056]
 transform = Transform3D(-0.70710677, 0, 0.70710677, 0.024677671, 0.99939084, 0.024677671, -0.70667595, 0.034899496, -0.70667595, 4.77, 4.08, 4.77)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchSE" unique_id=63470347]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchSE/Collider" unique_id=627533563]
+shape = SubResource("ArenaArchCollisionShape")
 
 [node name="ArchS" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=711886515]
 transform = Transform3D(-1, 0, 0, 0, 0.99939084, 0.034899496, 0, 0.034899496, -0.99939084, 0, 4.08, 6.75)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaArchBeamMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchS" unique_id=1148929589]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchS/Collider" unique_id=1085522707]
+shape = SubResource("ArenaArchCollisionShape")
+
 [node name="ArchSW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=809613878]
 transform = Transform3D(-0.7071067, 0, -0.7071068, -0.024677675, 0.99939084, 0.02467767, 0.70667595, 0.034899496, -0.7066759, -4.77, 4.08, 4.77)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchSW" unique_id=1765774171]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchSW/Collider" unique_id=1370053015]
+shape = SubResource("ArenaArchCollisionShape")
 
 [node name="ArchW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1755968081]
 transform = Transform3D(0, 0, 1, 0.034899496, 0.99939084, 0, -0.99939084, 0.034899496, 0, -6.75, 4.08, 0)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaArchBeamMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchW" unique_id=478167618]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchW/Collider" unique_id=818708115]
+shape = SubResource("ArenaArchCollisionShape")
+
 [node name="ArchNW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1930897497]
 transform = Transform3D(0.7071068, 0, -0.7071067, -0.02467767, 0.99939084, -0.024677675, 0.7066759, 0.034899496, 0.70667595, -4.77, 4.08, -4.77)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchNW" unique_id=1939579577]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ArchNW/Collider" unique_id=748206683]
+shape = SubResource("ArenaArchCollisionShape")
 
 [node name="ButtressN" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1642219957]
 transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.96, -7.35)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaButtressMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ButtressN" unique_id=1728613838]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ButtressN/Collider" unique_id=26992800]
+shape = SubResource("ArenaButtressCollisionShape")
+
 [node name="ButtressE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=724462944]
 transform = Transform3D(0, 0, -1, -0.034899496, 0.99939084, 0, 0.99939084, 0.034899496, 0, 7.35, 0.96, 0)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaButtressMesh")
+
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ButtressE" unique_id=463183845]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ButtressE/Collider" unique_id=652127937]
+shape = SubResource("ArenaButtressCollisionShape")
 
 [node name="ButtressS" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1139261403]
 transform = Transform3D(-1, 0, 0, 0, 0.99939084, 0.034899496, 0, 0.034899496, -0.99939084, 0, 0.96, 7.35)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaButtressMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ButtressS" unique_id=1905215132]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ButtressS/Collider" unique_id=1980394664]
+shape = SubResource("ArenaButtressCollisionShape")
+
 [node name="ButtressW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1075463246]
 transform = Transform3D(0, 0, 1, 0.034899496, 0.99939084, 0, -0.99939084, 0.034899496, 0, -7.35, 0.96, 0)
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaButtressMesh")
 
+[node name="Collider" type="StaticBody3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ButtressW" unique_id=348668231]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules/ButtressW/Collider" unique_id=1619673860]
+shape = SubResource("ArenaButtressCollisionShape")
+
 [node name="FinalPlatform" parent="World/Platforms" unique_id=183987220 instance=ExtResource("4")]
 transform = Transform3D(5.5, 0, 0, 0, 1, 0, 0, 0, 5.5, 74, 25, -8)
 
 [node name="RuinsPlatform" parent="World/Platforms" unique_id=2026567978 instance=ExtResource("4")]
-transform = Transform3D(6.6, 0, 0, 0, 1, 0, 0, 0, 6.6, 138, 34, -72)
+transform = Transform3D(6.6, 0, 0, 0, 1, 0, 0, 0, 6.6, 377.22852, 166.35518, -447.47708)
 
 [node name="Ruins" type="Node3D" parent="World/Platforms/RuinsPlatform" unique_id=652105667]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
@@ -511,61 +690,137 @@ transform = Transform3D(1, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155744, 0.9
 material_override = SubResource("MatRuinsStone")
 mesh = SubResource("RuinsColumnMesh")
 
+[node name="BrokenShardA" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=662416916]
+transform = Transform3D(0.9961947, -0.087155744, 0, 0.066765174, 0.7631294, -0.64278764, 0.05602263, 0.6403416, 0.7660445, -2.9000015, 2.199997, -6.87558)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsShardMesh")
+
+[node name="BrokenShardB" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=563924516]
+transform = Transform3D(0.9781476, 0.20791169, 0, -0.15110411, 0.7102641, -0.6872811, -0.14285715, 0.67234534, 0.7263101, 5.539009, 2.100006, -5.72966)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsShardMesh")
+
+[node name="BrokenShardC" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=864600625]
+transform = Transform3D(0.9396926, 0.34202015, 0, -0.19863228, 0.54697317, -0.81379765, -0.278847, 0.76448387, 0.58130807, -4.804947, 2, 3.7999992)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsShardMesh")
+
 [node name="DragonGuard" parent="World" unique_id=735975463 instance=ExtResource("6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 18.654394, -10.9)
-attack_damage = 0.0
+transform = Transform3D(-7.708599, 0, -10.467928, 0, 13, 0, 10.467928, 0, -7.708599, 27.719936, 20.286154, 143.03024)
 
 [node name="DragonKeycard" parent="World" unique_id=375519423 instance=ExtResource("7")]
-transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 56, 18.4, -14)
+transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 4.2002716, 18.364773, 134.52335)
 key_id = "key_3"
 use_any_free_slot = true
 auto_select_after_pickup = true
 
 [node name="BowPickup" parent="World" unique_id=591530306 instance=ExtResource("18_bow_item")]
-transform = Transform3D(0.94, 0, -0.34202015, 0, 1, 0, 0.34202015, 0, 0.94, 53.4, 18.35, -13.2)
+transform = Transform3D(0.94, 0, -0.34202015, 0, 1, 0, 0.34202015, 0, 0.94, 7.3183136, 18.688738, 105.031624)
 
 [node name="DragonEncounter" type="Node3D" parent="World" unique_id=905670534]
 
 [node name="ArenaTrigger" type="Area3D" parent="World/DragonEncounter" unique_id=2025829314]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 18.7, -14)
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 5.230503, 19.181684, 124.10852)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/DragonEncounter/ArenaTrigger" unique_id=2023299434]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.3356352)
 shape = SubResource("10")
 
 [node name="FightCamera" type="Camera3D" parent="World/DragonEncounter" unique_id=1781885947]
-transform = Transform3D(0.9363292, -0.0528949, 0.34701395, 0, 0.9885742, 0.15073343, -0.35102466, -0.141131, 0.9256341, 48.8, 22.2, -24.8)
+transform = Transform3D(0.9363617, -0.052907612, 0.34702685, 0, 0.9885768, 0.15071812, -0.35103685, -0.14112668, 0.9256654, 5.115986, 22.2, 107.40503)
 fov = 62.0
 
 [node name="DragonSpawnMarker" type="Marker3D" parent="World/DragonEncounter" unique_id=1025876110]
-transform = Transform3D(0.9063078, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.9063078, 56, 29.2, -22.6)
+transform = Transform3D(0.9063078, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.9063078, 27.72, 20.28, 143)
 
-[node name="RideReleaseArea" type="Area3D" parent="World/DragonEncounter" unique_id=623136873]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 138, 36, -72)
+[node name="IntroOrbitA" type="Marker3D" parent="World/DragonEncounter" unique_id=1774242152]
+transform = Transform3D(0.9961947, 0, 0.087155744, 0, 1, 0, -0.087155744, 0, 0.9961947, 11.8, 34.274178, 126.2)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/DragonEncounter/RideReleaseArea" unique_id=2036738851]
-shape = SubResource("11")
+[node name="IntroOrbitB" type="Marker3D" parent="World/DragonEncounter" unique_id=175416686]
+transform = Transform3D(0.9063078, 0, -0.42261827, 0, 1, 0, 0.42261827, 0, 0.9063078, -17.920666, 35.22655, 120.3)
+
+[node name="IntroOrbitC" type="Marker3D" parent="World/DragonEncounter" unique_id=1975631674]
+transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, -8.2, 30.896326, 140.814)
+
+[node name="IntroLandingMarker" type="Marker3D" parent="World/DragonEncounter" unique_id=1527674063]
+transform = Transform3D(0.98768836, 0, -0.15643448, 0, 1, 0, 0.15643448, 0, 0.98768836, 4.2, 19.2, 128.09532)
 
 [node name="DragonEscapeTarget" type="Marker3D" parent="World/DragonEncounter" unique_id=2033026958]
 transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, 182, 78, -118)
+
+[node name="RideReleaseArea" type="Area3D" parent="World/DragonEncounter" unique_id=1211385998]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 376.04306, 181.9955, -446.92188)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/DragonEncounter/RideReleaseArea" unique_id=14024218]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 21.44873, 0)
+shape = SubResource("Level3RideReleaseShape")
 
 [node name="Level4Gate" parent="World" unique_id=2147423050 instance=ExtResource("8")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 138, 36.25, -72)
 
 [node name="LevelFallDeathZone" type="Area3D" parent="World" unique_id=959243451]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, -94, -12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, -78.88209, -12)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/LevelFallDeathZone" unique_id=1738846207]
 shape = SubResource("Level3FallDeathShape")
 
-[node name="VerticalBlocker" type="StaticBody3D" parent="World" unique_id=430531576]
-transform = Transform3D(0.9063078, 0, -0.42261827, 0, 1, 0, 0.42261827, 0, 0.9063078, 47.4, 22.0, -11.6)
+[node name="BoundedBox" type="Node3D" parent="World" unique_id=484254138]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 22, -8)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/VerticalBlocker" unique_id=2093335099]
+[node name="WallNorth" type="StaticBody3D" parent="World/BoundedBox" unique_id=2089305126]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -520)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallNorth" unique_id=1950110177]
 shape = SubResource("Level3VerticalBlockerShape")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/VerticalBlocker" unique_id=2027836139]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallNorth" unique_id=1134682581]
+visible = false
 material_override = SubResource("MatArenaStone")
 mesh = SubResource("Level3VerticalBlockerMesh")
+
+[node name="WallSouth" type="StaticBody3D" parent="World/BoundedBox" unique_id=1390595452]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 520)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallSouth" unique_id=1196763104]
+shape = SubResource("Level3VerticalBlockerShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallSouth" unique_id=511543066]
+visible = false
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("Level3VerticalBlockerMesh")
+
+[node name="WallEast" type="StaticBody3D" parent="World/BoundedBox" unique_id=1655392387]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 520, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallEast" unique_id=943764736]
+shape = SubResource("Level3VerticalBlockerShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallEast" unique_id=40237817]
+visible = false
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("Level3VerticalBlockerMesh")
+
+[node name="WallWest" type="StaticBody3D" parent="World/BoundedBox" unique_id=1584386096]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -520, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallWest" unique_id=1283695851]
+shape = SubResource("Level3VerticalBlockerShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallWest" unique_id=2083733939]
+visible = false
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("Level3VerticalBlockerMesh")
+
+[node name="WallTop" type="StaticBody3D" parent="World/BoundedBox" unique_id=1201095731]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 220, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundedBox/WallTop" unique_id=1680268187]
+shape = SubResource("Level3BoundedTopShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/BoundedBox/WallTop" unique_id=689244133]
+visible = false
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("Level3BoundedTopMesh")
 
 [node name="AnomalyEncounter" type="Node3D" parent="World" unique_id=206546344]
 
@@ -665,6 +920,26 @@ mesh = SubResource("CourtLineLong")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, 0)
 material_override = SubResource("MatCourtLine")
 mesh = SubResource("CourtLineMid")
+
+[node name="CourtBase2" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=309092331]
+transform = Transform3D(0.93660784, 0.16514921, -0.30901676, 0.17364818, -0.9848077, 1.2666146e-07, -0.30432233, -0.053660322, -0.9510566, -25.10188, 19.000002, 69.432945)
+material_override = SubResource("MatCourt")
+mesh = SubResource("CourtMesh")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="World/SurrealShapes/CourtBase2" unique_id=1760390905]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/SurrealShapes/CourtBase2/StaticBody3D" unique_id=584338464]
+shape = SubResource("CourtBaseCollisionShape")
+
+[node name="CourtBase3" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=357950035]
+transform = Transform3D(0.93623555, -0.20094611, -0.2882418, -0.17564394, -0.9781317, 0.11139108, -0.3043224, -0.0536603, -0.9510567, 2.2380207, 15.334953, 69.42006)
+material_override = SubResource("MatCourt")
+mesh = SubResource("CourtMesh")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="World/SurrealShapes/CourtBase3" unique_id=1328345274]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/SurrealShapes/CourtBase3/StaticBody3D" unique_id=727468626]
+shape = SubResource("CourtBaseCollisionShape")
 
 [node name="FloatingCarA" type="Node3D" parent="World/SurrealShapes" unique_id=34366516 groups=["surreal_float"]]
 transform = Transform3D(0.7686703, -0.3105629, 0.5591929, -0.3746066, -0.92718387, 8.742278e-08, 0.51847464, -0.20947742, -0.8290376, 15, 15, 16)
@@ -789,6 +1064,11 @@ transform = Transform3D(0.8518604, -0.46683878, 0.23747711, 0.43031704, 0.882280
 material_override = SubResource("MatCarA")
 mesh = SubResource("7")
 
+[node name="Debris12" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1965844926 groups=["surreal_float"]]
+transform = Transform3D(0.52456963, 0.7007666, 0.48347986, -0.7516005, 0.64792675, -0.12364271, -0.39990413, -0.29852444, 0.86657935, 10.7355, 17.502901, 81.78273)
+material_override = SubResource("MatCarB")
+mesh = SubResource("7")
+
 [node name="Debris09" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=300201512 groups=["surreal_float"]]
 transform = Transform3D(0.9673976, 0.20975703, 0.14192992, -0.06912783, 0.75781727, -0.6487944, -0.24364614, 0.6178308, 0.7476106, -62.976208, 19.911686, 59.64926)
 material_override = SubResource("MatCreatureSkin")
@@ -810,7 +1090,7 @@ material_override = SubResource("MatCourtLine")
 mesh = SubResource("5")
 
 [node name="Debris05" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=168922906 groups=["surreal_float"]]
-transform = Transform3D(0.74225515, 0.088068426, -0.66430515, 0.14959905, 0.9445311, 0.2923717, 0.6532056, -0.3163938, 0.6879081, 24, 11, -12)
+transform = Transform3D(0.74225515, 0.088068426, -0.66430515, 0.14959905, 0.9445311, 0.2923717, 0.6532056, -0.3163938, 0.6879081, 29.689878, 11, -12)
 material_override = SubResource("MatCarA")
 mesh = SubResource("8")
 
@@ -829,6 +1109,11 @@ transform = Transform3D(0.76216775, -0.35807008, 0.53933865, 0.3386916, 0.930547
 material_override = SubResource("MatCreatureSkin")
 mesh = SubResource("7")
 
+[node name="Debris11" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=801820641 groups=["surreal_float"]]
+transform = Transform3D(0.864455, -0.44172883, -0.23998606, 0.48151326, 0.8647256, 0.1428095, 0.14443898, -0.23900887, 0.9602147, -39.8581, 24.184933, 61.759064)
+material_override = SubResource("MatCarA")
+mesh = SubResource("8")
+
 [node name="DragonRidePath" type="Node3D" parent="World" unique_id=1292534026]
 
 [node name="Start" type="Marker3D" parent="World/DragonRidePath" unique_id=1031007858]
@@ -842,3 +1127,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 28.2, -8)
 
 [node name="PlayerDrop" type="Marker3D" parent="World/DragonRidePath" unique_id=452536603]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71, 27.2, -8)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=841029472]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.677142, 17.868427, 119.07306)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=1915996883]
+shape = SubResource("CylinderShape3D_ghs8o")

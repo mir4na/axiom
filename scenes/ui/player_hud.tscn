@@ -44,6 +44,59 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="SwordTopDownOverlay" type="Control" parent="." unique_id=140833001]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = SubResource("Theme_hud_font")
+
+[node name="Tint" type="ColorRect" parent="SwordTopDownOverlay" unique_id=140833002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.04, 0.5)
+
+[node name="FrameTop" type="ColorRect" parent="SwordTopDownOverlay" unique_id=140833003]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 58.0
+grow_horizontal = 2
+color = Color(0.94, 0.24, 0.2, 0.32)
+
+[node name="FrameBottom" type="ColorRect" parent="SwordTopDownOverlay" unique_id=140833004]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -58.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0.94, 0.24, 0.2, 0.32)
+
+[node name="Label" type="Label" parent="SwordTopDownOverlay" unique_id=140833005]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 8.0
+offset_bottom = 50.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.01, 0.01, 0.01, 0.92)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 30
+text = "SWORD SKILL TARGETING"
+horizontal_alignment = 1
+
 [node name="StatusPanel" type="Control" parent="." unique_id=1672741001]
 layout_mode = 3
 anchors_preset = 0

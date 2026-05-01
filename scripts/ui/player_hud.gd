@@ -38,6 +38,7 @@ const TIME_STOP_OVERLAY_SHADER := preload("res://shaders/time_stop_overlay.gdsha
 @onready var _rewind_stun_track: ColorRect = $RewindStunContainer/Track
 @onready var _rewind_stun_fill: ColorRect = $RewindStunContainer/Track/Fill
 @onready var _rewind_stun_label: Label = $RewindStunContainer/Label
+@onready var _sword_topdown_overlay: Control = $SwordTopDownOverlay
 
 var _mark_nodes: Dictionary = {}
 var _invert_tween: Tween
@@ -134,6 +135,8 @@ func _ready() -> void:
 	prompt_label.visible = false
 	if glitch_overlay != null:
 		glitch_overlay.visible = false
+	if _sword_topdown_overlay != null:
+		_sword_topdown_overlay.visible = false
 	_setup_weapon_hud()
 	_setup_threat_warning()
 	_setup_time_stop_overlay()
@@ -154,6 +157,11 @@ func _ready() -> void:
 	hide_boss_bar()
 	call_deferred("_update_status_bars")
 	_slot_effect_tweens.resize(3)
+
+func set_sword_skill_topdown_overlay_active(active: bool) -> void:
+	if _sword_topdown_overlay == null:
+		return
+	_sword_topdown_overlay.visible = active
 
 func set_rewind_stun_state(active: bool, ratio: float = 0.0) -> void:
 	_rewind_stun_visual_active = active

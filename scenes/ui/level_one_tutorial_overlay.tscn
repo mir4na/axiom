@@ -77,7 +77,7 @@ theme_override_colors/font_color = Color(1, 0.92, 0.64, 1)
 theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.92)
 theme_override_constants/outline_size = 10
 theme_override_fonts/font = ExtResource("1_game_font")
-theme_override_font_sizes/font_size = 60
+theme_override_font_sizes/font_size = 90
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -108,7 +108,7 @@ offset_bottom = 62.0
 theme_override_colors/font_color = Color(0.98, 0.95, 0.8, 1)
 theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.9)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 60
 text = "AXIOM"
 horizontal_alignment = 1
 
@@ -121,7 +121,7 @@ offset_top = 72.0
 offset_right = -24.0
 offset_bottom = -54.0
 theme_override_colors/font_color = Color(0.88, 0.96, 0.98, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 42
 horizontal_alignment = 1
 autowrap_mode = 3
 
@@ -135,7 +135,7 @@ offset_top = -42.0
 offset_right = -24.0
 offset_bottom = -12.0
 theme_override_colors/font_color = Color(1, 0.84, 0.44, 1)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 36
 text = "[SPACE] NEXT"
 horizontal_alignment = 2
 
@@ -161,7 +161,7 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.9, 0.96, 1, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 27
 autowrap_mode = 3
 
 [node name="WarningCallout" type="Panel" parent="." unique_id=294537877]
@@ -186,7 +186,7 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.88, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 27
 autowrap_mode = 3
 
 [node name="CommitCallout" type="Panel" parent="." unique_id=1796255017]
@@ -211,7 +211,7 @@ offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.98, 0.96, 0.84, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 27
 autowrap_mode = 3
 
 [node name="TutorialContent" type="Control" parent="." unique_id=17462017]

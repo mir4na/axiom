@@ -1,6 +1,7 @@
 extends Node3D
 
 signal destroyed(obstacle: Node3D)
+signal projectile_fired(obstacle: Node3D, projectile: Node3D)
 
 @export var projectile_scene: PackedScene = preload("res://scenes/objects/electric_orb.tscn")
 @export var max_health: float = 120.0
@@ -9,6 +10,7 @@ signal destroyed(obstacle: Node3D)
 @export var projectile_damage: float = 50.0
 @export var projectile_radius: float = 1.25
 @export var detection_range: float = 260.0
+@export var sfx_fireball_cast: AudioStream
 
 @onready var _core_body: StaticBody3D = get_node_or_null("CoreBody") as StaticBody3D
 @onready var _core_collision: CollisionShape3D = get_node_or_null("CoreBody/CollisionShape3D") as CollisionShape3D
@@ -22,6 +24,7 @@ signal destroyed(obstacle: Node3D)
 @onready var _health_pivot: Node3D = get_node_or_null("HealthPivot") as Node3D
 @onready var _health_fill: MeshInstance3D = get_node_or_null("HealthPivot/Fill") as MeshInstance3D
 @onready var _health_back: MeshInstance3D = get_node_or_null("HealthPivot/Back") as MeshInstance3D
+@onready var _fireball_sfx_player: AudioStreamPlayer3D = get_node_or_null("FireballSFX") as AudioStreamPlayer3D
 
 var _health: float = 120.0
 var _cooldown_timer: float = 0.0
@@ -38,6 +41,8 @@ var _shot_direction: Vector3 = Vector3.ZERO
 func _ready() -> void:
 	_setup_materials()
 	reset_obstacle_state()
+	if _fireball_sfx_player != null and sfx_fireball_cast != null:
+		_fireball_sfx_player.stream = sfx_fireball_cast
 
 func _physics_process(delta: float) -> void:
 	_cleanup_projectiles()
@@ -155,6 +160,7 @@ func get_nearest_projectile_distance_to(point: Vector3) -> float:
 func _fire_projectile(player: CharacterBody3D) -> void:
 	if projectile_scene == null:
 		return
+	_play_fireball_sfx()
 	var projectile_node: Node3D = projectile_scene.instantiate() as Node3D
 	if projectile_node == null:
 		return
@@ -182,7 +188,18 @@ func _fire_projectile(player: CharacterBody3D) -> void:
 	if projectile_node.has_signal("finished"):
 		projectile_node.connect("finished", Callable(self, "_on_projectile_finished"))
 	_projectiles.append(projectile_node)
+	emit_signal("projectile_fired", self, projectile_node)
 	_flash_corridor_lights()
+
+func _play_fireball_sfx() -> void:
+	if _fireball_sfx_player == null:
+		return
+	if sfx_fireball_cast != null and _fireball_sfx_player.stream != sfx_fireball_cast:
+		_fireball_sfx_player.stream = sfx_fireball_cast
+	if _fireball_sfx_player.stream == null:
+		return
+	_fireball_sfx_player.pitch_scale = randf_range(0.97, 1.03)
+	_fireball_sfx_player.play()
 
 func _on_projectile_finished(projectile: Node3D) -> void:
 	var index: int = _projectiles.find(projectile)

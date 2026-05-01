@@ -2,9 +2,10 @@
 
 [ext_resource type="Script" uid="uid://buwo6lrjl2yqn" path="res://scripts/objects/dragon_guard.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://d1vdxemypofwy" path="res://scenes/objects/dragon.tscn" id="2"]
+[ext_resource type="AudioStream" path="res://audio/sfx/fireball.mp3" id="3_fireball_sfx"]
 
 [sub_resource type="BoxShape3D" id="1"]
-size = Vector3(4.8, 3.4, 6.2)
+size = Vector3(3.5925171, 1.378125, 3.0214355)
 
 [sub_resource type="StandardMaterial3D" id="3"]
 transparency = 1
@@ -21,8 +22,10 @@ albedo_color = Color(1, 0.18, 0.22, 0.94)
 
 [node name="DragonGuard" type="StaticBody3D" unique_id=1112488912]
 script = ExtResource("1")
+sfx_fireball_cast = ExtResource("3_fireball_sfx")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=439576964]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.024896264, 0.59594727, -0.42233884)
 shape = SubResource("1")
 
 [node name="ModelRoot" type="Node3D" parent="." unique_id=501539982]
@@ -39,8 +42,15 @@ light_color = Color(0.5, 0.3, 0.9, 1)
 light_energy = 1.25
 omni_range = 8.5
 
+[node name="FireballSFX" type="AudioStreamPlayer3D" parent="." unique_id=1420464482]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+stream = ExtResource("3_fireball_sfx")
+max_distance = 80.0
+unit_size = 3.5
+max_polyphony = 8
+
 [node name="HealthPivot" type="Node3D" parent="." unique_id=1661643053]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7707477, 0)
 
 [node name="HealthBack" type="MeshInstance3D" parent="HealthPivot" unique_id=670592890]
 material_override = SubResource("3")

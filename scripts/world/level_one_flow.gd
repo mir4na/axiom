@@ -3,6 +3,7 @@ extends RefCounted
 const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const BROKEN_HOUSE_SCENE := preload("res://scenes/objects/broken_house.tscn")
 const METEOR_SHADER := preload("res://shaders/spatial_glitch.gdshader")
+const DEFAULT_METEOR_EXPLOSION_SFX := preload("res://audio/sfx/explosion.mp3")
 const LEVEL_ONE_TUTORIAL_OVERLAY_SCENE := preload("res://scenes/ui/level_one_tutorial_overlay.tscn")
 const ESCAPE_DURATION := 60.0
 const SMALL_METEOR_INTERVAL := 3.0
@@ -919,6 +920,7 @@ func _play_meteor_explosion(position: Vector3, scale: float, duration: float, da
 		var player_distance: float = _world.player.global_position.distance_to(position)
 		if player_distance <= damage_radius:
 			_world.player.call("take_damage", damage_amount)
+	_play_meteor_explosion_sfx(position, scale)
 	var explosion := Node3D.new()
 	_world.add_child(explosion)
 	explosion.global_position = position
@@ -948,6 +950,19 @@ func _play_meteor_explosion(position: Vector3, scale: float, duration: float, da
 	burst.tween_property(sphere, "transparency", 1.0, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await burst.finished
 	explosion.queue_free()
+
+func _play_meteor_explosion_sfx(position: Vector3, scale: float) -> void:
+	if _world == null:
+		return
+	var stream: AudioStream = _world.get("sfx_meteor_explosion") as AudioStream
+	if stream == null:
+		stream = DEFAULT_METEOR_EXPLOSION_SFX
+	if stream == null:
+		return
+	var volume_db: float = lerpf(-4.0, -0.8, clampf((scale - 3.0) / 9.0, 0.0, 1.0))
+	var max_distance: float = lerpf(56.0, 128.0, clampf(scale / 12.0, 0.0, 1.0))
+	if _world.has_method("play_positional_sfx"):
+		_world.call("play_positional_sfx", stream, position, volume_db, randf_range(0.97, 1.03), max_distance)
 
 func _make_glitch_meteor_material(color: Color, energy: float, rim: float) -> ShaderMaterial:
 	var material := ShaderMaterial.new()

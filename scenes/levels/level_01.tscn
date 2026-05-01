@@ -13,6 +13,7 @@
 [ext_resource type="AudioStream" path="res://audio/bgm/bgm_level_4.mp3" id="15_bgm_level4"]
 [ext_resource type="AudioStream" path="res://audio/sfx/in-rewind-bgfx.mp3" id="16_sfx_glitch"]
 [ext_resource type="AudioStream" path="res://audio/sfx/sky_cracking.mp3" id="17_sfx_sky_cracking"]
+[ext_resource type="AudioStream" path="res://audio/sfx/explosion.mp3" id="18_sfx_explosion"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
 sky_top_color = Color(0.04, 0.02, 0.12, 1)
@@ -112,6 +113,7 @@ bgm_level_four = ExtResource("15_bgm_level4")
 bgm_ending_credits = ExtResource("15_bgm_level4")
 sfx_glitch_overlay = ExtResource("16_sfx_glitch")
 sfx_sky_cracking = ExtResource("17_sfx_sky_cracking")
+sfx_meteor_explosion = ExtResource("18_sfx_explosion")
 
 [node name="Audio" type="Node" parent="World"]
 

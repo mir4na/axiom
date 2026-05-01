@@ -8,6 +8,7 @@ var _pulse_time: float = 0.0
 var _decay_started: bool = false
 
 @export var despawn_after_seconds: float = 15.0
+@export var sfx_landing_thud: AudioStream
 
 @onready var _collision: CollisionShape3D = $CollisionShape3D
 @onready var _core: MeshInstance3D = $Core
@@ -15,12 +16,20 @@ var _decay_started: bool = false
 @onready var _trail: MeshInstance3D = $Trail
 @onready var _trace_beam: MeshInstance3D = $TraceBeam
 @onready var _light: OmniLight3D = $GlowLight
+@onready var _impact_particles: GPUParticles3D = $ImpactParticles
+@onready var _landing_sfx: AudioStreamPlayer3D = $LandingSFX
 
 func _ready() -> void:
 	prompt_text = "Press E to pick up Sword Skill"
+	add_to_group("sword_skill_drop")
 	_setup_aura_materials()
 	set_highlight_enabled(true)
 	set_highlight_strength(1.0)
+	if _impact_particles != null:
+		_impact_particles.emitting = false
+		_impact_particles.visible = false
+	if _landing_sfx != null and sfx_landing_thud != null:
+		_landing_sfx.stream = sfx_landing_thud
 	call_deferred("_play_starfall_arrival")
 
 func _process(delta: float) -> void:
@@ -80,6 +89,9 @@ func interact() -> void:
 	await tween.finished
 	queue_free()
 
+func is_traceable() -> bool:
+	return is_inside_tree() and visible and not _picked_up and _landing_ready
+
 func set_highlight_enabled(enabled: bool) -> void:
 	_highlight_enabled = (enabled or _persistent_highlight) and visible and not _picked_up
 	if _aura != null:
@@ -135,7 +147,9 @@ func _play_starfall_arrival() -> void:
 	fall.tween_property(self, "global_position", landing_position, 0.8).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	fall.parallel().tween_property(self, "scale", Vector3.ONE * 1.12, 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await fall.finished
+	_play_landing_thud()
 	_spawn_dark_impact_pulse(landing_position)
+	_emit_ground_impact_particles(landing_position)
 	var impact: Tween = create_tween().set_parallel(true)
 	impact.tween_property(self, "scale", Vector3.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	if _light != null:
@@ -216,3 +230,21 @@ func _expire_drop() -> void:
 	await fade.finished
 	if is_inside_tree():
 		queue_free()
+
+func _emit_ground_impact_particles(landing_position: Vector3) -> void:
+	if _impact_particles == null:
+		return
+	_impact_particles.global_position = landing_position + Vector3(0.0, 0.04, 0.0)
+	_impact_particles.visible = true
+	_impact_particles.restart()
+	_impact_particles.emitting = true
+
+func _play_landing_thud() -> void:
+	if _landing_sfx == null:
+		return
+	if sfx_landing_thud != null and _landing_sfx.stream != sfx_landing_thud:
+		_landing_sfx.stream = sfx_landing_thud
+	if _landing_sfx.stream == null:
+		return
+	_landing_sfx.pitch_scale = randf_range(0.97, 1.03)
+	_landing_sfx.play()

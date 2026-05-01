@@ -19,8 +19,8 @@ const LEVEL_ONE_WHITE_META := "level_one_white_intro"
 const LEVEL_FOUR_RETURN_WAKE_META := "level_four_return_wake"
 const ENDING_BOARD_LINE_1 := "Congratulations."
 const ENDING_BOARD_LINE_2 := "Thank you for playing this game."
-const ENDING_BOARD_LINE_3 := "Hope your day is wonderful."
-const ENDING_BOARD_FOOTER_TEXT := "Game Development Individual Assignment\nMuhammad Afwan Hafizh\n2306208855"
+const ENDING_BOARD_LINE_3 := "If you're working, may your work be easier."
+const ENDING_BOARD_FOOTER_TEXT := "If you're writing a thesis, may your process be eased.\nIf you're doing assignments, may your tasks go smoothly."
 const ENDING_BOARD_CAMERA_SHOT_DURATION := 0.9
 const ENDING_BOARD_TYPE_INTERVAL := 0.04
 const ENDING_BOARD_LINE_PAUSE := 0.26
@@ -60,6 +60,7 @@ const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa07
 @export var sfx_sky_crack_grow: AudioStream
 @export var sfx_sky_crack_break: AudioStream
 @export var sfx_sky_cracking: AudioStream
+@export var sfx_meteor_explosion: AudioStream
 @export var sfx_board_activate: AudioStream
 @export var sfx_credits_start: AudioStream
 @export var sfx_ending_return_wake: AudioStream
@@ -157,6 +158,7 @@ var _level_two_axia_cinematic_transform_from_scene: Transform3D = Transform3D.ID
 var _level_two_fall_death_zone: Area3D
 var _level_two_room3_sequence_running: bool = false
 var _level_two_room3_sequence_played: bool = false
+var _level_two_fireball_axiom_hint_shown: bool = false
 var _ending_mode_active: bool = false
 var _ending_cinematic_running: bool = false
 var _ending_credits_running: bool = false
@@ -323,6 +325,36 @@ func _play_sfx_stream(stream: AudioStream) -> void:
 		return
 	_sfx_player_2d.stream = stream
 	_sfx_player_2d.play()
+
+func play_positional_sfx(stream: AudioStream, position: Vector3, volume_db: float = -2.0, pitch_scale: float = 1.0, max_distance: float = 92.0) -> void:
+	if stream == null:
+		return
+	var player_3d := AudioStreamPlayer3D.new()
+	player_3d.name = "TempPositionalSFX"
+	player_3d.stream = stream
+	player_3d.bus = "Master"
+	player_3d.volume_db = volume_db
+	player_3d.pitch_scale = pitch_scale
+	player_3d.max_distance = maxf(8.0, max_distance)
+	player_3d.unit_size = 3.0
+	player_3d.max_polyphony = 1
+	add_child(player_3d)
+	player_3d.global_position = position
+	player_3d.finished.connect(Callable(self, "_free_temp_positional_sfx_player").bind(player_3d))
+	player_3d.play()
+	var fallback_lifetime: float = maxf(1.5, stream.get_length() + 0.6)
+	call_deferred("_free_temp_positional_sfx_player_after", player_3d, fallback_lifetime)
+
+func _free_temp_positional_sfx_player(player_3d: AudioStreamPlayer3D) -> void:
+	if player_3d != null and is_instance_valid(player_3d):
+		player_3d.queue_free()
+
+func _free_temp_positional_sfx_player_after(player_3d: AudioStreamPlayer3D, delay_seconds: float) -> void:
+	if player_3d == null or not is_instance_valid(player_3d):
+		return
+	await get_tree().create_timer(maxf(0.2, delay_seconds)).timeout
+	if player_3d != null and is_instance_valid(player_3d):
+		player_3d.queue_free()
 
 func _process(delta: float) -> void:
 	var current: float = scale.x
@@ -948,6 +980,9 @@ func _cache_level_two_targets() -> void:
 		var destroyed_callable: Callable = Callable(self, "_on_level_two_corridor_obstacle_destroyed")
 		if _level_two_corridor_obstacle.has_signal("destroyed") and not _level_two_corridor_obstacle.is_connected("destroyed", destroyed_callable):
 			_level_two_corridor_obstacle.connect("destroyed", destroyed_callable)
+		var fireball_fired_callable: Callable = Callable(self, "_on_level_two_corridor_obstacle_projectile_fired")
+		if _level_two_corridor_obstacle.has_signal("projectile_fired") and not _level_two_corridor_obstacle.is_connected("projectile_fired", fireball_fired_callable):
+			_level_two_corridor_obstacle.connect("projectile_fired", fireball_fired_callable)
 		if _level_two_corridor_obstacle.has_method("reset_obstacle_state"):
 			_level_two_corridor_obstacle.call("reset_obstacle_state")
 		elif _level_two_corridor_obstacle.has_method("set_obstacle_enabled"):
@@ -975,6 +1010,7 @@ func _cache_level_two_targets() -> void:
 	_level_two_enemy_defeated = 0
 	_level_two_room3_sequence_running = false
 	_level_two_room3_sequence_played = false
+	_level_two_fireball_axiom_hint_shown = false
 	if is_instance_valid(_level_two_portal):
 		_level_two_portal.visible = false
 		_level_two_portal.scale = Vector3.ZERO
@@ -1220,6 +1256,7 @@ func _spawn_level_two_room3_keycard(spawn_position: Vector3) -> void:
 
 func _start_level_two_obstacle_phase() -> void:
 	_objective_state = "level2_obstacle"
+	_level_two_fireball_axiom_hint_shown = false
 	_show_objective("Destroy the electric obstacle")
 	if _level_two_room3_button != null and is_instance_valid(_level_two_room3_button):
 		_level_two_room3_button.set("locked", true)
@@ -1238,6 +1275,17 @@ func _on_level_two_corridor_obstacle_destroyed(_obstacle: Node3D) -> void:
 		_level_two_room3_button.set("consume_required_item", true)
 	_objective_state = "level2_room3_door"
 	_show_objective("Open room 3")
+
+func _on_level_two_corridor_obstacle_projectile_fired(_obstacle: Node3D, _projectile: Node3D) -> void:
+	if _level_two_fireball_axiom_hint_shown:
+		return
+	if _objective_state != "level2_obstacle":
+		return
+	_level_two_fireball_axiom_hint_shown = true
+	call_deferred("_play_level_two_fireball_axiom_hint_subtitle")
+
+func _play_level_two_fireball_axiom_hint_subtitle() -> void:
+	await _show_subtitle("Use Axiom to avoid fireball.", 2.1)
 
 func _on_level_two_room3_opened() -> void:
 	if _level_two_room3_sequence_running or _level_two_room3_sequence_played:
@@ -1315,7 +1363,7 @@ func _play_level_two_room3_sequence() -> void:
 	var rose_target: Vector3 = _level_two_rose_focus.global_position if _level_two_rose_focus != null else ((_level_two_rose.global_position if _level_two_rose != null else Vector3(0.0, 1.5, 0.0)) + Vector3(0.0, 1.35, 0.0))
 	var player_view_transform: Transform3D = player_camera.global_transform if player_camera != null else _make_look_transform(rose_target + Vector3(0.0, 1.6, -5.0), rose_target)
 	var axia_camera_transform: Transform3D = _resolve_level_two_axia_camera_transform(player_view_transform)
-	var room_focus_transform: Transform3D = _make_look_transform(player_view_transform.origin, rose_target)
+	var room_focus_transform: Transform3D = Transform3D(axia_camera_transform.basis, player_view_transform.origin)
 	var use_scene_axia_camera: bool = _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera)
 	_intro_camera.global_transform = player_view_transform
 	_intro_camera.make_current()
@@ -2029,6 +2077,7 @@ func _play_meteor_impact() -> void:
 		window_position = house.to_global(Vector3(2.0, 0.3, 9.0))
 	var start_position := window_position + Vector3(2.6, 1.6, 18.0)
 	var impact_position := window_position + Vector3(0.35, 0.3, 1.1)
+	play_positional_sfx(sfx_meteor_explosion, impact_position, -1.5, randf_range(0.97, 1.03), 120.0)
 	_meteor.visible = true
 	_meteor_light.visible = true
 	_meteor.global_position = start_position
@@ -2493,25 +2542,44 @@ func _show_ending_credits_roll() -> void:
 	background.color = Color(0, 0, 0, 1)
 	credits_root.add_child(background)
 	var credit_text := Label.new()
-	credit_text.anchor_left = 0.08
+	credit_text.anchor_left = 0.5
 	credit_text.anchor_top = 0.0
-	credit_text.anchor_right = 0.92
+	credit_text.anchor_right = 0.5
 	credit_text.anchor_bottom = 0.0
+	credit_text.offset_left = -430.0
+	credit_text.offset_right = 430.0
 	credit_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	credit_text.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	credit_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credit_text.add_theme_font_size_override("font_size", 68)
 	credit_text.add_theme_color_override("font_color", Color(0.96, 0.96, 0.96, 1.0))
-	credit_text.text = "CREDITS\n\nAXIOM\n\nDesign, Programming, Art\nmir4na\n\nSpecial Thanks\nYou, for playing\n\nThank you for playing this game."
-	credit_text.custom_minimum_size = Vector2(viewport_size.x * 0.84, 1680.0)
+	credit_text.text = "CREDITS\n\nGame Designer, Programmer\nmir4na, codex, antigravity\n\nAssets\nCreators who published free models\n\nSound Effects and BGM\nCreators on YouTube\n\nAlso Thanks To\nGodot Engine\nGodot Community\nMixamo"
+	credit_text.custom_minimum_size = Vector2(860.0, 1820.0)
 	credit_text.size = credit_text.custom_minimum_size
 	credits_root.add_child(credit_text)
 	var start_y: float = viewport_size.y + 110.0
 	var end_y: float = -credit_text.custom_minimum_size.y - 180.0
-	credit_text.position = Vector2(0.0, start_y)
+	credit_text.position = Vector2(-430.0, start_y)
 	var credits_tween := create_tween()
 	credits_tween.tween_property(credit_text, "position:y", end_y, 23.0).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	await credits_tween.finished
+	var thanks_label := Label.new()
+	thanks_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	thanks_label.offset_left = -420.0
+	thanks_label.offset_top = -36.0
+	thanks_label.offset_right = 420.0
+	thanks_label.offset_bottom = 36.0
+	thanks_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	thanks_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	thanks_label.add_theme_font_size_override("font_size", 56)
+	thanks_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
+	thanks_label.text = "Again, Thanks for Playing this Game ^^."
+	thanks_label.modulate.a = 0.0
+	credits_root.add_child(thanks_label)
+	var thanks_tween := create_tween()
+	thanks_tween.tween_property(thanks_label, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await thanks_tween.finished
+	await get_tree().create_timer(1.8).timeout
 	credits_root.queue_free()
 
 func _return_to_main_menu_after_credits() -> void:
@@ -2519,7 +2587,10 @@ func _return_to_main_menu_after_credits() -> void:
 	if screen_fx != null and screen_fx.has_method("set_gameplay_filter_enabled"):
 		screen_fx.set_gameplay_filter_enabled(false)
 	_stop_bgm_stream()
-	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
+	if screen_fx != null and screen_fx.has_method("reboot_to_scene"):
+		await screen_fx.reboot_to_scene(MAIN_MENU_SCENE_PATH, true)
+	else:
+		get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
 
 func _set_sky_crack_intensity(value: float) -> void:
 	if _sky_crack_overlay == null:

@@ -54,6 +54,7 @@ var _base_bloom_energy: float = 3.0
 var _enrage_visual_active: bool = false
 var _enrage_warning_intensity: float = 0.0
 var _first_rewind_taunt_played: bool = false
+var _first_sword_skill_hint_shown: bool = false
 
 func _init(world_ref) -> void:
 	_world = world_ref
@@ -73,6 +74,7 @@ func process_frame() -> void:
 	_try_recover_intro_to_encounter()
 	if _encounter_started and not _completed:
 		_update_lightning_skill_drop()
+		_update_sword_skill_drop_hint()
 	if _completed:
 		return
 	if not _center_reached:
@@ -308,6 +310,26 @@ func _hide_hint() -> void:
 		_world._hint_marker.visible = false
 	if _world._hint_label != null:
 		_world._hint_label.visible = false
+
+func _update_sword_skill_drop_hint() -> void:
+	if _world == null or _world.player == null or not is_instance_valid(_world.player):
+		return
+	var nearest: Node3D = null
+	var nearest_distance: float = INF
+	for node in _world.get_tree().get_nodes_in_group("sword_skill_drop"):
+		var drop: Node3D = node as Node3D
+		if drop == null or not is_instance_valid(drop) or not drop.visible:
+			continue
+		if drop.has_method("is_traceable") and not bool(drop.call("is_traceable")):
+			continue
+		var distance: float = _world.player.global_position.distance_to(drop.global_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest = drop
+	if nearest == null:
+		_hide_hint()
+		return
+	_world._update_hint_marker(nearest.global_position + Vector3(0.0, 1.2, 0.0), "SWORD", nearest.global_position)
 
 func _look_to_marker(marker: Node3D, duration: float) -> void:
 	if marker == null or _world._intro_camera == null:
@@ -635,6 +657,14 @@ func _spawn_lightning_skill_drop() -> void:
 		center = _world.player.global_position
 	var target_position: Vector3 = _find_valid_lightning_drop_position(center)
 	drop_item.global_position = target_position
+	if not _first_sword_skill_hint_shown:
+		_first_sword_skill_hint_shown = true
+		call_deferred("_show_first_sword_skill_drop_hint")
+
+func _show_first_sword_skill_drop_hint() -> void:
+	if _world == null:
+		return
+	await _world._show_subtitle("Grab the Sword Skill, then press Left Mouse to use it.", 2.8, "")
 
 func _find_valid_lightning_drop_position(center: Vector3) -> Vector3:
 	var fallback: Vector3 = Vector3(center.x, _lightning_drop_fallback_y, center.z)

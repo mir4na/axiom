@@ -56,6 +56,7 @@ const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 @export var wave_teleport_player_clearance: float = 4.8
 @export var wave_teleport_glitch_duration: float = 0.34
 @export var wave_teleport_fade_duration: float = 0.12
+@export var hit_flash_duration: float = 0.15
 @export_group("Audio Placeholder")
 @export var sfx_manifest: AudioStream
 @export var sfx_teleport: AudioStream
@@ -100,6 +101,9 @@ var _aura_light_initial_energy: float = 0.0
 var _self_initial_scale: Vector3 = Vector3.ONE
 var _glitch_meshes: Array[MeshInstance3D] = []
 var _glitch_overrides: Dictionary = {}
+var _hit_flash_overrides: Dictionary = {}
+var _hit_flash_active: bool = false
+var _hit_flash_timer: Timer
 var _sfx_player: AudioStreamPlayer
 
 func _ready() -> void:
@@ -126,6 +130,7 @@ func _ready() -> void:
 		_ash_effect.emitting = false
 		_ash_effect.visible = false
 	_setup_audio_player()
+	_setup_hit_flash_timer()
 	_set_visual_transparency(0.0)
 
 func _setup_audio_player() -> void:
@@ -158,10 +163,60 @@ func take_damage(amount: float) -> void:
 	if _defeated or _death_in_progress:
 		return
 	_health = maxf(0.0, _health - amount)
+	_trigger_hit_flash()
 	_play_sfx(sfx_hurt)
 	_emit_health()
 	if _health <= 0.0:
 		_defeat()
+
+func _setup_hit_flash_timer() -> void:
+	_hit_flash_timer = Timer.new()
+	_hit_flash_timer.one_shot = true
+	_hit_flash_timer.wait_time = maxf(0.05, hit_flash_duration)
+	_hit_flash_timer.timeout.connect(_clear_hit_flash)
+	add_child(_hit_flash_timer)
+
+func _trigger_hit_flash() -> void:
+	if _hit_flash_timer == null:
+		return
+	if not _glitch_overrides.is_empty():
+		return
+	if not _hit_flash_active:
+		_hit_flash_active = true
+		_hit_flash_overrides.clear()
+		for mesh in _glitch_meshes:
+			if mesh == null or not is_instance_valid(mesh):
+				continue
+			var mesh_id: int = mesh.get_instance_id()
+			_hit_flash_overrides[mesh_id] = mesh.material_overlay
+			var glitch_material: ShaderMaterial = ShaderMaterial.new()
+			glitch_material.shader = SPATIAL_GLITCH_SHADER
+			glitch_material.set_shader_parameter("glitch_speed", 16.5)
+			glitch_material.set_shader_parameter("glitch_intensity", 2.9)
+			glitch_material.set_shader_parameter("base_color", Vector3(1.0, 0.24, 0.82))
+			glitch_material.set_shader_parameter("emission_energy", 7.2)
+			glitch_material.set_shader_parameter("rim_strength", 3.8)
+			glitch_material.set_shader_parameter("pulse_strength", 2.0)
+			glitch_material.set_shader_parameter("stripe_density", 80.0)
+			glitch_material.set_shader_parameter("alpha_flicker", 0.42)
+			mesh.material_overlay = glitch_material
+	_hit_flash_timer.start(maxf(0.05, hit_flash_duration))
+
+func _clear_hit_flash() -> void:
+	if not _hit_flash_active:
+		return
+	if _hit_flash_timer != null:
+		_hit_flash_timer.stop()
+	for mesh in _glitch_meshes:
+		if mesh == null or not is_instance_valid(mesh):
+			continue
+		var mesh_id: int = mesh.get_instance_id()
+		if _hit_flash_overrides.has(mesh_id):
+			mesh.material_overlay = _hit_flash_overrides[mesh_id] as Material
+		else:
+			mesh.material_overlay = null
+	_hit_flash_overrides.clear()
+	_hit_flash_active = false
 
 func _physics_process(delta: float) -> void:
 	_apply_gravity(delta)
@@ -343,6 +398,7 @@ func _collect_glitch_meshes(node: Node) -> void:
 
 func _apply_glitch_overlay(active: bool) -> void:
 	if active:
+		_clear_hit_flash()
 		for mesh in _glitch_meshes:
 			if mesh == null or not is_instance_valid(mesh):
 				continue
@@ -664,6 +720,7 @@ func _defeat() -> void:
 	_defeated = true
 	_encounter_active = false
 	_attack_running = false
+	_clear_hit_flash()
 	for child in _projectile_root.get_children():
 		child.queue_free()
 	for child in _snare_root.get_children():
@@ -698,6 +755,7 @@ func set_manifested(active: bool) -> void:
 		_wind_disc.scale = _wind_disc_initial_scale
 		_wind_disc.visible = false
 	scale = _self_initial_scale
+	_clear_hit_flash()
 	_apply_glitch_overlay(false)
 	_set_visual_transparency(0.0)
 	if _aura_light != null:
