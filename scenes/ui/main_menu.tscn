@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bgpm1ajyifylf" path="res://scripts/ui/main_menu.gd" id="1_mm"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_abstract_bg.tscn" id="2_bg_3d"]
-[ext_resource type="FontFile" uid="uid://bvkra0a1gyuc6" path="res://assets/fonts/PatrickHand-Regular.ttf" id="3_hand_font"]
-[ext_resource type="AudioStream" path="res://audio/sfx/button.mp3" id="4_sfx_button"]
+[ext_resource type="FontFile" uid="uid://djt08l5gryxok" path="res://fonts/CatPentagram.ttf" id="4_m1kxf"]
+[ext_resource type="AudioStream" uid="uid://b80k10g8smcm8" path="res://audio/sfx/button.mp3" id="4_sfx_button"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_start_normal"]
 bg_color = Color(0.08, 0.08, 0.08, 0.94)
@@ -89,7 +89,7 @@ grow_vertical = 2
 script = ExtResource("1_mm")
 sfx_start_button = ExtResource("4_sfx_button")
 
-[node name="Background3D" type="SubViewportContainer" parent="."]
+[node name="Background3D" type="SubViewportContainer" parent="." unique_id=309048340]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -98,12 +98,12 @@ grow_horizontal = 2
 grow_vertical = 2
 stretch = true
 
-[node name="Viewport" type="SubViewport" parent="Background3D"]
+[node name="Viewport" type="SubViewport" parent="Background3D" unique_id=1634214518]
 handle_input_locally = false
 size = Vector2i(1920, 1080)
 render_target_update_mode = 4
 
-[node name="AbstractBG" parent="Background3D/Viewport" instance=ExtResource("2_bg_3d")]
+[node name="AbstractBG" parent="Background3D/Viewport" unique_id=1758060217 instance=ExtResource("2_bg_3d")]
 
 [node name="OverlayFrame" type="ColorRect" parent="." unique_id=298530796]
 layout_mode = 1
@@ -134,8 +134,8 @@ size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0, 0, 0, 0.9607843)
 theme_override_colors/font_outline_color = Color(1, 1, 1, 0.62)
 theme_override_constants/outline_size = 4
-theme_override_fonts/font = ExtResource("3_hand_font")
-theme_override_font_sizes/font_size = 244
+theme_override_fonts/font = ExtResource("4_m1kxf")
+theme_override_font_sizes/font_size = 300
 text = "AXIOM"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -151,7 +151,7 @@ theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.86)
 theme_override_constants/outline_size = 6
-theme_override_fonts/font = ExtResource("3_hand_font")
+theme_override_fonts/font = ExtResource("4_m1kxf")
 theme_override_font_sizes/font_size = 52
 theme_override_styles/normal = SubResource("StyleBox_start_normal")
 theme_override_styles/pressed = SubResource("StyleBox_start_pressed")
@@ -174,8 +174,7 @@ color = Color(1, 1, 1, 0.16)
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=268788544]
 libraries/ = SubResource("AnimationLibrary_main_menu")
 
-[node name="StartSFX" type="AudioStreamPlayer" parent="."]
+[node name="StartSFX" type="AudioStreamPlayer" parent="." unique_id=74192151]
 stream = ExtResource("4_sfx_button")
-bus = &"Master"
 
 [connection signal="pressed" from="MenuRoot/StartButton" to="." method="_on_start_pressed"]

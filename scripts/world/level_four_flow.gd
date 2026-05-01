@@ -65,6 +65,18 @@ func initialize() -> void:
 	_prepare_state()
 	_connect_signals()
 
+func _scene_tree() -> SceneTree:
+	if _world == null or not is_instance_valid(_world):
+		return null
+	return _world.get_tree()
+
+func _wait_seconds(duration: float) -> bool:
+	var tree: SceneTree = _scene_tree()
+	if tree == null:
+		return false
+	await tree.create_timer(maxf(0.01, duration)).timeout
+	return _world != null and is_instance_valid(_world)
+
 func process_frame() -> void:
 	if _sequence_running:
 		_try_recover_intro_to_encounter()
@@ -107,7 +119,8 @@ func play_intro_sequence() -> void:
 	await _walk_boss_and_talk(_walk_point_b, 2.1, "You can do anything here. No pressure, no fear of failing, no one forcing you to keep getting up.", 3.8)
 	_activate_sky_head_camera()
 	await _show_axia_line("The sky, the light, this world... it can be the place where your exhaustion finally ends.", 3.2)
-	await _world.get_tree().create_timer(0.7).timeout
+	if not await _wait_seconds(0.7):
+		return
 	await _play_crystal_push_shot(2.35)
 	await _show_axia_line("I can grant anything you want, as long as you stay in this world.", 2.5)
 	await _world._fade_black(1.0, 0.32)
@@ -150,9 +163,11 @@ func on_boss_defeated() -> void:
 	call_deferred("_run_boss_defeat_transition")
 
 func _run_boss_defeat_transition() -> void:
-	await _world.get_tree().create_timer(1.4).timeout
+	if not await _wait_seconds(1.4):
+		return
 	await _world._fade_black(1.0, 0.35)
-	await _world.get_tree().create_timer(2.0).timeout
+	if not await _wait_seconds(2.0):
+		return
 	await _world._fade_black(0.0, 0.45)
 	_world.call_deferred("_play_level_four_victory_subtitle")
 
@@ -182,16 +197,19 @@ func play_victory_subtitle() -> void:
 	var crack_phase_one: Tween = _world.create_tween()
 	crack_phase_one.tween_method(_world._set_sky_crack_intensity, 0.0, 0.24, 2.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await crack_phase_one.finished
-	await _world.get_tree().create_timer(0.45).timeout
+	if not await _wait_seconds(0.45):
+		return
 	var crack_phase_two: Tween = _world.create_tween()
 	crack_phase_two.tween_method(_world._set_sky_crack_intensity, 0.24, 0.68, 2.15).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await crack_phase_two.finished
-	await _world.get_tree().create_timer(0.32).timeout
+	if not await _wait_seconds(0.32):
+		return
 	var crack_phase_three: Tween = _world.create_tween()
 	crack_phase_three.tween_method(_world._set_sky_crack_intensity, 0.68, 1.0, 0.95).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	await crack_phase_three.finished
 	await _world._fade_white(1.0, 0.12)
-	await _world.get_tree().create_timer(1.2).timeout
+	if not await _wait_seconds(1.2):
+		return
 	GameState.set_meta(LEVEL_FOUR_RETURN_WAKE_META, true)
 	_world.get_tree().change_scene_to_file(WORLD_SCENE_PATH)
 
@@ -440,7 +458,8 @@ func _walk_boss_to(marker: Node3D, duration: float) -> void:
 		return
 	_face_boss_to_player()
 	if duration > 0.0:
-		await _world.get_tree().create_timer(duration).timeout
+		if not await _wait_seconds(duration):
+			return
 	if _boss.has_method("play_idle"):
 		_boss.call("play_idle")
 	_face_boss_to_player()
@@ -453,7 +472,8 @@ func _walk_boss_and_talk(marker: Node3D, duration: float, text: String, subtitle
 	if _boss.has_method("play_idle"):
 		_boss.call("play_idle")
 	if duration > subtitle_duration:
-		await _world.get_tree().create_timer(duration - subtitle_duration).timeout
+		if not await _wait_seconds(duration - subtitle_duration):
+			return
 	await _world._show_subtitle(text, subtitle_duration, "axia")
 	_face_boss_to_player()
 
@@ -664,7 +684,7 @@ func _spawn_lightning_skill_drop() -> void:
 func _show_first_sword_skill_drop_hint() -> void:
 	if _world == null:
 		return
-	await _world._show_subtitle("Grab the Sword Skill, then press Left Mouse to use it.", 2.8, "")
+	await _world._show_subtitle("Grab the Sword Skill, then press Left Mouse to use it.", 3.0, "")
 
 func _find_valid_lightning_drop_position(center: Vector3) -> Vector3:
 	var fallback: Vector3 = Vector3(center.x, _lightning_drop_fallback_y, center.z)

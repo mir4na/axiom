@@ -2110,10 +2110,11 @@ func _play_level_one_after_disaster_bgm() -> void:
 func _play_level_one_post_split_bgm() -> void:
 	if not _is_level_one_scene():
 		return
-	_play_level_one_after_disaster_bgm()
+	# Keep current BGM during house split; after-disaster BGM starts on level-one arrival wake flow.
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
 		return
-	_bgm_player.volume_db = _volume_scale_to_db(level_one_post_split_bgm_volume_scale)
+	if _bgm_player.playing:
+		_bgm_player.volume_db = _volume_scale_to_db(level_one_post_split_bgm_volume_scale)
 
 func _fade_out_level_one_bgm_for_loading() -> void:
 	if not _is_world_intro_scene():

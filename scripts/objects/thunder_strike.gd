@@ -71,7 +71,10 @@ func play(height: float, radius: float) -> void:
 		_ground_mat.set_shader_parameter("expansion", 0.0)
 	if flash != null:
 		flash.light_energy = 0.0
-	await get_tree().create_timer(windup_duration).timeout
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+	await tree.create_timer(windup_duration).timeout
 	if not is_inside_tree():
 		return
 	if sword_root == null or not is_instance_valid(sword_root):

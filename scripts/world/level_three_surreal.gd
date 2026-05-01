@@ -1266,8 +1266,8 @@ func _start_dragon_ride() -> void:
 	if _player.has_method("set_external_camera_anchor"):
 		_player.call("set_external_camera_anchor", _dragon_runtime_camera_anchor)
 	_set_player_hud_visible(false)
+	_show_objective("")
 	_sync_player_to_dragon_mount()
-	_show_objective("Dragon flight in progress")
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	call_deferred("_play_dragon_ride_cinematic_sequence")
 
@@ -1569,4 +1569,4 @@ func _show_objective(text: String) -> void:
 
 func _show_subtitle(text: String, duration: float) -> void:
 	if _world != null and _world.has_method("_show_subtitle"):
-		_world.call_deferred("_show_subtitle", text, duration, "")
+		_world.call_deferred("_show_subtitle", text, maxf(3.0, duration), "")
