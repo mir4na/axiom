@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://bdj412gw5qg18"]
+
+[ext_resource type="Script" uid="uid://1g2sofcdmfik" path="res://scripts/ui/ending_credits_overlay.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://bvkra0a1gyuc6" path="res://assets/fonts/PatrickHand-Regular.ttf" id="2_font"]
+
+[node name="EndingCreditsOverlay" type="Control" unique_id=1441830326]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="." unique_id=2140813549]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="CreditsLabel" type="Label" parent="." unique_id=1178456306]
+custom_minimum_size = Vector2(1120, 1820)
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -560.0
+offset_right = 560.0
+offset_bottom = 1820.0
+theme_override_colors/font_color = Color(0.96, 0.96, 0.96, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 68
+text = "CREDITS
+
+Game Designer
+mir4na
+
+Programmer
+mir4na, Codex, Antigravity
+
+Assets
+Creators who published free models
+
+Sound Effects and BGM
+Creators who published free
+BGM and SFX on YouTube
+
+Also Thanks To
+Godot Engine
+Godot Community
+Mixamo
+Blender"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ThanksLabel" type="Label" parent="." unique_id=130930693]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -420.0
+offset_top = -36.0
+offset_right = 420.0
+offset_bottom = 36.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 56
+text = "Again, Thanks for Playing this Game ^^."
+horizontal_alignment = 1
+vertical_alignment = 1

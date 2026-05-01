@@ -25,7 +25,7 @@ const ENDING_BOARD_CAMERA_SHOT_DURATION := 0.9
 const ENDING_BOARD_TYPE_INTERVAL := 0.04
 const ENDING_BOARD_LINE_PAUSE := 0.26
 const ENDING_BOARD_FOOTER_PAUSE := 0.36
-const ENDING_BOARD_HOLD_DURATION := 1.0
+const ENDING_BOARD_HOLD_DURATION := 5.0
 const ENDING_BOARD_FADE_DURATION := 2.6
 const CAMERA_FOV_MIN := 1.0
 const CAMERA_FOV_MAX := 179.0
@@ -38,6 +38,7 @@ const LEVEL_ONE_FLOW := preload("res://scripts/world/level_one_flow.gd")
 const LEVEL_FOUR_FLOW := preload("res://scripts/world/level_four_flow.gd")
 const OBJECTIVE_PANEL_SCENE := preload("res://scenes/ui/objective_panel.tscn")
 const ENDING_BOARD_TEXT_OVERLAY_SCENE := preload("res://scenes/ui/ending_board_text_overlay.tscn")
+const ENDING_CREDITS_OVERLAY_SCENE := preload("res://scenes/ui/ending_credits_overlay.tscn")
 const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa071de8bc191c3b4bef00edda/AllSkyFree/AllSkyFree_Skyboxes/AllSky_Space_AnotherPlanet Equirect.png"
 
@@ -2518,6 +2519,12 @@ func _cache_ending_board_node() -> void:
 		_ending_board = get_node_or_null("EndingBoard")
 	if _ending_board_camera == null or not is_instance_valid(_ending_board_camera):
 		_ending_board_camera = get_node_or_null("EndingBoardCamera") as Camera3D
+	if (_ending_board == null or not is_instance_valid(_ending_board)) and get_tree() != null and get_tree().current_scene != null:
+		_ending_board = get_tree().current_scene.find_child("EndingBoard", true, false)
+	if (_ending_board_camera == null or not is_instance_valid(_ending_board_camera)) and get_tree() != null and get_tree().current_scene != null:
+		var cam_node: Node = get_tree().current_scene.find_child("EndingBoardCamera", true, false)
+		if cam_node is Camera3D:
+			_ending_board_camera = cam_node as Camera3D
 
 func _set_ending_board_active(visible: bool, interactable: bool) -> void:
 	_cache_ending_board_node()
@@ -2597,7 +2604,6 @@ func _play_ending_board_cinematic() -> void:
 	_intro_camera.global_transform = start_transform
 	_intro_camera.make_current()
 	_set_intro_camera_fov_safe(start_fov)
-	await _set_cinematic_bars(true, 0.35)
 	var camera_tween := create_tween().set_parallel(true)
 	camera_tween.tween_method(_blend_intro_camera.bind(start_transform, end_transform), 0.0, 1.0, ENDING_BOARD_CAMERA_SHOT_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	camera_tween.tween_method(_set_intro_camera_fov_safe, start_fov, end_fov, ENDING_BOARD_CAMERA_SHOT_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -2625,12 +2631,7 @@ func _get_ending_board_cinematic_focus() -> Vector3:
 func _resolve_ending_board_camera_transform(fallback_start: Transform3D) -> Transform3D:
 	if _ending_board_camera != null and is_instance_valid(_ending_board_camera):
 		return _ending_board_camera.global_transform
-	var fallback_focus: Vector3 = _get_ending_board_cinematic_focus()
-	var fallback_dir: Vector3 = fallback_start.origin - fallback_focus
-	if fallback_dir.length_squared() <= 0.0001:
-		fallback_dir = Vector3.BACK
-	fallback_dir = fallback_dir.normalized()
-	return _make_look_transform(fallback_focus + fallback_dir * 0.62, fallback_focus)
+	return fallback_start
 
 func _resolve_ending_board_camera_fov(fallback_fov: float) -> float:
 	if _ending_board_camera != null and is_instance_valid(_ending_board_camera):
@@ -2708,59 +2709,14 @@ func _show_ending_credits_roll() -> void:
 	if _bgm_player == null or not is_instance_valid(_bgm_player) or not _bgm_player.playing:
 		_play_bgm_stream(_get_last_scene_bgm_stream())
 	_play_sfx_stream(sfx_credits_start)
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	var credits_root := Control.new()
-	credits_root.name = "EndingCredits"
-	credits_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var credits_root: Control = ENDING_CREDITS_OVERLAY_SCENE.instantiate() as Control
+	if credits_root == null:
+		return
 	_intro_ui.add_child(credits_root)
-	var background := ColorRect.new()
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.color = Color(0, 0, 0, 1)
-	credits_root.add_child(background)
-	var credit_text := Label.new()
-	credit_text.anchor_left = 0.12
-	credit_text.anchor_top = 0.0
-	credit_text.anchor_right = 0.88
-	credit_text.anchor_bottom = 0.0
-	credit_text.offset_left = 0.0
-	credit_text.offset_right = 0.0
-	credit_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	credit_text.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	credit_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	credit_text.add_theme_font_size_override("font_size", 68)
-	if _gameplay_font != null:
-		credit_text.add_theme_font_override("font", _gameplay_font)
-	credit_text.add_theme_color_override("font_color", Color(0.96, 0.96, 0.96, 1.0))
-	credit_text.text = "CREDITS\n\nGame Designer\nmir4na\n\nProgrammer\nmir4na, Codex, Antigravity\n\nAssets\nCreators who published free models\n\nSound Effects and BGM\nCreators on YouTube\n\nAlso Thanks To\nGodot Engine\nGodot Community\nMixamo"
-	credit_text.custom_minimum_size = Vector2(0.0, 1820.0)
-	credit_text.size = credit_text.custom_minimum_size
-	credits_root.add_child(credit_text)
-	var start_y: float = viewport_size.y + 110.0
-	var end_y: float = -credit_text.custom_minimum_size.y - 180.0
-	credit_text.position = Vector2(0.0, start_y)
-	var credits_tween := create_tween()
-	credits_tween.tween_property(credit_text, "position:y", end_y, 23.0).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
-	await credits_tween.finished
-	var thanks_label := Label.new()
-	thanks_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	thanks_label.offset_left = -420.0
-	thanks_label.offset_top = -36.0
-	thanks_label.offset_right = 420.0
-	thanks_label.offset_bottom = 36.0
-	thanks_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	thanks_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	thanks_label.add_theme_font_size_override("font_size", 56)
-	if _gameplay_font != null:
-		thanks_label.add_theme_font_override("font", _gameplay_font)
-	thanks_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
-	thanks_label.text = "Again, Thanks for Playing this Game ^^."
-	thanks_label.modulate.a = 0.0
-	credits_root.add_child(thanks_label)
-	var thanks_tween := create_tween()
-	thanks_tween.tween_property(thanks_label, "modulate:a", 1.0, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	await thanks_tween.finished
-	await get_tree().create_timer(1.8).timeout
-	credits_root.queue_free()
+	if credits_root.has_method("play_roll"):
+		await credits_root.call("play_roll", _gameplay_font)
+	if is_instance_valid(credits_root):
+		credits_root.queue_free()
 
 func _return_to_main_menu_after_credits() -> void:
 	GameState.reset_for_main_menu()
