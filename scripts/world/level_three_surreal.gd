@@ -64,13 +64,19 @@ enum Stage {
 @export var dragon_ride_turn_speed: float = 1.9
 @export var dragon_ride_boost_multiplier: float = 1.7
 @export var dragon_ride_accel: float = 3.8
-@export var dragon_ride_visual_yaw_offset_degrees: float = 180.0
+@export var dragon_ride_visual_yaw_offset_degrees: float = 0.0
 @export var dragon_takeoff_impulse: float = 8.0
 @export var dragon_idle_descent_speed: float = 2.2
 @export var dragon_ground_probe_height: float = 3.2
 @export var dragon_ground_probe_depth: float = 6.2
 @export var dragon_ground_clearance: float = 0.08
 @export var dragon_cursor_steer_max_ray_distance: float = 300.0
+@export var dragon_cursor_deadzone: float = 0.08
+@export var dragon_cursor_horizontal_steer: float = 1.35
+@export var dragon_cursor_vertical_steer: float = 0.8
+@export var dragon_camera_anchor_position_smooth: float = 8.0
+@export var dragon_camera_anchor_rotation_smooth: float = 8.0
+@export var dragon_camera_look_distance: float = 32.0
 @export var boots_forward_speed_multiplier: float = 1.15
 
 var _stage: Stage = Stage.TAKE_BOOTS
@@ -95,6 +101,8 @@ var _dragon_ride_velocity: Vector3 = Vector3.ZERO
 var _dragon_flight_active: bool = false
 var _dragon_space_prev: bool = false
 var _dragon_ride_ready: bool = false
+var _dragon_ride_look_direction: Vector3 = Vector3.FORWARD
+var _dragon_runtime_camera_anchor: Node3D
 var _portal_transfer_running: bool = false
 var _boots_item_id: String = "JumpBoots"
 var _boots_jump_multiplier: float = 1.0
@@ -179,7 +187,6 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_stabilize_dragon_keycard()
 	if _dragon_riding:
-		_update_dragon_ride(delta)
 		_update_portal_destination_trace()
 	elif _stage == Stage.TAKE_BOOTS:
 		_update_boots_objective_trace()
@@ -204,6 +211,10 @@ func _process(delta: float) -> void:
 		node3d.position = base_position + Vector3(0.0, sin(_time * bob_speed + phase) * bob_height, 0.0)
 		node3d.rotate_y(delta * spin_speed)
 	_floating_update_bucket = (_floating_update_bucket + 1) % slices
+
+func _physics_process(delta: float) -> void:
+	if _dragon_riding:
+		_update_dragon_ride(delta)
 
 func _collect_dragon_arch_markers() -> void:
 	_dragon_arch_markers.clear()
@@ -743,6 +754,7 @@ func _play_dragon_arena_cinematic() -> void:
 		_dragon_guard.visible = false
 	if _dragon_spawn_marker != null:
 		_dragon_guard.global_position = _dragon_spawn_marker.global_position
+		_dragon_guard.global_rotation = _dragon_spawn_marker.global_rotation
 		_dragon_guard.visible = false
 		await _focus_player_camera_to_position(_dragon_spawn_marker.global_position + Vector3(0.0, 1.8, 0.0), 0.3)
 		await get_tree().create_timer(0.35).timeout
@@ -778,12 +790,7 @@ func _play_dragon_glitch_summon() -> void:
 			overlay.modulate.a = 0.0
 		if _world.has_method("_set_arrival_glitch_strength"):
 			_world.call("_set_arrival_glitch_strength", 1.0)
-	var model_root: Node3D = _dragon_guard.get_node_or_null("ModelRoot") as Node3D
-	if model_root != null:
-		model_root.scale = Vector3.ONE * 0.06
 	var summon: Tween = create_tween().set_parallel(true)
-	if model_root != null:
-		summon.tween_property(model_root, "scale", Vector3.ONE, 0.36).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	if _world != null:
 		var overlay_variant: Variant = _world.get("_glitch_overlay")
 		if overlay_variant is CanvasItem:
@@ -981,22 +988,29 @@ func _update_dragon_ride(delta: float) -> void:
 			var hit_pos: Vector3 = grounded_hit.get("position", _dragon_guard.global_position)
 			_dragon_guard.global_position.y = hit_pos.y + dragon_ground_clearance
 	var move_forward_pressed: bool = Input.is_key_pressed(KEY_W)
-	var basis: Basis = _dragon_guard.global_transform.basis
-	var forward: Vector3 = -basis.z.normalized()
-	var planar_direction: Vector3 = _get_dragon_cursor_direction()
+	var sprint_pressed: bool = Input.is_key_pressed(KEY_SHIFT)
+	var cursor_offset: Vector2 = _get_dragon_cursor_offset()
+	var planar_direction: Vector3 = _get_dragon_cursor_direction(cursor_offset)
 	if planar_direction.length_squared() <= 0.0001:
-		planar_direction = Vector3(forward.x, 0.0, forward.z)
-	if planar_direction.length_squared() > 0.0001:
-		planar_direction = planar_direction.normalized()
+		var basis: Basis = _dragon_guard.global_transform.basis
+		var forward: Vector3 = -basis.z
+		forward.y = 0.0
+		if forward.length_squared() > 0.0001:
+			planar_direction = forward.normalized()
+		else:
+			planar_direction = _dragon_ride_look_direction
 	var planar_target_velocity: Vector3 = Vector3.ZERO
 	if move_forward_pressed:
-		planar_target_velocity = planar_direction * dragon_ride_speed
+		var speed_scale: float = dragon_ride_boost_multiplier if sprint_pressed else 1.0
+		planar_target_velocity = planar_direction * (dragon_ride_speed * speed_scale)
+		if planar_direction.length_squared() > 0.0001:
+			_dragon_ride_look_direction = planar_direction
 	var target_vertical_velocity: float = 0.0
 	if _dragon_flight_active:
 		if not move_forward_pressed:
 			target_vertical_velocity = -dragon_idle_descent_speed
 		else:
-			target_vertical_velocity = 0.0
+			target_vertical_velocity = clampf(-cursor_offset.y * dragon_ride_vertical_speed * dragon_cursor_vertical_steer, -dragon_ride_vertical_speed, dragon_ride_vertical_speed)
 	if not _dragon_flight_active or not _dragon_ride_ready:
 		planar_target_velocity = Vector3.ZERO
 		target_vertical_velocity = 0.0
@@ -1008,44 +1022,79 @@ func _update_dragon_ride(delta: float) -> void:
 		var target_yaw: float = atan2(-planar_direction.x, -planar_direction.z) + yaw_offset
 		var turn_alpha: float = clampf(dragon_ride_turn_speed * delta, 0.0, 1.0)
 		_dragon_guard.rotation.y = lerp_angle(_dragon_guard.rotation.y, target_yaw, turn_alpha)
+	_update_dragon_ride_camera_anchor(delta)
 	_sync_player_to_dragon_mount()
 
-func _get_dragon_cursor_direction() -> Vector3:
-	var camera: Camera3D = _get_player_camera()
-	if camera == null or _dragon_guard == null:
-		return Vector3.ZERO
+func _get_dragon_cursor_offset() -> Vector2:
 	var viewport: Viewport = get_viewport()
 	if viewport == null:
-		return Vector3.ZERO
+		return Vector2.ZERO
+	var viewport_size: Vector2 = viewport.get_visible_rect().size
+	if viewport_size.x <= 1.0 or viewport_size.y <= 1.0:
+		return Vector2.ZERO
+	var center: Vector2 = viewport_size * 0.5
 	var mouse_position: Vector2 = viewport.get_mouse_position()
-	var ray_origin: Vector3 = camera.project_ray_origin(mouse_position)
-	var ray_direction: Vector3 = camera.project_ray_normal(mouse_position).normalized()
-	var ray_end: Vector3 = ray_origin + ray_direction * maxf(8.0, dragon_cursor_steer_max_ray_distance)
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
-	query.collide_with_areas = false
-	query.collide_with_bodies = true
-	var exclude: Array[RID] = []
-	if _dragon_guard is CollisionObject3D:
-		exclude.append((_dragon_guard as CollisionObject3D).get_rid())
-	if _player is CollisionObject3D:
-		exclude.append((_player as CollisionObject3D).get_rid())
-	query.exclude = exclude
-	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
-	var target: Vector3 = ray_end
-	if not hit.is_empty():
-		target = hit.get("position", ray_end)
+	var offset: Vector2 = Vector2(
+		(mouse_position.x - center.x) / maxf(1.0, center.x),
+		(mouse_position.y - center.y) / maxf(1.0, center.y)
+	)
+	if offset.length_squared() > 1.0:
+		offset = offset.normalized()
+	if offset.length() < maxf(0.0, dragon_cursor_deadzone):
+		return Vector2.ZERO
+	return offset
+
+func _get_dragon_cursor_direction(cursor_offset: Vector2 = Vector2.ZERO) -> Vector3:
+	if _dragon_guard == null:
+		return Vector3.ZERO
+	var basis: Basis = _dragon_guard.global_transform.basis
+	var forward: Vector3 = -basis.z
+	forward.y = 0.0
+	if forward.length_squared() <= 0.0001:
+		forward = _dragon_ride_look_direction
+	if forward.length_squared() <= 0.0001:
+		forward = Vector3.FORWARD
+	forward = forward.normalized()
+	if cursor_offset == Vector2.ZERO:
+		cursor_offset = _get_dragon_cursor_offset()
+	if cursor_offset == Vector2.ZERO:
+		return forward
+	var right: Vector3 = basis.x
+	right.y = 0.0
+	if right.length_squared() <= 0.0001:
+		right = Vector3.RIGHT
 	else:
-		var plane_y: float = _dragon_guard.global_position.y
-		if absf(ray_direction.y) > 0.0001:
-			var t: float = (plane_y - ray_origin.y) / ray_direction.y
-			if t > 0.0:
-				target = ray_origin + ray_direction * t
-	var direction: Vector3 = target - _dragon_guard.global_position
-	direction.y = 0.0
+		right = right.normalized()
+	var steer_x: float = clampf(cursor_offset.x * dragon_cursor_horizontal_steer, -1.6, 1.6)
+	var direction: Vector3 = (forward + right * steer_x).normalized()
 	if direction.length_squared() <= 0.0001:
-		var forward: Vector3 = -_dragon_guard.global_transform.basis.z
-		return Vector3(forward.x, 0.0, forward.z).normalized()
-	return direction.normalized()
+		return forward
+	return direction
+
+func _update_dragon_ride_camera_anchor(delta: float) -> void:
+	if _dragon_runtime_camera_anchor == null or not is_instance_valid(_dragon_runtime_camera_anchor):
+		return
+	if _dragon_guard == null:
+		return
+	var desired_position: Vector3 = _dragon_guard.global_position + Vector3(0.0, 3.2, 0.0)
+	if _dragon_camera_socket != null and is_instance_valid(_dragon_camera_socket):
+		desired_position = _dragon_camera_socket.global_position
+	var pos_alpha: float = clampf(dragon_camera_anchor_position_smooth * delta, 0.0, 1.0)
+	_dragon_runtime_camera_anchor.global_position = _dragon_runtime_camera_anchor.global_position.lerp(desired_position, pos_alpha)
+	var look_direction: Vector3 = _dragon_ride_look_direction
+	if look_direction.length_squared() <= 0.0001:
+		look_direction = _get_dragon_cursor_direction()
+	look_direction.y = 0.0
+	if look_direction.length_squared() <= 0.0001:
+		var fallback_forward: Vector3 = -_dragon_guard.global_transform.basis.z
+		fallback_forward.y = 0.0
+		look_direction = fallback_forward if fallback_forward.length_squared() > 0.0001 else Vector3.FORWARD
+	look_direction = look_direction.normalized()
+	var look_target: Vector3 = _dragon_runtime_camera_anchor.global_position + look_direction * maxf(4.0, dragon_camera_look_distance)
+	var desired_basis: Basis = _dragon_runtime_camera_anchor.global_transform.looking_at(look_target, Vector3.UP).basis
+	var rot_alpha: float = clampf(dragon_camera_anchor_rotation_smooth * delta, 0.0, 1.0)
+	var smooth_basis: Basis = _dragon_runtime_camera_anchor.global_transform.basis.slerp(desired_basis, rot_alpha)
+	_dragon_runtime_camera_anchor.global_transform = Transform3D(smooth_basis.orthonormalized(), _dragon_runtime_camera_anchor.global_position)
 
 func _get_dragon_ground_hit() -> Dictionary:
 	if _dragon_guard == null:
@@ -1183,6 +1232,20 @@ func _start_dragon_ride() -> void:
 	_dragon_flight_active = false
 	_dragon_space_prev = false
 	_dragon_ride_ready = false
+	_dragon_ride_look_direction = _get_dragon_cursor_direction()
+	if _dragon_ride_look_direction.length_squared() <= 0.0001:
+		var start_forward: Vector3 = -_dragon_guard.global_transform.basis.z
+		start_forward.y = 0.0
+		_dragon_ride_look_direction = start_forward.normalized() if start_forward.length_squared() > 0.0001 else Vector3.FORWARD
+	if _dragon_runtime_camera_anchor == null or not is_instance_valid(_dragon_runtime_camera_anchor):
+		_dragon_runtime_camera_anchor = Node3D.new()
+		_dragon_runtime_camera_anchor.name = "DragonRideCameraAnchor"
+		add_child(_dragon_runtime_camera_anchor)
+	var initial_anchor_position: Vector3 = _dragon_guard.global_position + Vector3(0.0, 3.2, 0.0)
+	if _dragon_camera_socket != null and is_instance_valid(_dragon_camera_socket):
+		initial_anchor_position = _dragon_camera_socket.global_position
+	_dragon_runtime_camera_anchor.global_position = initial_anchor_position
+	_update_dragon_ride_camera_anchor(1.0 / 60.0)
 	_player.set_mobility_lock(true)
 	_player.visible = false
 	if _player.has_method("set_look_input_locked"):
@@ -1192,7 +1255,7 @@ func _start_dragon_ride() -> void:
 	if _player.has_method("set_mount_riding"):
 		_player.call("set_mount_riding", true)
 	if _player.has_method("set_external_camera_anchor"):
-		_player.call("set_external_camera_anchor", _dragon_camera_socket)
+		_player.call("set_external_camera_anchor", _dragon_runtime_camera_anchor)
 	_sync_player_to_dragon_mount()
 	_show_objective("Fly to the portal platform")
 	_show_subtitle("Press Space to take off. Follow the trace to the portal area.", 2.6)

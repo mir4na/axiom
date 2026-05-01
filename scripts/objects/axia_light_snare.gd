@@ -11,6 +11,7 @@ extends Area3D
 @export var spear_track_lerp: float = 4.8
 @export var spear_strike_duration: float = 0.22
 @export var spear_fade_duration: float = 0.25
+@export var sfx_time_stop: AudioStream
 
 const SNARE_INDICATOR_SCENE := preload("res://scenes/objects/axia_snare_indicator.tscn")
 const SNARE_SPEAR_SCENE := preload("res://scenes/objects/axia_snare_spear.tscn")
@@ -18,6 +19,7 @@ const SNARE_SPEAR_SCENE := preload("res://scenes/objects/axia_snare_spear.tscn")
 @onready var _ring: MeshInstance3D = $Ring
 @onready var _column: MeshInstance3D = $Column
 @onready var _light: OmniLight3D = $Light
+@onready var _time_stop_sfx_player: AudioStreamPlayer3D = get_node_or_null("TimeStopSFX") as AudioStreamPlayer3D
 
 var _player: CharacterBody3D
 var _caster: Node3D
@@ -59,6 +61,8 @@ func _ready() -> void:
 	var shape_node: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if shape_node != null:
 		shape_node.disabled = true
+	if _time_stop_sfx_player != null and sfx_time_stop != null:
+		_time_stop_sfx_player.stream = sfx_time_stop
 
 func _physics_process(delta: float) -> void:
 	if not _active:
@@ -199,6 +203,8 @@ func _release_player() -> void:
 func _apply_player_time_stop(active: bool) -> void:
 	if _player == null or not is_instance_valid(_player):
 		return
+	if active:
+		_play_time_stop_sfx()
 	if _player.has_method("set_mobility_lock"):
 		_player.call("set_mobility_lock", active)
 	if _player.has_method("set_time_stop_active"):
@@ -206,6 +212,19 @@ func _apply_player_time_stop(active: bool) -> void:
 			_player.call("set_time_stop_active", true, _anchor_position, wave_expand_duration)
 		else:
 			_player.call("set_time_stop_active", false, Vector3.ZERO, 0.2)
+
+func _play_time_stop_sfx() -> void:
+	var stream_to_use: AudioStream = sfx_time_stop
+	if stream_to_use == null and _time_stop_sfx_player != null:
+		stream_to_use = _time_stop_sfx_player.stream
+	if _time_stop_sfx_player == null:
+		return
+	if stream_to_use != null and _time_stop_sfx_player.stream != stream_to_use:
+		_time_stop_sfx_player.stream = stream_to_use
+	if _time_stop_sfx_player.stream == null:
+		return
+	_time_stop_sfx_player.pitch_scale = randf_range(0.98, 1.02)
+	_time_stop_sfx_player.play()
 
 func _cleanup_indicator() -> void:
 	if _indicator_root != null and is_instance_valid(_indicator_root):

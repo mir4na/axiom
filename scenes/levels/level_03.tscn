@@ -13,6 +13,7 @@
 [ext_resource type="AudioStream" uid="uid://dcdxueaoxk7op" path="res://audio/bgm/level_1_before_disaster.mp3" id="11_bgm_level1"]
 [ext_resource type="AudioStream" uid="uid://unoa5a565im0" path="res://audio/bgm/level_2.mp3" id="12_bgm_level2"]
 [ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="13_bgm_level4"]
+[ext_resource type="AudioStream" uid="uid://lpnux3cfn4wu" path="res://audio/bgm/level_3.mp3" id="19_bgm_level3"]
 [ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="14_sfx_glitch"]
 [ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="15_sfx_sky_cracking"]
 [ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="16_enemy"]
@@ -290,9 +291,10 @@ script = ExtResource("2")
 bgm_world_intro = ExtResource("11_bgm_level1")
 bgm_level_one = ExtResource("11_bgm_level1")
 bgm_level_two = ExtResource("12_bgm_level2")
-bgm_level_three = ExtResource("12_bgm_level2")
+bgm_level_three = ExtResource("19_bgm_level3")
 bgm_level_four = ExtResource("13_bgm_level4")
 bgm_ending_credits = ExtResource("13_bgm_level4")
+bgm_volume_scale = 0.6
 sfx_glitch_overlay = ExtResource("14_sfx_glitch")
 sfx_sky_cracking = ExtResource("15_sfx_sky_cracking")
 

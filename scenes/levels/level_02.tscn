@@ -12,12 +12,13 @@
 [ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="11_enemy"]
 [ext_resource type="PackedScene" uid="uid://c5287n5mgov23" path="res://scenes/objects/electric_obstacle.tscn" id="12_obstacle"]
 [ext_resource type="PackedScene" uid="uid://cp8n1f0xys6sq" path="res://scenes/objects/blackhole_portal.tscn" id="13_portal"]
-[ext_resource type="AudioStream" uid="uid://cxshusirauqx4" path="res://audio/bgm/level_1_before_disaster.mp3" id="14_bgm_level1"]
+[ext_resource type="AudioStream" uid="uid://dcdxueaoxk7op" path="res://audio/bgm/level_1_before_disaster.mp3" id="14_bgm_level1"]
 [ext_resource type="AudioStream" uid="uid://unoa5a565im0" path="res://audio/bgm/level_2.mp3" id="15_bgm_level2"]
 [ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="16_bgm_level4"]
 [ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="17_sfx_glitch"]
 [ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="18_sfx_sky_cracking"]
 [ext_resource type="PackedScene" uid="uid://b5l1buxicxxq5" path="res://scenes/objects/electric_orb.tscn" id="19_orb"]
+[ext_resource type="AudioStream" path="res://audio/sfx/trap.mp3" id="20_sfx_trap_laser"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -133,10 +134,12 @@ bgm_level_four = ExtResource("16_bgm_level4")
 bgm_ending_credits = ExtResource("16_bgm_level4")
 sfx_glitch_overlay = ExtResource("17_sfx_glitch")
 sfx_sky_cracking = ExtResource("18_sfx_sky_cracking")
+sfx_level_two_trap_laser = ExtResource("20_sfx_trap_laser")
 
 [node name="Audio" type="Node" parent="World" unique_id=910519672]
 
 [node name="BGMPlayer" type="AudioStreamPlayer" parent="World/Audio" unique_id=130913784]
+stream = ExtResource("15_bgm_level2")
 
 [node name="SFXPlayer2D" type="AudioStreamPlayer2D" parent="World/Audio" unique_id=443230309]
 

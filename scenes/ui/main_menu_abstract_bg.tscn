@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://cvwbbx4txul2f"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu_abstract_bg.gd" id="1_bg_script"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.96, 0.98, 1, 1)
+sky_horizon_color = Color(0.86, 0.9, 0.97, 1)
+ground_bottom_color = Color(0.72, 0.76, 0.86, 1)
+ground_horizon_color = Color(0.82, 0.86, 0.94, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 3
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.82
+glow_enabled = true
+glow_intensity = 0.72
+glow_bloom = 0.09
+glow_hdr_threshold = 0.86
+glow_hdr_scale = 1.08
+tonemap_mode = 2
+
+[node name="MainMenuAbstractBG" type="Node3D"]
+script = ExtResource("1_bg_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.72631, -0.289089, 0.62349, 0, 0.907673, 0.419677, -0.687367, -0.30485, 0.658966, 0, 0, 0)
+light_energy = 1.05
+shadow_enabled = true
+
+[node name="FillLightA" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 18, -30)
+light_color = Color(0.38, 0.88, 1, 1)
+light_energy = 1.2
+omni_range = 64.0
+
+[node name="FillLightB" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 16, 28)
+light_color = Color(1, 0.48, 0.82, 1)
+light_energy = 1.1
+omni_range = 64.0
+
+[node name="MenuCamera" type="Camera3D" parent="."]
+transform = Transform3D(0.906308, 0, -0.422618, 0, 1, 0, 0.422618, 0, 0.906308, 42, 22, 0)
+fov = 58.0
+
+[node name="Objects" type="Node3D" parent="."]

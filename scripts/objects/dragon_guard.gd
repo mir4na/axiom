@@ -22,7 +22,7 @@ const FIREBALL_SCENE := preload("res://scenes/objects/electric_orb.tscn")
 @export var gun_hit_damage: float = 2.0
 @export var bow_hit_damage: float = 8.0
 @export var hit_flash_duration: float = 0.16
-@export var model_yaw_offset_degrees: float = 180.0
+@export var model_yaw_offset_degrees: float = 0.0
 @export var sfx_fireball_cast: AudioStream
 
 @onready var _collision: CollisionShape3D = $CollisionShape3D

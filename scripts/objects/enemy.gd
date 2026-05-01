@@ -21,6 +21,7 @@ signal defeated(enemy: Node3D, defeat_position: Vector3)
 @export var nav_min_z: float = -28.0
 @export var nav_max_z: float = 166.0
 @export var nav_cell_size: float = 1.6
+@export var sfx_laser_enemy: AudioStream
 
 @onready var _visual_root: Node3D = $VisualRoot
 @onready var _collision_shape: CollisionShape3D = $CollisionShape3D
@@ -35,6 +36,7 @@ signal defeated(enemy: Node3D, defeat_position: Vector3)
 @onready var _health_pivot: Node3D = $VisualRoot/HealthPivot
 @onready var _health_fill: MeshInstance3D = $VisualRoot/HealthPivot/Fill
 @onready var _health_back: MeshInstance3D = $VisualRoot/HealthPivot/Back
+@onready var _laser_sfx_player: AudioStreamPlayer3D = get_node_or_null("LaserSFX") as AudioStreamPlayer3D
 
 var _direction: int = 1
 var _traveled: float = 0.0
@@ -79,6 +81,8 @@ func _ready() -> void:
 		_target_beam.visible = false
 	if _laser_light != null:
 		_laser_light.visible = false
+	if _laser_sfx_player != null and sfx_laser_enemy != null:
+		_laser_sfx_player.stream = sfx_laser_enemy
 	if not visible:
 		set_encounter_enabled(false)
 
@@ -187,6 +191,12 @@ func _show_laser(from: Vector3, to: Vector3) -> void:
 	if _laser_light != null:
 		_laser_light.visible = true
 		_laser_light.global_position = to
+	if _laser_sfx_player != null:
+		if sfx_laser_enemy != null and _laser_sfx_player.stream != sfx_laser_enemy:
+			_laser_sfx_player.stream = sfx_laser_enemy
+		if _laser_sfx_player.stream != null:
+			_laser_sfx_player.pitch_scale = randf_range(0.98, 1.03)
+			_laser_sfx_player.play()
 	_laser_timer = laser_duration
 
 func _show_target_line(from: Vector3, to: Vector3) -> void:

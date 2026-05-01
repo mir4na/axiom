@@ -67,11 +67,14 @@ const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa07
 @export var sfx_board_activate: AudioStream
 @export var sfx_credits_start: AudioStream
 @export var sfx_ending_return_wake: AudioStream
+@export var sfx_level_two_trap_laser: AudioStream
 
 @export_group("Level Four Audio Flow")
 @export var level_four_bgm_fade_out_duration: float = 2.8
 @export_group("Level One Audio Flow")
 @export var level_one_bgm_fade_out_duration: float = 2.0
+@export_group("BGM Mix")
+@export_range(0.0, 1.0, 0.01) var bgm_volume_scale: float = 0.6
 
 @export_group("Ending Sky")
 @export_file("*.png", "*.jpg", "*.jpeg", "*.webp", "*.hdr", "*.exr") var ending_world_sky_path: String = ENDING_WORLD_SKY_PATH
@@ -261,6 +264,7 @@ func _setup_audio_players() -> void:
 		_bgm_player.bus = "Master"
 		_bgm_player.autoplay = false
 		audio_root.add_child(_bgm_player)
+	_bgm_player.volume_db = _target_bgm_volume_db()
 	_sfx_player_2d = audio_root.get_node_or_null("SFXPlayer2D") as AudioStreamPlayer2D
 	if _sfx_player_2d == null:
 		_sfx_player_2d = AudioStreamPlayer2D.new()
@@ -291,9 +295,15 @@ func _play_bgm_stream(stream: AudioStream) -> void:
 	_set_bgm_stream_loop_enabled(stream)
 	if _bgm_player.stream == stream and _bgm_player.playing:
 		return
-	_bgm_player.volume_db = 0.0
+	_bgm_player.volume_db = _target_bgm_volume_db()
 	_bgm_player.stream = stream
 	_bgm_player.play()
+
+func _target_bgm_volume_db() -> float:
+	var clamped_volume: float = clampf(bgm_volume_scale, 0.0, 1.0)
+	if clamped_volume <= 0.0001:
+		return -50.0
+	return linear_to_db(clamped_volume)
 
 func _set_bgm_stream_loop_enabled(stream: AudioStream) -> void:
 	if stream == null:
@@ -315,7 +325,7 @@ func _stop_bgm_stream() -> void:
 		_bgm_fade_tween.kill()
 	_bgm_fade_tween = null
 	_bgm_player.stop()
-	_bgm_player.volume_db = 0.0
+	_bgm_player.volume_db = _target_bgm_volume_db()
 
 func play_level_four_bgm() -> void:
 	if not _is_level_four_scene():
@@ -338,7 +348,7 @@ func fade_out_level_four_bgm() -> void:
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
 		return
 	_bgm_player.stop()
-	_bgm_player.volume_db = 0.0
+	_bgm_player.volume_db = _target_bgm_volume_db()
 	_bgm_fade_tween = null
 
 func _play_sfx_stream(stream: AudioStream) -> void:
@@ -1142,6 +1152,8 @@ func _fire_level_two_trap_laser() -> void:
 		return
 	if _level_two_trap_laser == null or _level_two_trap_beam == null:
 		return
+	if sfx_level_two_trap_laser != null:
+		play_positional_sfx(sfx_level_two_trap_laser, _level_two_trap_laser.global_position, -3.0, randf_range(0.98, 1.02), 90.0)
 	_level_two_trap_laser.visible = true
 	_level_two_trap_beam.scale = Vector3(0.1, 1.05, 0.1)
 	if _level_two_trap_light != null:
@@ -2097,7 +2109,7 @@ func _fade_out_current_bgm(duration: float) -> void:
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
 		return
 	_bgm_player.stop()
-	_bgm_player.volume_db = 0.0
+	_bgm_player.volume_db = _target_bgm_volume_db()
 	_bgm_fade_tween = null
 
 func _activate_window_camera() -> void:

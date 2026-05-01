@@ -68,6 +68,7 @@ const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 @export var sfx_sword_fire: AudioStream
 @export var sfx_meteor_cast: AudioStream
 @export var sfx_snare_cast: AudioStream
+@export var sfx_wind_pulse: AudioStream
 
 @onready var _rose: CharacterBody3D = $Rose
 @onready var _visual_root: Node3D = $VisualRoot
@@ -79,6 +80,7 @@ const SPATIAL_GLITCH_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 @onready var _launchers: Node3D = $Launchers
 @onready var _ash_anchor: Marker3D = $AshEffectAnchor
 @onready var _ash_effect: GPUParticles3D = $AshEffect
+@onready var _wind_pulse_sfx_player: AudioStreamPlayer3D = get_node_or_null("WindPulseSFX") as AudioStreamPlayer3D
 
 var _player: CharacterBody3D
 var _health: float = 0.0
@@ -132,6 +134,8 @@ func _ready() -> void:
 	_setup_audio_player()
 	_setup_hit_flash_timer()
 	_set_visual_transparency(0.0)
+	if _wind_pulse_sfx_player != null and sfx_wind_pulse != null:
+		_wind_pulse_sfx_player.stream = sfx_wind_pulse
 
 func _setup_audio_player() -> void:
 	_sfx_player = AudioStreamPlayer.new()
@@ -148,6 +152,25 @@ func _play_sfx(stream: AudioStream) -> void:
 	if _sfx_player == null or not is_instance_valid(_sfx_player):
 		return
 	_sfx_player.stream = stream
+	_sfx_player.play()
+
+func _play_wind_pulse_sfx() -> void:
+	var stream_to_use: AudioStream = sfx_wind_pulse
+	if stream_to_use == null and _wind_pulse_sfx_player != null:
+		stream_to_use = _wind_pulse_sfx_player.stream
+	if _wind_pulse_sfx_player != null:
+		if stream_to_use != null and _wind_pulse_sfx_player.stream != stream_to_use:
+			_wind_pulse_sfx_player.stream = stream_to_use
+		if _wind_pulse_sfx_player.stream != null:
+			_wind_pulse_sfx_player.pitch_scale = randf_range(0.98, 1.02)
+			_wind_pulse_sfx_player.play()
+			return
+	if _sfx_player == null or not is_instance_valid(_sfx_player):
+		return
+	if stream_to_use == null:
+		return
+	_sfx_player.stream = stream_to_use
+	_sfx_player.pitch_scale = randf_range(0.98, 1.02)
 	_sfx_player.play()
 
 func begin_encounter(player_ref: CharacterBody3D) -> void:
@@ -500,6 +523,7 @@ func _perform_wind_pulse() -> void:
 			_aura_light.light_color = original_light_color
 		return
 	_apply_wind_damage()
+	_play_wind_pulse_sfx()
 	_play_sfx(sfx_wind_blast)
 	var blast: Tween = create_tween().set_parallel(true)
 	blast.tween_property(_wind_disc, "scale", Vector3(58.0, 1.0, 58.0), 0.72).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)

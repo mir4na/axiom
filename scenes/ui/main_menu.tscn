@@ -1,27 +1,8 @@
 [gd_scene format=3 uid="uid://bq2is5w8qqy4o"]
 
 [ext_resource type="Script" uid="uid://bgpm1ajyifylf" path="res://scripts/ui/main_menu.gd" id="1_mm"]
-[ext_resource type="Shader" uid="uid://baamcfes1ge5g" path="res://shaders/main_menu_bg.gdshader" id="2_bg"]
-[ext_resource type="Shader" uid="uid://blrulhyxn0nbq" path="res://shaders/main_menu_button_marker.gdshader" id="3_marker"]
-[ext_resource type="Shader" uid="uid://55a0qoe50hp5" path="res://shaders/main_menu_title_ink.gdshader" id="4_title_fx"]
-[ext_resource type="FontFile" uid="uid://bvkra0a1gyuc6" path="res://assets/fonts/PatrickHand-Regular.ttf" id="5_hand_font"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
-shader = ExtResource("2_bg")
-shader_parameter/time_scale = 1.0
-shader_parameter/vignette_strength = 1.0
-shader_parameter/grain_strength = 0.08
-shader_parameter/glitch_strength = 0.42
-shader_parameter/crack_strength = 0.46
-shader_parameter/color_a = Color(0.95, 0.95, 0.95, 1)
-shader_parameter/color_b = Color(0.9, 0.9, 0.92, 1)
-shader_parameter/color_c = Color(0.84, 0.86, 0.9, 1)
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_title"]
-shader = ExtResource("4_title_fx")
-shader_parameter/wobble_strength = 0.12
-shader_parameter/wobble_speed = 0.7
-shader_parameter/ink_noise = 0.06
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_abstract_bg.tscn" id="2_bg_3d"]
+[ext_resource type="FontFile" uid="uid://bvkra0a1gyuc6" path="res://assets/fonts/PatrickHand-Regular.ttf" id="3_hand_font"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_start_normal"]
 bg_color = Color(0.08, 0.08, 0.08, 0.94)
@@ -62,12 +43,6 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 shadow_color = Color(0, 0, 0, 0.52)
 shadow_size = 24
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_marker"]
-shader = ExtResource("3_marker")
-shader_parameter/scribble_strength = 0.85
-shader_parameter/animation_speed = 0.95
-shader_parameter/ink_color = Color(1, 1, 1, 0.26)
 
 [sub_resource type="Animation" id="Animation_pulse"]
 resource_name = "pulse"
@@ -112,14 +87,21 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_mm")
 
-[node name="Background" type="ColorRect" parent="." unique_id=517152798]
-material = SubResource("ShaderMaterial_bg")
+[node name="Background3D" type="SubViewportContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="Background3D"]
+handle_input_locally = false
+size = Vector2i(1920, 1080)
+render_target_update_mode = 4
+
+[node name="AbstractBG" parent="Background3D/Viewport" instance=ExtResource("2_bg_3d")]
 
 [node name="OverlayFrame" type="ColorRect" parent="." unique_id=298530796]
 layout_mode = 1
@@ -144,14 +126,13 @@ theme_override_constants/separation = 20
 alignment = 1
 
 [node name="TitleText" type="Label" parent="MenuRoot" unique_id=1186230676]
-material = SubResource("ShaderMaterial_title")
 custom_minimum_size = Vector2(760, 220)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0, 0, 0, 0.9607843)
 theme_override_colors/font_outline_color = Color(1, 1, 1, 0.62)
 theme_override_constants/outline_size = 4
-theme_override_fonts/font = ExtResource("5_hand_font")
+theme_override_fonts/font = ExtResource("3_hand_font")
 theme_override_font_sizes/font_size = 244
 text = "AXIOM"
 horizontal_alignment = 1
@@ -168,7 +149,7 @@ theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
 theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.86)
 theme_override_constants/outline_size = 6
-theme_override_fonts/font = ExtResource("5_hand_font")
+theme_override_fonts/font = ExtResource("3_hand_font")
 theme_override_font_sizes/font_size = 52
 theme_override_styles/normal = SubResource("StyleBox_start_normal")
 theme_override_styles/pressed = SubResource("StyleBox_start_pressed")
@@ -178,7 +159,6 @@ text = "Start"
 
 [node name="Pulse" type="ColorRect" parent="MenuRoot/StartButton" unique_id=1021405000]
 modulate = Color(1, 1, 1, 0.15999997)
-material = SubResource("ShaderMaterial_marker")
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
