@@ -5,7 +5,19 @@
 [sub_resource type="SphereShape3D" id="SphereShape3D_orb"]
 radius = 2.9
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fireball"]
+albedo_color = Color(1, 0.38, 0.16, 1)
+roughness = 0.12
+emission_enabled = true
+emission = Color(1, 0.36, 0.14, 1)
+emission_energy_multiplier = 4.2
+
+[sub_resource type="SphereMesh" id="SphereMesh_fireball"]
+radius = 0.62
+height = 1.24
+
 [node name="ElectricOrb" type="CharacterBody3D" unique_id=1151066551]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9710767, 0)
 script = ExtResource("1_orb_script")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=488463843]
@@ -15,7 +27,11 @@ shape = SubResource("SphereShape3D_orb")
 transform = Transform3D(0.075, 0, 0, 0, 0.075, 0, 0, 0, 0.075, 0, 0, 0)
 
 [node name="ModelAnchor" type="Node3D" parent="VisualRoot" unique_id=520080425]
-transform = Transform3D(8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0)
+transform = Transform3D(70, 0, 0, 0, 70, 0, 0, 0, 70, 0, 0, 0)
+
+[node name="FireballVisual" type="MeshInstance3D" parent="VisualRoot/ModelAnchor" unique_id=1322451987]
+material_override = SubResource("StandardMaterial3D_fireball")
+mesh = SubResource("SphereMesh_fireball")
 
 [node name="GlowLight" type="OmniLight3D" parent="." unique_id=2134898988]
 light_color = Color(1, 0.42, 0.16, 1)

@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/objects/bow_item.gd" id="1_bow"]
+[ext_resource type="Mesh" path="res://assets/f6k1sql6xr7k-Bow/BOW AND ARROW/OBJ/BOW AND ARROW.obj" id="2_bow_mesh"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bow"]
+size = Vector3(1.0, 0.45, 0.45)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bow_aura"]
+size = Vector3(1.2, 0.55, 0.55)
+
+[node name="BowItem" type="StaticBody3D"]
+script = ExtResource("1_bow")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_bow")
+
+[node name="ModelRoot" type="Node3D" parent="."]
+transform = Transform3D(0.030909628, 0, -0.0054503204, 0.00095465075, 0.031357434, 0.0054146675, 0.0053661228, -0.0054977676, 0.030431964, 0, -0.02, 0)
+
+[node name="Model" type="MeshInstance3D" parent="ModelRoot"]
+mesh = ExtResource("2_bow_mesh")
+
+[node name="BowAura" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("BoxMesh_bow_aura")
+
+[node name="GlowLight" type="OmniLight3D" parent="."]
+visible = false
+light_color = Color(0.2, 0.8, 1, 1)
+light_energy = 0.0
+omni_range = 4.0

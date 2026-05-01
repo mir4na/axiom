@@ -6,7 +6,7 @@ const METEOR_SHADER := preload("res://shaders/spatial_glitch.gdshader")
 const LEVEL_ONE_TUTORIAL_OVERLAY_SCENE := preload("res://scenes/ui/level_one_tutorial_overlay.tscn")
 const ESCAPE_DURATION := 60.0
 const SMALL_METEOR_INTERVAL := 3.0
-const TUTORIAL_PAGES := [
+const TUTORIAL_PAGES_FALLBACK := [
 	"AXIOM records your recent movement and facing over time.",
 	"You can rewind to any recorded moment and commit that state as your new position.",
 	"Let's run a quick rewind tutorial before the final sprint."
@@ -65,6 +65,23 @@ var _tutorial_callout_warning_line: ColorRect
 var _tutorial_callout_commit: Panel
 var _tutorial_callout_commit_label: Label
 var _tutorial_callout_commit_line: ColorRect
+var _tutorial_content_root: Node
+var _tutorial_pages: Array[String] = []
+var _tutorial_title_axiom: String = "AXIOM"
+var _tutorial_title_rewind: String = "AXIOM REWIND"
+var _tutorial_hint_space_next: String = "[SPACE] NEXT"
+var _tutorial_hint_space_close: String = "[SPACE] CLOSE"
+var _tutorial_hint_rewind_activate: String = "[R] ACTIVATE"
+var _tutorial_hint_rewind_move: String = "[R/F] KEEP MOVING THE POINTER"
+var _tutorial_hint_rewind_commit: String = "[SPACE] JUMP TO SELECTED MOMENT"
+var _tutorial_prompt_rewind_activate: String = "Press R to activate Axiom rewind mode."
+var _tutorial_prompt_rewind_step_one: String = "That split is too wide for a normal jump. You cannot clear it without rewinding."
+var _tutorial_prompt_rewind_step_two: String = "Remember when you grabbed the keycard in the kitchen? Reposition to the recorded coordinates from that moment, then cross the split and reach the hole."
+var _tutorial_callout_rewind_base: String = "Timeline Pointer\nHold R = past, hold F = forward. Keep moving the pointer to browse recorded moments."
+var _tutorial_callout_warning_base: String = "Warning\nIf rewind stays active for over 10 seconds, the system overloads and stuns you."
+var _tutorial_callout_commit_base: String = "Commit Rule\nPress SPACE to jump to the selected state. Any state ahead of the pointer is permanently erased."
+var _tutorial_callout_rewind_step_one: String = "Timeline Pointer\nShift backward until the pointer reaches the kitchen keycard coordinates."
+var _tutorial_callout_commit_step_two: String = "Commit Now\nJump to those recorded kitchen coordinates, then cross the split and reach the hole."
 var _marker_root: Node3D
 var _guest_reveal_exterior_start: Node3D
 var _guest_reveal_exterior_start_look: Node3D
@@ -93,8 +110,8 @@ func initialize() -> void:
 	_connect_hooks()
 	_set_objective_state("check_outside")
 
-func process_objectives() -> void:
-	_process_escape_phase(_world.get_process_delta_time())
+func process_objectives(delta: float) -> void:
+	_process_escape_phase(delta)
 	if _objective_state == "guest_key" and is_instance_valid(_key_item_instance):
 		_pulse_objective_highlight(_key_item_instance, 0.55, 1.25)
 		_world._update_hint_marker(_key_item_instance.global_position + Vector3(0.0, 0.55, 0.0), "KEY", _key_item_instance.global_position)
@@ -206,6 +223,7 @@ func _prepare_phase() -> void:
 	_rewind_tutorial_start_index = -1
 	_rewind_tutorial_shift_step_one_done = false
 	_rewind_tutorial_shift_step_two_done = false
+	_tutorial_pages = []
 	_small_meteor_spawn_timer = SMALL_METEOR_INTERVAL
 	_clear_small_meteors()
 	_escape_failed_sequence_started = false
@@ -292,6 +310,42 @@ func _create_escape_ui() -> void:
 	_tutorial_callout_commit = _tutorial_overlay_root.get_node_or_null("CommitCallout") as Panel
 	_tutorial_callout_commit_label = _tutorial_overlay_root.get_node_or_null("CommitCallout/Label") as Label
 	_tutorial_callout_commit_line = _tutorial_overlay_root.get_node_or_null("CommitLine") as ColorRect
+	_tutorial_content_root = _tutorial_overlay_root.get_node_or_null("TutorialContent")
+	_load_tutorial_overlay_content_from_scene()
+
+func _load_tutorial_overlay_content_from_scene() -> void:
+	_tutorial_pages.clear()
+	if _tutorial_content_root == null:
+		for fallback_text in TUTORIAL_PAGES_FALLBACK:
+			_tutorial_pages.append(fallback_text)
+		return
+	_tutorial_pages.append(_get_tutorial_content_text("AxiomPage01", TUTORIAL_PAGES_FALLBACK[0]))
+	_tutorial_pages.append(_get_tutorial_content_text("AxiomPage02", TUTORIAL_PAGES_FALLBACK[1]))
+	_tutorial_pages.append(_get_tutorial_content_text("AxiomPage03", TUTORIAL_PAGES_FALLBACK[2]))
+	_tutorial_title_axiom = _get_tutorial_content_text("TitleAxiom", _tutorial_title_axiom)
+	_tutorial_title_rewind = _get_tutorial_content_text("TitleRewind", _tutorial_title_rewind)
+	_tutorial_hint_space_next = _get_tutorial_content_text("HintSpaceNext", _tutorial_hint_space_next)
+	_tutorial_hint_space_close = _get_tutorial_content_text("HintSpaceClose", _tutorial_hint_space_close)
+	_tutorial_hint_rewind_activate = _get_tutorial_content_text("HintRewindActivate", _tutorial_hint_rewind_activate)
+	_tutorial_hint_rewind_move = _get_tutorial_content_text("HintRewindMove", _tutorial_hint_rewind_move)
+	_tutorial_hint_rewind_commit = _get_tutorial_content_text("HintRewindCommit", _tutorial_hint_rewind_commit)
+	_tutorial_prompt_rewind_activate = _get_tutorial_content_text("PromptRewindActivate", _tutorial_prompt_rewind_activate)
+	_tutorial_prompt_rewind_step_one = _get_tutorial_content_text("PromptRewindStep01", _tutorial_prompt_rewind_step_one)
+	_tutorial_prompt_rewind_step_two = _get_tutorial_content_text("PromptRewindStep02", _tutorial_prompt_rewind_step_two)
+	_tutorial_callout_rewind_base = _get_tutorial_content_text("CalloutRewindBase", _tutorial_callout_rewind_base)
+	_tutorial_callout_warning_base = _get_tutorial_content_text("CalloutWarningBase", _tutorial_callout_warning_base)
+	_tutorial_callout_commit_base = _get_tutorial_content_text("CalloutCommitBase", _tutorial_callout_commit_base)
+	_tutorial_callout_rewind_step_one = _get_tutorial_content_text("CalloutRewindStep01", _tutorial_callout_rewind_step_one)
+	_tutorial_callout_commit_step_two = _get_tutorial_content_text("CalloutCommitStep02", _tutorial_callout_commit_step_two)
+
+func _get_tutorial_content_text(node_name: String, fallback: String) -> String:
+	if _tutorial_content_root == null:
+		return fallback
+	var label_node: Label = _tutorial_content_root.get_node_or_null(node_name) as Label
+	if label_node == null:
+		return fallback
+	var source_text: String = label_node.text.strip_edges()
+	return source_text if not source_text.is_empty() else fallback
 
 func _connect_hooks() -> void:
 	var axiom_callable := Callable(self, "_on_axiom_equipped_changed")
@@ -422,7 +476,7 @@ func _process_escape_phase(delta: float) -> void:
 			if not _tutorial_space_consumed:
 				_tutorial_space_consumed = true
 				_tutorial_page_index += 1
-				if _tutorial_page_index >= TUTORIAL_PAGES.size():
+				if _tutorial_page_index >= _tutorial_pages.size():
 					_end_axiom_tutorial()
 				else:
 					_update_axiom_tutorial_page()
@@ -468,14 +522,18 @@ func _start_axiom_tutorial() -> void:
 	_set_tutorial_panel_rewind_layout(false)
 	_set_rewind_tutorial_callouts_visible(false)
 	if _tutorial_title != null:
-		_tutorial_title.text = "AXIOM"
+		_tutorial_title.text = _tutorial_title_axiom
 	_update_axiom_tutorial_page()
 
 func _update_axiom_tutorial_page() -> void:
+	if _tutorial_pages.is_empty():
+		for fallback_text in TUTORIAL_PAGES_FALLBACK:
+			_tutorial_pages.append(fallback_text)
 	if _tutorial_body != null:
-		_tutorial_body.text = TUTORIAL_PAGES[_tutorial_page_index]
+		var safe_index: int = clampi(_tutorial_page_index, 0, _tutorial_pages.size() - 1)
+		_tutorial_body.text = _tutorial_pages[safe_index]
 	if _tutorial_hint != null:
-		_tutorial_hint.text = "[SPACE] CLOSE" if _tutorial_page_index == TUTORIAL_PAGES.size() - 1 else "[SPACE] NEXT"
+		_tutorial_hint.text = _tutorial_hint_space_close if _tutorial_page_index == _tutorial_pages.size() - 1 else _tutorial_hint_space_next
 
 func _end_axiom_tutorial() -> void:
 	_tutorial_active = false
@@ -498,11 +556,11 @@ func _start_rewind_activation_tutorial() -> void:
 	_set_tutorial_panel_rewind_layout(true)
 	_set_rewind_tutorial_callouts_visible(false)
 	if _tutorial_title != null:
-		_tutorial_title.text = "AXIOM REWIND"
+		_tutorial_title.text = _tutorial_title_rewind
 	if _tutorial_body != null:
-		_tutorial_body.text = "Press R to activate Axiom rewind mode."
+		_tutorial_body.text = _tutorial_prompt_rewind_activate
 	if _tutorial_hint != null:
-		_tutorial_hint.text = "[R] ACTIVATE"
+		_tutorial_hint.text = _tutorial_hint_rewind_activate
 
 func _process_rewind_tutorial_guidance() -> void:
 	if not GameState.rewind_mode_active:
@@ -514,16 +572,16 @@ func _process_rewind_tutorial_guidance() -> void:
 		_rewind_tutorial_shift_step_one_done = true
 		_set_rewind_tutorial_callouts_step(1)
 		if _tutorial_body != null:
-			_tutorial_body.text = "That split is too wide for a normal jump. You cannot clear it without rewinding."
+			_tutorial_body.text = _tutorial_prompt_rewind_step_one
 		if _tutorial_hint != null:
-			_tutorial_hint.text = "[R/F] KEEP MOVING THE POINTER"
+			_tutorial_hint.text = _tutorial_hint_rewind_move
 	elif _rewind_tutorial_shift_step_one_done and not _rewind_tutorial_shift_step_two_done and pointer_shift >= 42:
 		_rewind_tutorial_shift_step_two_done = true
 		_set_rewind_tutorial_callouts_step(2)
 		if _tutorial_body != null:
-			_tutorial_body.text = "Remember the keycard you took in the kitchen? Axiom recorded that exact state. Jump back to that moment, then cross the split and reach the hole."
+			_tutorial_body.text = _tutorial_prompt_rewind_step_two
 		if _tutorial_hint != null:
-			_tutorial_hint.text = "[SPACE] JUMP TO SELECTED MOMENT"
+			_tutorial_hint.text = _tutorial_hint_rewind_commit
 
 func _finish_rewind_tutorial() -> void:
 	_rewind_tutorial_prompt_active = false
@@ -1135,42 +1193,10 @@ func _set_rewind_overload_enabled(enabled: bool) -> void:
 		_world.player.call("set_rewind_overload_enabled", enabled)
 
 func _set_tutorial_panel_rewind_layout(enabled: bool) -> void:
-	if _tutorial_panel == null:
-		return
-	if enabled:
-		_tutorial_panel.offset_left = -420.0
-		_tutorial_panel.offset_top = -300.0
-		_tutorial_panel.offset_right = 420.0
-		_tutorial_panel.offset_bottom = -188.0
-		if _tutorial_title != null:
-			_tutorial_title.offset_top = 14.0
-			_tutorial_title.offset_bottom = 44.0
-			_tutorial_title.add_theme_font_size_override("font_size", 40)
-		if _tutorial_body != null:
-			_tutorial_body.offset_top = 44.0
-			_tutorial_body.offset_bottom = -34.0
-			_tutorial_body.add_theme_font_size_override("font_size", 30)
-		if _tutorial_hint != null:
-			_tutorial_hint.offset_top = -30.0
-			_tutorial_hint.offset_bottom = -8.0
-			_tutorial_hint.add_theme_font_size_override("font_size", 24)
-	else:
-		_tutorial_panel.offset_left = -320.0
-		_tutorial_panel.offset_top = -130.0
-		_tutorial_panel.offset_right = 320.0
-		_tutorial_panel.offset_bottom = 130.0
-		if _tutorial_title != null:
-			_tutorial_title.offset_top = 18.0
-			_tutorial_title.offset_bottom = 50.0
-			_tutorial_title.add_theme_font_size_override("font_size", 52)
-		if _tutorial_body != null:
-			_tutorial_body.offset_top = 60.0
-			_tutorial_body.offset_bottom = -54.0
-			_tutorial_body.add_theme_font_size_override("font_size", 44)
-		if _tutorial_hint != null:
-			_tutorial_hint.offset_top = -38.0
-			_tutorial_hint.offset_bottom = -12.0
-			_tutorial_hint.add_theme_font_size_override("font_size", 32)
+	# Scene-driven layout: all tutorial panel/title/body/hint positioning
+	# and sizing are configured directly in level_one_tutorial_overlay.tscn.
+	# Keep this function as a compatibility hook.
+	pass
 
 func _set_rewind_tutorial_callouts_visible(visible: bool) -> void:
 	if _tutorial_callout_rewind != null:
@@ -1189,15 +1215,15 @@ func _set_rewind_tutorial_callouts_visible(visible: bool) -> void:
 func _set_rewind_tutorial_callouts_step(step: int) -> void:
 	_set_rewind_tutorial_callouts_visible(true)
 	if _tutorial_callout_rewind_label != null:
-		_tutorial_callout_rewind_label.text = "Timeline Pointer\nHold R = past, hold F = forward. Keep moving the pointer to browse recorded moments."
+		_tutorial_callout_rewind_label.text = _tutorial_callout_rewind_base
 	if _tutorial_callout_warning_label != null:
-		_tutorial_callout_warning_label.text = "Warning\nIf rewind stays active for over 10 seconds, the system overloads and stuns you."
+		_tutorial_callout_warning_label.text = _tutorial_callout_warning_base
 	if _tutorial_callout_commit_label != null:
-		_tutorial_callout_commit_label.text = "Commit Rule\nPress SPACE to jump to the selected state. Any state ahead of the pointer is permanently erased."
+		_tutorial_callout_commit_label.text = _tutorial_callout_commit_base
 	if step >= 1 and _tutorial_callout_rewind_label != null:
-		_tutorial_callout_rewind_label.text = "Timeline Pointer\nShift backward until you find the keycard moment."
+		_tutorial_callout_rewind_label.text = _tutorial_callout_rewind_step_one
 	if step >= 2 and _tutorial_callout_commit_label != null:
-		_tutorial_callout_commit_label.text = "Commit Now\nJump to that keycard state, then cross the split and reach the hole."
+		_tutorial_callout_commit_label.text = _tutorial_callout_commit_step_two
 
 func _clear_small_meteors() -> void:
 	for meteor_data in _active_small_meteors:

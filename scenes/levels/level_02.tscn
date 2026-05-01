@@ -17,6 +17,7 @@
 [ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="16_bgm_level4"]
 [ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="17_sfx_glitch"]
 [ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="18_sfx_sky_cracking"]
+[ext_resource type="PackedScene" uid="uid://b5l1buxicxxq5" path="res://scenes/objects/electric_orb.tscn" id="19_orb"]
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 1
@@ -648,6 +649,7 @@ key_id = "key_2"
 [node name="CorridorObstacle" parent="World" unique_id=410271083 instance=ExtResource("12_obstacle")]
 transform = Transform3D(0.991595, 0, 0.12938431, 0.0034749245, 0.9996393, -0.02663165, -0.12933764, 0.026857387, 0.9912373, -0.056529284, 0.8440082, 139.59364)
 fire_cooldown = 15.0
+projectile_scene = ExtResource("19_orb")
 projectile_damage = 75.0
 projectile_radius = 1.25
 

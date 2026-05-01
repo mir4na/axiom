@@ -16,7 +16,8 @@ const HAZMAT_SCENE := preload("res://scenes/characters/hazmat.tscn")
 enum Stage {
 	TAKE_BOOTS,
 	TRIGGER_REWIND,
-	CROSS_AND_FIGHT,
+	REACH_ARENA,
+	FIGHT_DRAGON,
 	TAKE_KEYCARD,
 	TAME_DRAGON,
 	USE_GATE,
@@ -37,15 +38,25 @@ enum Stage {
 @onready var _boots = $World/Platforms/BootsPlatform/BootsHouse/JumpingBoots
 @onready var _boots_platform: Node3D = $World/Platforms/BootsPlatform
 @onready var _boots_house: Node3D = $World/Platforms/BootsPlatform/BootsHouse
+@onready var _boots_trace_marker: Marker3D = get_node_or_null("World/Platforms/BootsPlatform/BootsTraceMarker") as Marker3D
 @onready var _dragon_guard = $World/DragonGuard
 @onready var _dragon_keycard = $World/DragonKeycard
 @onready var _level_gate = $World/Level4Gate
-@onready var _ride_start: Marker3D = $World/DragonRidePath/Start
-@onready var _ride_mid: Marker3D = $World/DragonRidePath/Mid
-@onready var _ride_end: Marker3D = $World/DragonRidePath/End
-@onready var _player_drop: Marker3D = $World/DragonRidePath/PlayerDrop
 @onready var _bridge_root: Node3D = $World/Platforms/BridgePlatforms
 @onready var _surreal_shapes_root: Node3D = $World/SurrealShapes
+@onready var _fall_death_zone: Area3D = get_node_or_null("World/LevelFallDeathZone") as Area3D
+@onready var _anomaly_trigger: Area3D = $World/AnomalyEncounter/Trigger
+@onready var _anomaly_enemies_root: Node3D = $World/AnomalyEncounter/Enemies
+@onready var _dragon_arena_trigger: Area3D = get_node_or_null("World/DragonEncounter/ArenaTrigger") as Area3D
+@onready var _dragon_fight_camera: Camera3D = get_node_or_null("World/DragonEncounter/FightCamera") as Camera3D
+@onready var _dragon_spawn_marker: Marker3D = get_node_or_null("World/DragonEncounter/DragonSpawnMarker") as Marker3D
+@onready var _dragon_ride_release_area: Area3D = get_node_or_null("World/DragonEncounter/RideReleaseArea") as Area3D
+@onready var _dragon_escape_target: Marker3D = get_node_or_null("World/DragonEncounter/DragonEscapeTarget") as Marker3D
+@onready var _dragon_mount_socket: Marker3D = get_node_or_null("World/DragonGuard/ModelRoot/RideSocket") as Marker3D
+
+@export var dragon_ride_speed: float = 23.0
+@export var dragon_ride_vertical_speed: float = 14.0
+@export var dragon_ride_turn_speed: float = 1.9
 
 var _stage: Stage = Stage.TAKE_BOOTS
 var _base_jump_power: float = 4.5
@@ -57,8 +68,22 @@ var _base_positions: Dictionary = {}
 var _phase_map: Dictionary = {}
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _floating_update_bucket: int = 0
+var _anomaly_enemies: Array[Node3D] = []
+var _anomaly_encounter_started: bool = false
+var _dragon_intro_played: bool = false
+var _dragon_fight_running: bool = false
+var _dragon_arena_position: Vector3 = Vector3.ZERO
+var _dragon_riding: bool = false
+var _dragon_escape_running: bool = false
 
 func _ready() -> void:
+	GameState.current_level_index = 2
+	GameState.set_rewind_disabled(false)
+	GameState.recording_enabled = true
+	GameState.axiom_unlocked = true
+	GameState.axiom_equipped = true
+	GameState.axiom_equipped_changed.emit()
+	GameState.ui_updated.emit()
 	_rng.randomize()
 	if _player != null:
 		_base_jump_power = _player.jump_power
@@ -66,12 +91,17 @@ func _ready() -> void:
 	_collect_floaters()
 	_set_bridge_enabled(false)
 	_set_bridge_preview_visible(true)
-	if _dragon_keycard != null and _dragon_keycard.has_method("set_interactable_enabled"):
-		_dragon_keycard.call("set_interactable_enabled", false)
-	if _dragon_keycard != null:
-		_dragon_keycard.visible = false
+	_set_dragon_keycard_pickup_enabled(false)
 	if _dragon_guard != null and _dragon_guard.has_method("set_mount_enabled"):
 		_dragon_guard.call("set_mount_enabled", false)
+	if _dragon_guard != null:
+		_dragon_arena_position = _dragon_guard.global_position
+		if _dragon_guard.has_method("reset_dragon_state"):
+			_dragon_guard.call("reset_dragon_state")
+		if _dragon_guard.has_method("set_combat_enabled"):
+			_dragon_guard.call("set_combat_enabled", false)
+		else:
+			_dragon_guard.visible = false
 	if _level_gate != null and _level_gate.has_method("set_interactable_enabled"):
 		_level_gate.call("set_interactable_enabled", false)
 	if _boots != null and _boots.has_signal("collected"):
@@ -87,10 +117,20 @@ func _ready() -> void:
 		GameState.rewind_mode_changed.connect(_on_rewind_mode_changed)
 	if not GameState.is_connected("inventory_changed", Callable(self, "_on_inventory_changed")):
 		GameState.inventory_changed.connect(_on_inventory_changed)
+	_setup_anomaly_encounter()
+	_setup_dragon_arena_encounter()
+	_setup_dragon_ride_release_trigger()
+	_setup_fall_death_zone()
 	_show_objective("Take the jumping boots")
 	_show_subtitle("Find the boots and prepare for a long jump.", 2.0)
 
 func _process(delta: float) -> void:
+	if _dragon_riding:
+		_update_dragon_ride(delta)
+	if _stage == Stage.TAKE_BOOTS:
+		_update_boots_objective_trace()
+	else:
+		_clear_hint_marker()
 	if GameState.is_time_blocked():
 		return
 	_time += delta
@@ -302,12 +342,220 @@ func _deactivate_runtime_nodes_recursive(node: Node) -> void:
 	for child in node.get_children():
 		_deactivate_runtime_nodes_recursive(child)
 
+func _setup_anomaly_encounter() -> void:
+	_anomaly_enemies.clear()
+	if _anomaly_enemies_root != null:
+		for child in _anomaly_enemies_root.get_children():
+			var enemy_node: Node3D = child as Node3D
+			if enemy_node == null:
+				continue
+			_anomaly_enemies.append(enemy_node)
+			if enemy_node.has_method("reset_enemy_state"):
+				enemy_node.call("reset_enemy_state")
+			if enemy_node.has_method("set_encounter_enabled"):
+				enemy_node.call("set_encounter_enabled", false)
+			else:
+				enemy_node.visible = false
+	if _anomaly_trigger != null:
+		var entered: Callable = Callable(self, "_on_anomaly_trigger_body_entered")
+		if not _anomaly_trigger.is_connected("body_entered", entered):
+			_anomaly_trigger.body_entered.connect(entered)
+		_anomaly_trigger.monitoring = true
+		_anomaly_trigger.monitorable = true
+
+func _on_anomaly_trigger_body_entered(body: Node) -> void:
+	if _anomaly_encounter_started:
+		return
+	if body == null or not body.is_in_group("player"):
+		return
+	_anomaly_encounter_started = true
+	if _anomaly_trigger != null:
+		_anomaly_trigger.monitoring = false
+	_activate_anomaly_enemies()
+
+func _activate_anomaly_enemies() -> void:
+	for enemy_node in _anomaly_enemies:
+		if enemy_node == null or not is_instance_valid(enemy_node):
+			continue
+		if enemy_node.has_method("reset_enemy_state"):
+			enemy_node.call("reset_enemy_state")
+		if enemy_node.has_method("set_encounter_enabled"):
+			enemy_node.call("set_encounter_enabled", true)
+		else:
+			enemy_node.visible = true
+
+func _setup_dragon_arena_encounter() -> void:
+	if _dragon_arena_trigger == null:
+		return
+	var entered: Callable = Callable(self, "_on_dragon_arena_body_entered")
+	if not _dragon_arena_trigger.is_connected("body_entered", entered):
+		_dragon_arena_trigger.body_entered.connect(entered)
+	_dragon_arena_trigger.monitoring = true
+	_dragon_arena_trigger.monitorable = true
+
+func _setup_dragon_ride_release_trigger() -> void:
+	if _dragon_ride_release_area == null:
+		return
+	var entered: Callable = Callable(self, "_on_dragon_ride_release_area_body_entered")
+	if not _dragon_ride_release_area.is_connected("body_entered", entered):
+		_dragon_ride_release_area.body_entered.connect(entered)
+	_dragon_ride_release_area.monitoring = true
+	_dragon_ride_release_area.monitorable = true
+
+func _setup_fall_death_zone() -> void:
+	if _fall_death_zone == null:
+		return
+	var entered: Callable = Callable(self, "_on_fall_death_zone_body_entered")
+	if not _fall_death_zone.is_connected("body_entered", entered):
+		_fall_death_zone.body_entered.connect(entered)
+	_fall_death_zone.monitoring = true
+	_fall_death_zone.monitorable = true
+
+func _on_fall_death_zone_body_entered(body: Node) -> void:
+	if body == null or _player == null:
+		return
+	if body != _player and not body.is_in_group("player"):
+		return
+	if _player.has_method("take_damage"):
+		_player.call("take_damage", 9999.0)
+
+func _update_boots_objective_trace() -> void:
+	if _world == null or _boots == null or not is_instance_valid(_boots):
+		return
+	if _boots.has_method("set_highlight_enabled"):
+		_boots.call("set_highlight_enabled", true)
+	if _boots.has_method("set_highlight_strength"):
+		var pulse: float = 0.55 + (sin(_time * 1.35) * 0.5 + 0.5) * 0.7
+		_boots.call("set_highlight_strength", pulse)
+	if _world.has_method("_update_hint_marker"):
+		var target_pos: Vector3 = _boots.global_position
+		var marker_pos: Vector3 = target_pos + Vector3(0.0, 1.1, 0.0)
+		if _boots_trace_marker != null:
+			marker_pos = _boots_trace_marker.global_position
+		_world.call("_update_hint_marker", marker_pos, "BOOTS", target_pos)
+
+func _clear_hint_marker() -> void:
+	if _world == null:
+		return
+	var marker_variant: Variant = _world.get("_hint_marker")
+	if marker_variant is CanvasItem:
+		(marker_variant as CanvasItem).visible = false
+	var label_variant: Variant = _world.get("_hint_label")
+	if label_variant is Label:
+		(label_variant as Label).visible = false
+
+func _set_dragon_keycard_pickup_enabled(enabled: bool) -> void:
+	if _dragon_keycard == null:
+		return
+	_dragon_keycard.visible = true
+	var shape: CollisionShape3D = _dragon_keycard.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if shape != null:
+		shape.disabled = not enabled
+	_dragon_keycard.set("prompt_text", "Press E to pick up Keycard" if enabled else "")
+	if _dragon_keycard.has_method("set_highlight_enabled"):
+		_dragon_keycard.call("set_highlight_enabled", enabled)
+	if enabled and _dragon_keycard.has_method("set_highlight_strength"):
+		_dragon_keycard.call("set_highlight_strength", 1.0)
+
+func _on_dragon_arena_body_entered(body: Node) -> void:
+	if _dragon_intro_played or _dragon_fight_running:
+		return
+	if _stage != Stage.REACH_ARENA:
+		return
+	if body == null or not body.is_in_group("player"):
+		return
+	_dragon_intro_played = true
+	_dragon_fight_running = true
+	call_deferred("_play_dragon_arena_cinematic")
+
+func _play_dragon_arena_cinematic() -> void:
+	if _player == null or _dragon_guard == null:
+		_dragon_fight_running = false
+		return
+	if GameState.rewind_mode_active:
+		GameState.cancel_rewind_mode()
+	_player.set_cinematic_lock(true)
+	_player.set_mobility_lock(true)
+	_player.visible = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	var player_camera: Camera3D = _player.get_node_or_null("root/Skeleton3D/BoneAttachment3D/Head/Camera3D") as Camera3D
+	if _dragon_fight_camera != null:
+		_dragon_fight_camera.make_current()
+	if _dragon_guard.has_method("reset_dragon_state"):
+		_dragon_guard.call("reset_dragon_state")
+	if _dragon_guard.has_method("set_combat_enabled"):
+		_dragon_guard.call("set_combat_enabled", false)
+	else:
+		_dragon_guard.visible = true
+	_dragon_guard.visible = true
+	if _dragon_spawn_marker != null:
+		_dragon_guard.global_position = _dragon_spawn_marker.global_position
+	var end_position: Vector3 = _dragon_arena_position if _dragon_arena_position != Vector3.ZERO else _dragon_guard.global_position
+	var emerge: Tween = create_tween().set_parallel(true)
+	emerge.tween_property(_dragon_guard, "global_position", end_position, 1.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	emerge.tween_property(_dragon_guard, "rotation_degrees", _dragon_guard.rotation_degrees + Vector3(0.0, 200.0, 0.0), 1.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await emerge.finished
+	if _dragon_guard.has_method("set_combat_enabled"):
+		_dragon_guard.call("set_combat_enabled", true)
+	_stage = Stage.FIGHT_DRAGON
+	_show_objective("Defeat the dragon")
+	_show_subtitle("Use Bow for heavy damage. Gun damage is low.", 2.3)
+	if player_camera != null:
+		player_camera.make_current()
+	_player.visible = true
+	_player.set_cinematic_lock(false)
+	_player.set_mobility_lock(false)
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	_dragon_fight_running = false
+
+func _on_dragon_ride_release_area_body_entered(body: Node) -> void:
+	if not _dragon_riding:
+		return
+	if body == null or not body.is_in_group("player"):
+		return
+	_release_dragon_ride()
+
+func _update_dragon_ride(delta: float) -> void:
+	if _dragon_guard == null or _player == null:
+		return
+	var turn_input: float = 0.0
+	if Input.is_key_pressed(KEY_D):
+		turn_input += 1.0
+	if Input.is_key_pressed(KEY_A):
+		turn_input -= 1.0
+	if absf(turn_input) > 0.001:
+		_dragon_guard.rotate_y(turn_input * dragon_ride_turn_speed * delta)
+	var move_input: float = 0.0
+	if Input.is_key_pressed(KEY_W):
+		move_input += 1.0
+	if Input.is_key_pressed(KEY_S):
+		move_input -= 1.0
+	var vertical_input: float = 0.0
+	if Input.is_key_pressed(KEY_SPACE):
+		vertical_input += 1.0
+	if Input.is_key_pressed(KEY_CTRL):
+		vertical_input -= 1.0
+	var forward: Vector3 = -_dragon_guard.global_transform.basis.z.normalized()
+	var velocity: Vector3 = forward * (move_input * dragon_ride_speed) + Vector3.UP * (vertical_input * dragon_ride_vertical_speed)
+	_dragon_guard.global_position += velocity * delta
+	_sync_player_to_dragon_mount()
+
+func _sync_player_to_dragon_mount() -> void:
+	if _player == null:
+		return
+	if _dragon_mount_socket != null:
+		_player.global_position = _dragon_mount_socket.global_position
+	else:
+		_player.global_position = _dragon_guard.global_position + Vector3(0.0, 2.2, -0.3)
+	_player.rotation.y = _dragon_guard.global_rotation.y
+
 func _on_boots_collected(multiplier: float) -> void:
 	if _player != null:
 		_player.jump_power = _base_jump_power * multiplier
 	if _stage != Stage.TAKE_BOOTS:
 		return
 	_stage = Stage.TRIGGER_REWIND
+	_clear_hint_marker()
 	_show_objective("Activate rewind to stabilize the route")
 	_show_subtitle("The platform is collapsing. Rewind now.", 2.1)
 	_set_bridge_enabled(false)
@@ -328,6 +576,7 @@ func _collapse_boots_platform() -> void:
 	await get_tree().create_timer(0.35).timeout
 	_set_platform_walkable(_boots_platform, false)
 	if _boots_house != null:
+		_set_collisions_recursive_enabled(_boots_house, false)
 		_boots_house.visible = false
 	await tween.finished
 
@@ -336,69 +585,105 @@ func _on_rewind_mode_changed(active: bool) -> void:
 		return
 	if _stage != Stage.TRIGGER_REWIND:
 		return
-	_stage = Stage.CROSS_AND_FIGHT
+	_stage = Stage.REACH_ARENA
 	_set_bridge_enabled(true)
-	_show_objective("Cross the platforms and defeat the dragon")
-	_show_subtitle("The route is back. Move now.", 1.8)
+	_show_objective("Reach the arena at the center platform")
+	_show_subtitle("The route is back. Reach the keycard arena.", 1.9)
 
 func _on_dragon_defeated(_dragon: Node3D) -> void:
-	if _stage != Stage.CROSS_AND_FIGHT:
+	if _stage != Stage.FIGHT_DRAGON:
 		return
-	_stage = Stage.TAKE_KEYCARD
-	if _dragon_keycard != null:
-		_dragon_keycard.visible = true
-		if _dragon_keycard.has_method("set_interactable_enabled"):
-			_dragon_keycard.call("set_interactable_enabled", true)
-	_show_objective("Grab the keycard")
-	_show_subtitle("The dragon is down. Take the keycard.", 2.0)
+	_grant_dragon_keycard()
+	_stage = Stage.TAME_DRAGON
+	if _dragon_guard != null and _dragon_guard.has_method("set_mount_enabled"):
+		_dragon_guard.call("set_mount_enabled", true)
+	_show_objective("Ride the dragon")
+	_show_subtitle("Interact with the dragon to start flying.", 2.0)
 
 func _on_inventory_changed() -> void:
-	if _stage == Stage.TAKE_KEYCARD and GameState.has_item("key_3"):
-		_stage = Stage.TAME_DRAGON
-		if _dragon_guard != null and _dragon_guard.has_method("set_mount_enabled"):
-			_dragon_guard.call("set_mount_enabled", true)
-		_show_objective("Tame the dragon and ride to the final platform")
-		return
 	if _stage == Stage.USE_GATE and _level_gate != null and _level_gate.has_method("set_highlight_strength"):
 		_level_gate.call("set_highlight_strength", 0.95)
 
 func _on_dragon_mount_requested(_dragon: Node3D) -> void:
 	if _stage != Stage.TAME_DRAGON:
 		return
-	if _ride_running:
+	if _ride_running or _dragon_riding:
 		return
-	_ride_running = true
-	call_deferred("_play_dragon_ride")
+	_start_dragon_ride()
 
-func _play_dragon_ride() -> void:
+func _start_dragon_ride() -> void:
 	if _player == null or _dragon_guard == null:
-		_ride_running = false
 		return
 	if GameState.rewind_mode_active:
 		GameState.cancel_rewind_mode()
-	_player.set_cinematic_lock(true)
+	_ride_running = true
+	_dragon_riding = true
 	_player.set_mobility_lock(true)
-	_player.visible = false
-	var tween: Tween = create_tween()
-	tween.tween_property(_dragon_guard, "global_position", _ride_start.global_position, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(_dragon_guard, "global_position", _ride_mid.global_position, 1.25).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(_dragon_guard, "global_position", _ride_end.global_position, 1.15).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	await tween.finished
-	_player.global_position = _player_drop.global_position
-	_player.rotation.y = _player_drop.global_rotation.y
-	_player.visible = true
-	_player.set_cinematic_lock(false)
-	_player.set_mobility_lock(false)
+	if _player.has_method("set_item_usage_locked"):
+		_player.call("set_item_usage_locked", true)
+	_sync_player_to_dragon_mount()
+	_show_objective("Fly to the distant ruins platform")
+	_show_subtitle("Use W A S D to steer, Space/Ctrl to move up and down.", 2.4)
+	_ride_running = false
+
+func _release_dragon_ride() -> void:
+	if not _dragon_riding:
+		return
+	_dragon_riding = false
+	if _player != null:
+		_player.set_mobility_lock(false)
+		if _player.has_method("set_item_usage_locked"):
+			_player.call("set_item_usage_locked", false)
+	if _dragon_ride_release_area != null:
+		_dragon_ride_release_area.monitoring = false
 	_stage = Stage.USE_GATE
 	if _level_gate != null and _level_gate.has_method("set_interactable_enabled"):
 		_level_gate.call("set_interactable_enabled", true)
-	_show_objective("Use the keycard on the gate")
-	_show_subtitle("Use the keycard and enter Level 4.", 2.0)
-	_ride_running = false
+	_show_objective("Use the portal box")
+	_show_subtitle("The dragon left. Enter the box to reach the next world.", 2.1)
+	if not _dragon_escape_running:
+		_dragon_escape_running = true
+		call_deferred("_fly_dragon_away")
+
+func _fly_dragon_away() -> void:
+	if _dragon_guard == null:
+		_dragon_escape_running = false
+		return
+	if _dragon_escape_target == null:
+		_dragon_guard.visible = false
+		_dragon_escape_running = false
+		return
+	var tween: Tween = create_tween().set_parallel(true)
+	tween.tween_property(_dragon_guard, "global_position", _dragon_escape_target.global_position, 2.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(_dragon_guard, "rotation_degrees", _dragon_guard.rotation_degrees + Vector3(-8.0, 220.0, 0.0), 2.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+	if _dragon_guard.has_method("set_combat_enabled"):
+		_dragon_guard.call("set_combat_enabled", false)
+	else:
+		_dragon_guard.visible = false
+	_dragon_escape_running = false
+
+func _grant_dragon_keycard() -> void:
+	if _dragon_keycard != null:
+		_dragon_keycard.visible = false
+	if GameState.has_item("key_3"):
+		GameState.select_item("key_3")
+		return
+	if GameState.add_item_first_free_slot("key_3"):
+		GameState.select_item("key_3")
+		return
+	if GameState.selected_slot >= 0 and GameState.selected_slot < GameState.slots.size():
+		GameState.slots[GameState.selected_slot] = "key_3"
+		GameState.inventory_changed.emit()
+		GameState.select_item("key_3")
 
 func _on_gate_opened() -> void:
 	if _stage != Stage.USE_GATE:
 		return
+	if _player != null and _player.has_method("set_item_usage_locked"):
+		_player.call("set_item_usage_locked", false)
+	if _player != null:
+		_player.set_mobility_lock(false)
 	_stage = Stage.DONE
 	_show_objective("")
 	_transition_to_level_four()
@@ -446,6 +731,22 @@ func _set_platform_walkable(platform: Node3D, enabled: bool) -> void:
 			for area_child in node.get_children():
 				if area_child is CollisionShape3D:
 					(area_child as CollisionShape3D).disabled = not enabled
+
+func _set_collisions_recursive_enabled(node: Node, enabled: bool) -> void:
+	if node == null:
+		return
+	if node is CollisionShape3D:
+		(node as CollisionShape3D).disabled = not enabled
+	elif node is Area3D:
+		(node as Area3D).monitoring = enabled
+		(node as Area3D).monitorable = enabled
+	elif node is PhysicsBody3D:
+		var body: PhysicsBody3D = node as PhysicsBody3D
+		if not enabled:
+			body.collision_layer = 0
+			body.collision_mask = 0
+	for child in node.get_children():
+		_set_collisions_recursive_enabled(child, enabled)
 
 func _set_platform_preview(platform: Node3D, enabled: bool) -> void:
 	if platform == null:

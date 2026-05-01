@@ -15,6 +15,9 @@
 [ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="13_bgm_level4"]
 [ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="14_sfx_glitch"]
 [ext_resource type="AudioStream" uid="uid://o3exmwpc35b1" path="res://audio/sfx/sky_cracking.mp3" id="15_sfx_sky_cracking"]
+[ext_resource type="PackedScene" uid="uid://cj401kllxsikw" path="res://scenes/objects/enemy.tscn" id="16_enemy"]
+[ext_resource type="Script" uid="uid://4isofn1ndolb" path="res://scripts/objects/anomaly_sentry.gd" id="17_anomaly_sentry"]
+[ext_resource type="PackedScene" path="res://scenes/objects/bow_item.tscn" id="18_bow_item"]
 
 [sub_resource type="ProceduralSkyMaterial" id="1"]
 sky_top_color = Color(0.98, 0.99, 1, 1)
@@ -45,6 +48,84 @@ fog_aerial_perspective = 0.38
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.018
 volumetric_fog_albedo = Color(0.95, 0.97, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="MatArenaStone"]
+albedo_color = Color(0.62, 0.58, 0.52, 1)
+metallic = 0.05
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="ArenaFloorMesh"]
+top_radius = 5.55
+bottom_radius = 5.85
+height = 0.6
+
+[sub_resource type="StandardMaterial3D" id="MatCourtLine"]
+roughness = 0.18
+emission_enabled = true
+emission = Color(0.88, 0.88, 1, 1)
+emission_energy_multiplier = 3.2
+
+[sub_resource type="CylinderMesh" id="ArenaCenterMedallionMesh"]
+top_radius = 1.95
+bottom_radius = 2.1
+height = 0.16
+
+[sub_resource type="StandardMaterial3D" id="MatArenaAccent"]
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+metallic = 0.02
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="ArenaStepRingMeshA"]
+top_radius = 6.0
+bottom_radius = 6.45
+height = 0.44
+
+[sub_resource type="CylinderMesh" id="ArenaStepRingMeshB"]
+top_radius = 6.7
+bottom_radius = 7.35
+height = 0.56
+
+[sub_resource type="CylinderMesh" id="ArenaColumnMesh"]
+top_radius = 0.24
+bottom_radius = 0.32
+height = 3.8
+radial_segments = 10
+
+[sub_resource type="BoxMesh" id="ArenaArchBeamMesh"]
+size = Vector3(1.7, 0.42, 0.64)
+
+[sub_resource type="BoxMesh" id="ArenaButtressMesh"]
+size = Vector3(0.95, 1.08, 1.3)
+
+[sub_resource type="StandardMaterial3D" id="MatRuinsStone"]
+albedo_color = Color(0.58, 0.57, 0.54, 1)
+metallic = 0.04
+roughness = 0.88
+
+[sub_resource type="BoxMesh" id="RuinsWallMesh"]
+size = Vector3(4.6, 3.4, 0.6)
+
+[sub_resource type="BoxMesh" id="RuinsColumnMesh"]
+size = Vector3(1.05, 4.8, 1.05)
+
+[sub_resource type="BoxShape3D" id="10"]
+size = Vector3(8, 4, 8)
+
+[sub_resource type="CylinderShape3D" id="11"]
+height = 24.0
+radius = 8.5
+
+[sub_resource type="BoxShape3D" id="Level3FallDeathShape"]
+size = Vector3(1200, 42, 1200)
+
+[sub_resource type="BoxShape3D" id="9"]
+size = Vector3(12, 4.5, 12)
+
+[sub_resource type="BoxShape3D" id="Level3VerticalBlockerShape"]
+size = Vector3(3.2, 11.0, 1.4)
+
+[sub_resource type="BoxMesh" id="Level3VerticalBlockerMesh"]
+size = Vector3(3.2, 11.0, 1.4)
 
 [sub_resource type="ShaderMaterial" id="4"]
 render_priority = 0
@@ -84,12 +165,6 @@ emission_energy_multiplier = 0.5
 
 [sub_resource type="BoxMesh" id="CourtMesh"]
 size = Vector3(17, 0.4, 9.5)
-
-[sub_resource type="StandardMaterial3D" id="MatCourtLine"]
-roughness = 0.18
-emission_enabled = true
-emission = Color(0.88, 0.88, 1, 1)
-emission_energy_multiplier = 3.2
 
 [sub_resource type="BoxMesh" id="CourtLineLong"]
 size = Vector3(17.1, 0.03, 0.14)
@@ -214,6 +289,9 @@ transform = Transform3D(0.20000002, 0, 0, 0, 0.2, 0, 0, 0, 0.20000002, 1.2830572
 [node name="JumpingBoots" parent="World/Platforms/BootsPlatform/BootsHouse" unique_id=444350027 instance=ExtResource("5")]
 transform = Transform3D(0.9659258, 0, -0.25881904, 0, 1, 0, 0.25881904, 0, 0.9659258, 0, 6.6, 0.4)
 
+[node name="BootsTraceMarker" type="Marker3D" parent="World/Platforms/BootsPlatform" unique_id=1760253384]
+transform = Transform3D(1, 0, 0, 0, 0.98768836, -0.15643448, 0, 0.15643448, 0.98768836, 0.2, 2.75, 0.9)
+
 [node name="BridgePlatforms" type="Node3D" parent="World/Platforms" unique_id=756291455]
 
 [node name="BridgeA" parent="World/Platforms/BridgePlatforms" unique_id=267916812 instance=ExtResource("4")]
@@ -242,20 +320,298 @@ visible = false
 [node name="DragonPlatform" parent="World/Platforms" unique_id=1060336020 instance=ExtResource("4")]
 transform = Transform3D(4.2, 0, 0, 0, 1, 0, 0, 0, 4.2, 56, 17, -14)
 
+[node name="DragonArena" type="Node3D" parent="World/Platforms/DragonPlatform" unique_id=1176054983]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, 0)
+
+[node name="ArenaFloor" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=877647727]
+transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.26, 0)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaFloorMesh")
+
+[node name="ArenaCenterMedallion" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=1297882564]
+transform = Transform3D(1, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155744, 0.9961947, 0, 0.64, 0)
+material_override = SubResource("MatCourtLine")
+mesh = SubResource("ArenaCenterMedallionMesh")
+
+[node name="ArenaWallRing" type="CSGCombiner3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=2139067895]
+transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 1.5, 0)
+use_collision = true
+
+[node name="OuterWall" type="CSGCylinder3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing" unique_id=1628394768]
+radius = 6.2
+height = 2.6
+sides = 40
+material = SubResource("MatArenaStone")
+
+[node name="InnerCut" type="CSGCylinder3D" parent="World/Platforms/DragonPlatform/DragonArena/ArenaWallRing" unique_id=955527888]
+operation = 2
+radius = 5.52
+height = 2.9
+sides = 40
+
+[node name="StepRingA" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=1216372862]
+transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.38, 0)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaStepRingMeshA")
+
+[node name="StepRingB" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=1207044744]
+transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.2, 0)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaStepRingMeshB")
+
+[node name="ColosseumModules" type="Node3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=831578953]
+transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.5, 0)
+
+[node name="ColumnN" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=783732335]
+transform = Transform3D(1, 0, 0, 0, 0.997564, -0.06975647, 0, 0.06975647, 0.997564, 0, 2.05, -6.75)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaColumnMesh")
+
+[node name="ColumnNE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1325085744]
+transform = Transform3D(0.70710677, 0, 0.70710677, 0.04932528, 0.997564, -0.04932528, -0.7053844, 0.06975647, 0.7053844, 4.77, 2.05, -4.77)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaColumnMesh")
+
+[node name="ColumnE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=124375398]
+transform = Transform3D(0.017452383, 0, -0.9998477, -0.06974585, 0.997564, -0.0012179748, 0.99741215, 0.06975647, 0.017409906, 6.75, 2.05, 0)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaColumnMesh")
+
+[node name="ColumnSE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=620638012]
+transform = Transform3D(-0.70710677, 0, 0.70710677, 0.04932528, 0.997564, 0.04932528, -0.7053844, 0.06975647, -0.7053844, 4.77, 2.05, 4.77)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaColumnMesh")
+
+[node name="ColumnS" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=2059931734]
+transform = Transform3D(-1, 0, -8.742278e-08, -6.099934e-09, 0.997564, 0.06975647, 8.720978e-08, 0.06975647, -0.997564, 0, 2.05, 6.75)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaColumnMesh")
+
+[node name="ColumnSW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=98025217]
+transform = Transform3D(-0.7071067, 0, -0.7071068, -0.049325295, 0.997564, 0.049325284, 0.70538443, 0.06975647, -0.7053843, -4.77, 2.05, 4.77)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaColumnMesh")
+
+[node name="ColumnW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1403237357]
+transform = Transform3D(-0.017452544, 0, 0.99984765, 0.06974584, 0.997564, 0.0012179861, -0.99741215, 0.06975647, -0.017410068, -6.75, 2.05, 0)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaColumnMesh")
+
+[node name="ColumnNW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=704501318]
+transform = Transform3D(0.7071068, 0, -0.7071067, -0.049325284, 0.997564, -0.049325295, 0.7053843, 0.06975647, 0.70538443, -4.77, 2.05, -4.77)
+material_override = SubResource("MatArenaAccent")
+mesh = SubResource("ArenaColumnMesh")
+
+[node name="ArchN" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1944465569]
+transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 4.08, -6.75)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="ArchNE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=171957863]
+transform = Transform3D(0.70710677, 0, 0.70710677, 0.024677671, 0.99939084, -0.024677671, -0.70667595, 0.034899496, 0.70667595, 4.77, 4.08, -4.77)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="ArchE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=2132752472]
+transform = Transform3D(0, 0, -1, -0.034899496, 0.99939084, 0, 0.99939084, 0.034899496, 0, 6.75, 4.08, 0)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="ArchSE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=34518056]
+transform = Transform3D(-0.70710677, 0, 0.70710677, 0.024677671, 0.99939084, 0.024677671, -0.70667595, 0.034899496, -0.70667595, 4.77, 4.08, 4.77)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="ArchS" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=711886515]
+transform = Transform3D(-1, 0, 0, 0, 0.99939084, 0.034899496, 0, 0.034899496, -0.99939084, 0, 4.08, 6.75)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="ArchSW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=809613878]
+transform = Transform3D(-0.7071067, 0, -0.7071068, -0.024677675, 0.99939084, 0.02467767, 0.70667595, 0.034899496, -0.7066759, -4.77, 4.08, 4.77)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="ArchW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1755968081]
+transform = Transform3D(0, 0, 1, 0.034899496, 0.99939084, 0, -0.99939084, 0.034899496, 0, -6.75, 4.08, 0)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="ArchNW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1930897497]
+transform = Transform3D(0.7071068, 0, -0.7071067, -0.02467767, 0.99939084, -0.024677675, 0.7066759, 0.034899496, 0.70667595, -4.77, 4.08, -4.77)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaArchBeamMesh")
+
+[node name="ButtressN" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1642219957]
+transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.96, -7.35)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaButtressMesh")
+
+[node name="ButtressE" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=724462944]
+transform = Transform3D(0, 0, -1, -0.034899496, 0.99939084, 0, 0.99939084, 0.034899496, 0, 7.35, 0.96, 0)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaButtressMesh")
+
+[node name="ButtressS" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1139261403]
+transform = Transform3D(-1, 0, 0, 0, 0.99939084, 0.034899496, 0, 0.034899496, -0.99939084, 0, 0.96, 7.35)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaButtressMesh")
+
+[node name="ButtressW" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena/ColosseumModules" unique_id=1075463246]
+transform = Transform3D(0, 0, 1, 0.034899496, 0.99939084, 0, -0.99939084, 0.034899496, 0, -7.35, 0.96, 0)
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("ArenaButtressMesh")
+
 [node name="FinalPlatform" parent="World/Platforms" unique_id=183987220 instance=ExtResource("4")]
 transform = Transform3D(5.5, 0, 0, 0, 1, 0, 0, 0, 5.5, 74, 25, -8)
 
+[node name="RuinsPlatform" parent="World/Platforms" unique_id=2026567978 instance=ExtResource("4")]
+transform = Transform3D(6.6, 0, 0, 0, 1, 0, 0, 0, 6.6, 138, 34, -72)
+
+[node name="Ruins" type="Node3D" parent="World/Platforms/RuinsPlatform" unique_id=652105667]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+
+[node name="WallN" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=1223208942]
+transform = Transform3D(1, 0, 0, 0, 0.9848077, -0.17364818, 0, 0.17364818, 0.9848077, 0, 1.7, -6.1)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsWallMesh")
+
+[node name="WallS" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=566563889]
+transform = Transform3D(1, 0, 0, 0, 0.9848077, -0.17364818, 0, 0.17364818, 0.9848077, 0, 1.7, 6.1)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsWallMesh")
+
+[node name="WallW" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=819434321]
+transform = Transform3D(0.017452383, 0, -0.9998477, 0, 1, 0, 0.9998477, 0, 0.017452383, -6.1, 1.7, 0)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsWallMesh")
+
+[node name="WallE" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=726687127]
+transform = Transform3D(0.017452383, 0, -0.9998477, 0, 1, 0, 0.9998477, 0, 0.017452383, 6.1, 1.7, 0)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsWallMesh")
+
+[node name="ColumnA" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=522623693]
+transform = Transform3D(1, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155744, 0.9961947, -5.8, 2.35, -5.8)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsColumnMesh")
+
+[node name="ColumnB" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=1794948370]
+transform = Transform3D(1, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155744, 0.9961947, 5.8, 2.35, -5.8)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsColumnMesh")
+
+[node name="ColumnC" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=1401022163]
+transform = Transform3D(1, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155744, 0.9961947, -5.8, 2.35, 5.8)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsColumnMesh")
+
+[node name="ColumnD" type="MeshInstance3D" parent="World/Platforms/RuinsPlatform/Ruins" unique_id=1651010498]
+transform = Transform3D(1, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155744, 0.9961947, 5.8, 2.35, 5.8)
+material_override = SubResource("MatRuinsStone")
+mesh = SubResource("RuinsColumnMesh")
+
 [node name="DragonGuard" parent="World" unique_id=735975463 instance=ExtResource("6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 18.654394, -11.486603)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 18.654394, -10.9)
+attack_damage = 0.0
 
 [node name="DragonKeycard" parent="World" unique_id=375519423 instance=ExtResource("7")]
-transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 59, 18.4, -13)
+transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 56, 18.4, -14)
 key_id = "key_3"
 use_any_free_slot = true
 auto_select_after_pickup = true
 
+[node name="BowPickup" parent="World" unique_id=591530306 instance=ExtResource("18_bow_item")]
+transform = Transform3D(0.94, 0, -0.34202015, 0, 1, 0, 0.34202015, 0, 0.94, 53.4, 18.35, -13.2)
+
+[node name="DragonEncounter" type="Node3D" parent="World" unique_id=905670534]
+
+[node name="ArenaTrigger" type="Area3D" parent="World/DragonEncounter" unique_id=2025829314]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 18.7, -14)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/DragonEncounter/ArenaTrigger" unique_id=2023299434]
+shape = SubResource("10")
+
+[node name="FightCamera" type="Camera3D" parent="World/DragonEncounter" unique_id=1781885947]
+transform = Transform3D(0.9363292, -0.0528949, 0.34701395, 0, 0.9885742, 0.15073343, -0.35102466, -0.141131, 0.9256341, 48.8, 22.2, -24.8)
+fov = 62.0
+
+[node name="DragonSpawnMarker" type="Marker3D" parent="World/DragonEncounter" unique_id=1025876110]
+transform = Transform3D(0.9063078, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.9063078, 56, 29.2, -22.6)
+
+[node name="RideReleaseArea" type="Area3D" parent="World/DragonEncounter" unique_id=623136873]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 138, 36, -72)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/DragonEncounter/RideReleaseArea" unique_id=2036738851]
+shape = SubResource("11")
+
+[node name="DragonEscapeTarget" type="Marker3D" parent="World/DragonEncounter" unique_id=2033026958]
+transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, 182, 78, -118)
+
 [node name="Level4Gate" parent="World" unique_id=2147423050 instance=ExtResource("8")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 27.2, -4.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 138, 36.25, -72)
+
+[node name="LevelFallDeathZone" type="Area3D" parent="World" unique_id=959243451]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, -94, -12)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/LevelFallDeathZone" unique_id=1738846207]
+shape = SubResource("Level3FallDeathShape")
+
+[node name="VerticalBlocker" type="StaticBody3D" parent="World" unique_id=430531576]
+transform = Transform3D(0.9063078, 0, -0.42261827, 0, 1, 0, 0.42261827, 0, 0.9063078, 47.4, 22.0, -11.6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/VerticalBlocker" unique_id=2093335099]
+shape = SubResource("Level3VerticalBlockerShape")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/VerticalBlocker" unique_id=2027836139]
+material_override = SubResource("MatArenaStone")
+mesh = SubResource("Level3VerticalBlockerMesh")
+
+[node name="AnomalyEncounter" type="Node3D" parent="World" unique_id=206546344]
+
+[node name="Trigger" type="Area3D" parent="World/AnomalyEncounter" unique_id=1089246160]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, 18.6, -14)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/AnomalyEncounter/Trigger" unique_id=699648072]
+shape = SubResource("9")
+
+[node name="Enemies" type="Node3D" parent="World/AnomalyEncounter" unique_id=1856311772]
+
+[node name="AnomalyA" parent="World/AnomalyEncounter/Enemies" unique_id=1299439896 instance=ExtResource("16_enemy")]
+transform = Transform3D(0.72, 0, 0, 0, 0.72, 0, 0, 0, 0.72, 52.8, 18.2, -14)
+visible = false
+script = ExtResource("17_anomaly_sentry")
+shoot_range = 20.0
+fire_cooldown = 5.0
+laser_duration = 0.22
+max_health = 90.0
+laser_color = Color(0.24, 1, 0.42, 0.95)
+laser_light_color = Color(0.36, 1, 0.58, 1)
+laser_thickness = 0.085
+
+[node name="AnomalyB" parent="World/AnomalyEncounter/Enemies" unique_id=590843362 instance=ExtResource("16_enemy")]
+transform = Transform3D(0.72, 0, 0, 0, 0.72, 0, 0, 0, 0.72, 59.2, 18.2, -14)
+visible = false
+script = ExtResource("17_anomaly_sentry")
+shoot_range = 20.0
+fire_cooldown = 5.0
+laser_duration = 0.22
+max_health = 90.0
+laser_color = Color(0.18, 0.86, 1, 0.95)
+laser_light_color = Color(0.3, 0.9, 1, 1)
+laser_thickness = 0.082
+
+[node name="AnomalyC" parent="World/AnomalyEncounter/Enemies" unique_id=1043683956 instance=ExtResource("16_enemy")]
+transform = Transform3D(0.72, 0, 0, 0, 0.72, 0, 0, 0, 0.72, 56, 18.2, -10.2)
+visible = false
+script = ExtResource("17_anomaly_sentry")
+shoot_range = 20.0
+fire_cooldown = 5.0
+laser_duration = 0.22
+max_health = 90.0
+laser_color = Color(1, 0.52, 0.22, 0.95)
+laser_light_color = Color(1, 0.62, 0.32, 1)
+laser_thickness = 0.088
 
 [node name="SurrealShapes" type="Node3D" parent="World" unique_id=62983666]
 
@@ -280,7 +636,7 @@ material_override = SubResource("4")
 mesh = SubResource("8")
 
 [node name="InvertedHouseA" parent="World/SurrealShapes" unique_id=1796730722 groups=["surreal_float"] instance=ExtResource("9")]
-transform = Transform3D(0.8263445, -0.11613513, 0.33714595, -0.1252558, -0.89124125, 7.86805e-08, 0.33386484, -0.046921723, -0.83446544, -34, 24, 40)
+transform = Transform3D(0.8263445, -0.11613513, 0.33714595, -0.1252558, -0.89124125, 7.86805e-08, 0.33386484, -0.046921723, -0.83446544, -36.85788, 24, 40)
 
 [node name="InvertedHouseB" parent="World/SurrealShapes" unique_id=1565081098 groups=["surreal_float"] instance=ExtResource("9")]
 transform = Transform3D(0.5456813, 0.05735336, -0.6093788, 0.08571334, -0.81550795, 7.168668e-08, -0.6060406, -0.06369748, -0.54868704, 40, 30, 58)
@@ -432,6 +788,16 @@ mesh = SubResource("8")
 transform = Transform3D(0.8518604, -0.46683878, 0.23747711, 0.43031704, 0.88228065, 0.190809, -0.29859853, -0.06035219, 0.95246863, 14, 15, 28)
 material_override = SubResource("MatCarA")
 mesh = SubResource("7")
+
+[node name="Debris09" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=300201512 groups=["surreal_float"]]
+transform = Transform3D(0.9673976, 0.20975703, 0.14192992, -0.06912783, 0.75781727, -0.6487944, -0.24364614, 0.6178308, 0.7476106, -62.976208, 19.911686, 59.64926)
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("8")
+
+[node name="Debris10" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=1351475457 groups=["surreal_float"]]
+transform = Transform3D(0.5114144, 0.7781169, 0.36467728, -0.09192893, 0.47147542, -0.8770746, -0.854403, 0.41502404, 0.3126508, -59.003452, 22.689093, 44.301495)
+material_override = SubResource("MatCreatureSkin")
+mesh = SubResource("8")
 
 [node name="Debris03" type="MeshInstance3D" parent="World/SurrealShapes" unique_id=2014509673 groups=["surreal_float"]]
 transform = Transform3D(0.8424622, 0.0363089, -0.5375307, -0.21623683, 0.9366246, -0.27563736, 0.49345642, 0.34844798, 0.7969221, -30, 12, 6)

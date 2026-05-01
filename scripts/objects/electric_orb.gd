@@ -3,14 +3,12 @@ extends CharacterBody3D
 signal finished(projectile: Node3D)
 
 const ORB_SCALE := 1.5
-static var _cached_fireball_scene: PackedScene
-static var _cached_fireball_scene_path: String = ""
 
 @export var speed: float = 8.5
 @export var damage: float = 75.0
 @export var lifetime: float = 16.0
 @export var radius: float = 1.25
-@export_file("*.tscn") var fireball_model_scene_path: String = "res://.godot/imported/fireballvfx.fbx-8a0e3acf4bdf14dc78b4bd387e8c098c.scn"
+@export var fireball_visual_scene: PackedScene
 
 @onready var _collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 @onready var _visual_root: Node3D = get_node_or_null("VisualRoot") as Node3D
@@ -132,12 +130,11 @@ func _sanitize_imported_model(node: Node) -> void:
 func _spawn_fireball_model() -> void:
 	if _model_anchor == null:
 		return
-	for child in _model_anchor.get_children():
-		child.queue_free()
 	_model_instance = null
-	var loaded_scene: PackedScene = _get_cached_fireball_scene()
-	if loaded_scene != null:
-		var model_node: Node = loaded_scene.instantiate()
+	if fireball_visual_scene != null:
+		for child in _model_anchor.get_children():
+			child.queue_free()
+		var model_node: Node = fireball_visual_scene.instantiate()
 		if model_node is Node3D:
 			_model_instance = model_node as Node3D
 			_model_anchor.add_child(_model_instance)
@@ -147,21 +144,12 @@ func _spawn_fireball_model() -> void:
 			_sanitize_imported_model(_model_instance)
 			return
 		model_node.queue_free()
+	if _model_anchor.get_child_count() > 0:
+		var existing_model: Node = _model_anchor.get_child(0)
+		if existing_model is Node3D:
+			_model_instance = existing_model as Node3D
+			return
 	_spawn_fallback_fireball()
-
-func _get_cached_fireball_scene() -> PackedScene:
-	if fireball_model_scene_path.is_empty():
-		return null
-	if _cached_fireball_scene != null and _cached_fireball_scene_path == fireball_model_scene_path:
-		return _cached_fireball_scene
-	var loaded_resource: Resource = ResourceLoader.load(fireball_model_scene_path)
-	if loaded_resource is PackedScene:
-		_cached_fireball_scene = loaded_resource as PackedScene
-		_cached_fireball_scene_path = fireball_model_scene_path
-		return _cached_fireball_scene
-	_cached_fireball_scene = null
-	_cached_fireball_scene_path = ""
-	return null
 
 func _spawn_fallback_fireball() -> void:
 	var fallback_mesh: MeshInstance3D = MeshInstance3D.new()

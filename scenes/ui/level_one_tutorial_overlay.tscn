@@ -2,6 +2,9 @@
 
 [ext_resource type="FontFile" uid="uid://djt08l5gryxok" path="res://fonts/CatPentagram.ttf" id="1_game_font"]
 
+[sub_resource type="Theme" id="ThemeTutorial"]
+default_font = ExtResource("1_game_font")
+
 [sub_resource type="StyleBoxFlat" id="StyleMain"]
 bg_color = Color(0.05, 0.07, 0.1, 0.94)
 border_width_left = 2
@@ -58,6 +61,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = SubResource("ThemeTutorial")
 
 [node name="TimerLabel" type="Label" parent="." unique_id=812080165]
 visible = false
@@ -79,28 +83,32 @@ vertical_alignment = 1
 
 [node name="TutorialPanel" type="Panel" parent="." unique_id=873362162]
 visible = false
-layout_mode = 0
+custom_minimum_size = Vector2(900, 220)
+layout_mode = 1
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -320.0
-offset_top = -130.0
-offset_right = 320.0
-offset_bottom = 130.0
+offset_left = -500.0
+offset_top = -342.0
+offset_right = 500.0
+offset_bottom = -120.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleMain")
 
-[node name="TutorialTitle" type="Label" parent="TutorialPanel" unique_id=200593909]
+[node name="TutorialTitle" type="Label" parent="TutorialPanel" unique_id=287345900]
 layout_mode = 0
+anchor_right = 1.0
 offset_left = 24.0
-offset_top = 18.0
-offset_right = 616.0
-offset_bottom = 50.0
-theme_override_colors/font_color = Color(0.92, 0.98, 1, 1)
-theme_override_fonts/font = ExtResource("1_game_font")
-theme_override_font_sizes/font_size = 52
+offset_top = 14.0
+offset_right = -24.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(0.98, 0.95, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 0.9)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 40
 text = "AXIOM"
 horizontal_alignment = 1
 
@@ -109,14 +117,12 @@ layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = 60.0
+offset_top = 72.0
 offset_right = -24.0
 offset_bottom = -54.0
 theme_override_colors/font_color = Color(0.88, 0.96, 0.98, 1)
-theme_override_fonts/font = ExtResource("1_game_font")
-theme_override_font_sizes/font_size = 44
+theme_override_font_sizes/font_size = 28
 horizontal_alignment = 1
-vertical_alignment = 1
 autowrap_mode = 3
 
 [node name="TutorialHint" type="Label" parent="TutorialPanel" unique_id=1410746749]
@@ -125,117 +131,166 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -38.0
+offset_top = -42.0
 offset_right = -24.0
 offset_bottom = -12.0
 theme_override_colors/font_color = Color(1, 0.84, 0.44, 1)
-theme_override_fonts/font = ExtResource("1_game_font")
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 24
 text = "[SPACE] NEXT"
 horizontal_alignment = 2
 
 [node name="RewindCallout" type="Panel" parent="." unique_id=1770482909]
 visible = false
+custom_minimum_size = Vector2(320, 190)
 layout_mode = 0
 anchor_left = 0.04
-anchor_top = 0.58
-anchor_right = 0.34
-anchor_bottom = 0.78
+anchor_top = 0.64
+anchor_right = 0.36
+anchor_bottom = 0.93
 theme_override_styles/panel = SubResource("StyleRewind")
 
 [node name="Label" type="Label" parent="RewindCallout" unique_id=1127941990]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 14.0
 offset_top = 12.0
 offset_right = -14.0
 offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0.9, 0.96, 1, 1)
-theme_override_fonts/font = ExtResource("1_game_font")
-theme_override_font_sizes/font_size = 28
-vertical_alignment = 1
+theme_override_font_sizes/font_size = 24
 autowrap_mode = 3
-
-[node name="RewindLine" type="ColorRect" parent="." unique_id=1004756652]
-visible = false
-layout_mode = 0
-anchor_left = 0.33
-anchor_top = 0.79
-anchor_right = 0.5
-anchor_bottom = 0.79
-offset_left = -6.0
-offset_right = 6.0
-offset_bottom = 84.0
-mouse_filter = 2
-color = Color(0.28, 0.9, 1, 0.95)
 
 [node name="WarningCallout" type="Panel" parent="." unique_id=294537877]
 visible = false
+custom_minimum_size = Vector2(300, 170)
 layout_mode = 0
-anchor_left = 0.68
-anchor_top = 0.08
-anchor_right = 0.97
-anchor_bottom = 0.26
+anchor_left = 0.66
+anchor_top = 0.07
+anchor_right = 0.96
+anchor_bottom = 0.34
 theme_override_styles/panel = SubResource("StyleWarning")
 
 [node name="Label" type="Label" parent="WarningCallout" unique_id=352180410]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 14.0
 offset_top = 12.0
 offset_right = -14.0
 offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.88, 1)
-theme_override_fonts/font = ExtResource("1_game_font")
-theme_override_font_sizes/font_size = 26
-vertical_alignment = 1
+theme_override_font_sizes/font_size = 23
 autowrap_mode = 3
-
-[node name="WarningLine" type="ColorRect" parent="." unique_id=1158072807]
-visible = false
-layout_mode = 0
-anchor_left = 0.71
-anchor_top = 0.26
-anchor_right = 0.71
-anchor_bottom = 0.48
-offset_left = -2.0
-offset_right = 2.0
-mouse_filter = 2
-color = Color(1, 0.35, 0.3, 0.92)
 
 [node name="CommitCallout" type="Panel" parent="." unique_id=1796255017]
 visible = false
+custom_minimum_size = Vector2(300, 170)
 layout_mode = 0
 anchor_left = 0.66
-anchor_top = 0.58
-anchor_right = 0.97
-anchor_bottom = 0.82
+anchor_top = 0.66
+anchor_right = 0.96
+anchor_bottom = 0.93
 theme_override_styles/panel = SubResource("StyleCommit")
 
 [node name="Label" type="Label" parent="CommitCallout" unique_id=1846709823]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 14.0
 offset_top = 12.0
 offset_right = -14.0
 offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0.98, 0.96, 0.84, 1)
-theme_override_fonts/font = ExtResource("1_game_font")
-theme_override_font_sizes/font_size = 26
-vertical_alignment = 1
+theme_override_font_sizes/font_size = 23
 autowrap_mode = 3
 
-[node name="CommitLine" type="ColorRect" parent="." unique_id=1416108573]
+[node name="TutorialContent" type="Control" parent="." unique_id=17462017]
 visible = false
+anchors_preset = 0
+
+[node name="AxiomPage01" type="Label" parent="TutorialContent" unique_id=364592851]
 layout_mode = 0
-anchor_left = 0.54
-anchor_top = 0.77
-anchor_right = 0.66
-anchor_bottom = 0.77
-offset_top = -2.0
-offset_bottom = 2.0
-mouse_filter = 2
-color = Color(0.94, 0.84, 0.42, 0.94)
+text = "AXIOM records your recent movement and facing over time."
+
+[node name="AxiomPage02" type="Label" parent="TutorialContent" unique_id=1100876669]
+layout_mode = 0
+text = "You can rewind to any recorded moment and commit that state as your new position."
+
+[node name="AxiomPage03" type="Label" parent="TutorialContent" unique_id=168359684]
+layout_mode = 0
+text = "Let's run a quick rewind tutorial before the final sprint."
+
+[node name="TitleAxiom" type="Label" parent="TutorialContent" unique_id=614614244]
+layout_mode = 0
+text = "AXIOM"
+
+[node name="TitleRewind" type="Label" parent="TutorialContent" unique_id=1921773635]
+layout_mode = 0
+text = "AXIOM REWIND"
+
+[node name="HintSpaceNext" type="Label" parent="TutorialContent" unique_id=741374920]
+layout_mode = 0
+text = "[SPACE] NEXT"
+
+[node name="HintSpaceClose" type="Label" parent="TutorialContent" unique_id=967291276]
+layout_mode = 0
+text = "[SPACE] CLOSE"
+
+[node name="HintRewindActivate" type="Label" parent="TutorialContent" unique_id=365653596]
+layout_mode = 0
+text = "[R] ACTIVATE"
+
+[node name="HintRewindMove" type="Label" parent="TutorialContent" unique_id=551205457]
+layout_mode = 0
+text = "[R/F] KEEP MOVING THE POINTER"
+
+[node name="HintRewindCommit" type="Label" parent="TutorialContent" unique_id=1281848779]
+layout_mode = 0
+text = "[SPACE] JUMP TO SELECTED MOMENT"
+
+[node name="PromptRewindActivate" type="Label" parent="TutorialContent" unique_id=949319561]
+layout_mode = 0
+text = "Press R to activate Axiom rewind mode."
+
+[node name="PromptRewindStep01" type="Label" parent="TutorialContent" unique_id=376151939]
+layout_mode = 0
+text = "That split is too wide for a normal jump. You cannot clear it without rewinding."
+
+[node name="PromptRewindStep02" type="Label" parent="TutorialContent" unique_id=1505744746]
+layout_mode = 0
+text = "Remember when you grabbed the keycard in the kitchen? Reposition to the recorded coordinates from that moment, then cross the split and reach the hole."
+
+[node name="CalloutRewindBase" type="Label" parent="TutorialContent" unique_id=1307412585]
+layout_mode = 0
+text = "Timeline Pointer
+Hold R = past, hold F = forward. Keep moving the pointer to browse recorded moments."
+
+[node name="CalloutWarningBase" type="Label" parent="TutorialContent" unique_id=2091933133]
+layout_mode = 0
+text = "Warning
+If rewind stays active for over 10 seconds, the system overloads and stuns you."
+
+[node name="CalloutCommitBase" type="Label" parent="TutorialContent" unique_id=620892822]
+layout_mode = 0
+text = "Commit Rule
+Press SPACE to jump to the selected state. Any state ahead of the pointer is permanently erased."
+
+[node name="CalloutRewindStep01" type="Label" parent="TutorialContent" unique_id=251688385]
+layout_mode = 0
+text = "Timeline Pointer
+Shift backward until the pointer reaches the kitchen keycard coordinates."
+
+[node name="CalloutCommitStep02" type="Label" parent="TutorialContent" unique_id=1915043574]
+layout_mode = 0
+text = "Commit Now
+Jump to those recorded kitchen coordinates, then cross the split and reach the hole."

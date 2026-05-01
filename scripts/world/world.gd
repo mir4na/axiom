@@ -113,6 +113,8 @@ var _hint_label: Label
 var _loading_label: Label
 var _top_bar: ColorRect
 var _bottom_bar: ColorRect
+var _cinematic_bars_tween: Tween
+var _cinematic_bars_ticket: int = 0
 var _objective_tween: Tween
 var _objective_transition_serial: int = 0
 var _ending_board_text_overlay: Control
@@ -337,7 +339,7 @@ func _process(delta: float) -> void:
 
 	if _is_level_one_scene():
 		if _level_one_flow != null:
-			_level_one_flow.process_objectives()
+			_level_one_flow.process_objectives(delta)
 		if player_hud != null and player_hud.has_method("set_threat_warning_intensity"):
 			player_hud.call("set_threat_warning_intensity", 0.0)
 		return
@@ -533,6 +535,8 @@ func _create_intro_ui() -> void:
 	_top_bar.offset_bottom = 0.0
 	_top_bar.color = Color(0, 0, 0, 1)
 	_top_bar.visible = false
+	_top_bar.z_index = 180
+	_top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro_ui.add_child(_top_bar)
 
 	_bottom_bar = ColorRect.new()
@@ -546,6 +550,8 @@ func _create_intro_ui() -> void:
 	_bottom_bar.offset_bottom = 0.0
 	_bottom_bar.color = Color(0, 0, 0, 1)
 	_bottom_bar.visible = false
+	_bottom_bar.z_index = 180
+	_bottom_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro_ui.add_child(_bottom_bar)
 
 	_objective_panel = OBJECTIVE_PANEL_SCENE.instantiate() as Control
@@ -1314,7 +1320,6 @@ func _play_level_two_room3_sequence() -> void:
 	_intro_camera.make_current()
 	await _play_camera_shot(player_view_transform, axia_camera_transform, 1.05)
 	if use_scene_axia_camera:
-		_level_two_axia_cinematic_camera.global_transform = axia_camera_transform
 		_level_two_axia_cinematic_camera.make_current()
 	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(rose_target)
 	await _show_subtitle("Axia: Hey... so you finally opened it.", 2.4, "axia")
@@ -1325,12 +1330,17 @@ func _play_level_two_room3_sequence() -> void:
 		flashlight_fx.queue_free()
 	await _play_level_two_rose_glitch_disappear()
 	_prepare_level_two_portal_access()
+	await _focus_level_two_camera_to_endcap(0.65, 0.0)
 	await _show_subtitle("Axia: There. Go on... the portal will take you through.", 2.7, "axia")
 	if _level_two_portal != null:
 		if _level_two_portal.has_signal("player_entered") and not _level_two_portal.is_connected("player_entered", Callable(self, "_on_level_two_portal_entered")):
 			_level_two_portal.connect("player_entered", Callable(self, "_on_level_two_portal_entered"))
 		if _level_two_portal.has_method("play_open_sequence"):
-			_level_two_portal.call("play_open_sequence")
+			await _focus_level_two_camera_to_endcap(0.45, 0.0)
+			await _level_two_portal.call("play_open_sequence")
+			await _focus_level_two_camera_to_endcap(0.35, 0.25)
+		else:
+			await _focus_level_two_camera_to_endcap(0.35, 0.35)
 	await _complete_level_two_room3_cutscene()
 
 func _complete_level_two_room3_cutscene() -> void:
@@ -1359,11 +1369,58 @@ func _complete_level_two_room3_cutscene() -> void:
 	_level_two_room3_sequence_running = false
 
 func _resolve_level_two_axia_camera_transform(fallback_start: Transform3D) -> Transform3D:
-	if _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera):
-		return _level_two_axia_cinematic_camera.global_transform
 	if _level_two_axia_cinematic_transform_from_scene != Transform3D.IDENTITY:
 		return _level_two_axia_cinematic_transform_from_scene
+	if _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera):
+		return _level_two_axia_cinematic_camera.global_transform
 	return fallback_start
+
+func _focus_level_two_camera_to_endcap(travel_duration: float, hold_duration: float) -> void:
+	if _intro_camera == null:
+		return
+	var target_node: Node3D = _level_two_end_cap_near
+	if target_node == null or not is_instance_valid(target_node):
+		target_node = _level_two_portal
+	if target_node == null or not is_instance_valid(target_node):
+		return
+	var look_target: Vector3 = target_node.global_position + Vector3(0.0, 1.35, 0.0)
+	var current_transform: Transform3D = _get_current_cinematic_camera_transform()
+	var start_origin: Vector3 = current_transform.origin
+	var end_transform: Transform3D = _make_look_transform(start_origin, look_target)
+	if _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera) and _level_two_axia_cinematic_camera.current:
+		await _play_camera_on_node(_level_two_axia_cinematic_camera, current_transform, end_transform, travel_duration)
+	else:
+		_intro_camera.global_transform = current_transform
+		_intro_camera.make_current()
+		await _play_camera_shot(current_transform, end_transform, travel_duration)
+	if hold_duration > 0.0:
+		await get_tree().create_timer(hold_duration).timeout
+
+func _get_current_cinematic_camera_transform() -> Transform3D:
+	if _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera) and _level_two_axia_cinematic_camera.current:
+		return _level_two_axia_cinematic_camera.global_transform
+	if _intro_camera != null:
+		return _intro_camera.global_transform
+	if player_camera != null:
+		return player_camera.global_transform
+	return Transform3D.IDENTITY
+
+func _play_camera_on_node(cam: Camera3D, start_transform: Transform3D, end_transform: Transform3D, duration: float) -> void:
+	if cam == null:
+		return
+	var tween := create_tween()
+	tween.tween_method(_blend_camera_node.bind(cam, start_transform, end_transform), 0.0, 1.0, maxf(0.01, duration)).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+
+func _blend_camera_node(weight: float, cam: Camera3D, start_transform: Transform3D, end_transform: Transform3D) -> void:
+	if cam == null:
+		return
+	var clamped_weight: float = clampf(weight, 0.0, 1.0)
+	var blended_origin: Vector3 = start_transform.origin.lerp(end_transform.origin, clamped_weight)
+	var start_basis: Basis = start_transform.basis.orthonormalized()
+	var end_basis: Basis = end_transform.basis.orthonormalized()
+	var blended_basis: Basis = start_basis.slerp(end_basis, clamped_weight).orthonormalized()
+	cam.global_transform = Transform3D(blended_basis, blended_origin)
 
 func _prepare_level_two_portal_access() -> void:
 	if _level_two_end_cap_near != null and is_instance_valid(_level_two_end_cap_near):
@@ -2097,13 +2154,22 @@ func _apply_ending_world_sky() -> void:
 func _set_cinematic_bars(visible: bool, duration: float) -> void:
 	if _top_bar == null or _bottom_bar == null:
 		return
+	_cinematic_bars_ticket += 1
+	var ticket: int = _cinematic_bars_ticket
+	if _cinematic_bars_tween != null and _cinematic_bars_tween.is_valid():
+		_cinematic_bars_tween.kill()
 	var target_height := 88.0 if visible else 0.0
 	_top_bar.visible = true
 	_bottom_bar.visible = true
-	var tween := create_tween()
+	var tween: Tween = create_tween()
+	_cinematic_bars_tween = tween
 	tween.tween_property(_top_bar, "offset_bottom", target_height, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.parallel().tween_property(_bottom_bar, "offset_top", -target_height, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await tween.finished
+	if ticket != _cinematic_bars_ticket:
+		return
+	if _cinematic_bars_tween == tween:
+		_cinematic_bars_tween = null
 	if not visible:
 		_top_bar.visible = false
 		_bottom_bar.visible = false
@@ -2477,10 +2543,10 @@ func restart_current_level() -> void:
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
 		return
-	var requires_post_swap_record_reset: bool = _is_level_two_scene()
+	var requires_post_swap_record_reset: bool = true
+	GameState.reset_world_state()
 	GameState.force_time_forward()
-	if not requires_post_swap_record_reset:
-		GameState.reset_axiom_recording()
+	GameState.reset_axiom_recording()
 	GameState.set_meta(LEVEL_ONE_WHITE_META, false)
 	GameState.set_meta(LEVEL_FOUR_RETURN_WAKE_META, false)
 	if _is_level_one_scene():

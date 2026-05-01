@@ -26,6 +26,7 @@ extends CharacterBody3D
 @export var sfx_rewind_exit: AudioStream
 @export var sfx_gun_fire: AudioStream
 @export var sfx_gun_reload: AudioStream
+@export var sfx_bow_fire: AudioStream
 @export var sfx_lightning_target_enter: AudioStream
 @export var sfx_lightning_cast: AudioStream
 @export var sfx_player_hurt: AudioStream
@@ -36,6 +37,7 @@ const SHOVEL_ITEM_SCENE := preload("res://scenes/objects/shovel.tscn")
 const AXIOM_ITEM_SCENE := preload("res://scenes/objects/axiom_item.tscn")
 const FLASHLIGHT_ITEM_SCENE := preload("res://scenes/objects/flashlight_item.tscn")
 const GUN_ITEM_SCENE := preload("res://scenes/objects/gun_item.tscn")
+const BOW_ITEM_SCENE := preload("res://scenes/objects/bow_item.tscn")
 const THUNDER_AIM_RADIUS_SHADER := preload("res://shaders/thunder_aim_radius.gdshader")
 const SWORD_SKILL_SCENE := preload("res://scenes/objects/sword_skill.tscn")
 
@@ -58,6 +60,9 @@ var _gun_muzzle: Node3D
 var _gun_shot_material: Material
 var _gun_impact_material_enemy: Material
 var _gun_impact_material_world: Material
+var _bow_view_root: Node3D
+var _bow_muzzle: Node3D
+var _bow_shot_material: Material
 
 var camera_x_rotation: float = 0.0
 var _smoothed_head_y: float = 0.0
@@ -84,6 +89,11 @@ var _gun_shot_timer: float = 0.0
 var _gun_damage: float = 30.0
 var _gun_range: float = 52.0
 var _gun_recoil: float = 0.0
+var _bow_damage: float = 8.0
+var _bow_range: float = 58.0
+var _bow_shot_cooldown: float = 0.6
+var _bow_shot_timer: float = 0.0
+var _bow_recoil: float = 0.0
 var mobility_locked: bool = false
 var _lightning_targeting: bool = false
 var _lightning_target_position: Vector3 = Vector3.ZERO
@@ -100,6 +110,7 @@ var _rewind_overload_stun_active: bool = false
 var _rewind_overload_stun_remaining: float = 0.0
 var _rewind_overload_enabled: bool = true
 var _suppress_space_jump_until_release: bool = false
+var _item_usage_locked: bool = false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -120,6 +131,7 @@ func _ready() -> void:
 	_self_melee_exclude = [get_rid()]
 	_setup_flashlight()
 	_setup_gun_view_model()
+	_setup_bow_view_model()
 	_setup_lightning_target_indicator()
 	_resolve_lightning_target_camera()
 	_setup_audio_player()
@@ -213,6 +225,8 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey and event.pressed and not event.echo:
+		if _item_usage_locked and (event.keycode == KEY_R or event.keycode == KEY_X):
+			return
 		if event.keycode == KEY_R:
 			if _lightning_targeting:
 				return
@@ -235,6 +249,8 @@ func _input(event: InputEvent) -> void:
 		camera_x_rotation = clamp(camera_x_rotation + x_delta, -90.0, 90.0)
 
 	if event is InputEventKey and event.pressed:
+		if _item_usage_locked and (event.keycode == KEY_1 or event.keycode == KEY_2 or event.keycode == KEY_3):
+			return
 		if event.keycode == KEY_1:
 			GameState.select_slot(0)
 		elif event.keycode == KEY_2:
@@ -243,12 +259,17 @@ func _input(event: InputEvent) -> void:
 			GameState.select_slot(2)
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
+			if _item_usage_locked:
+				return
 			if _lightning_targeting:
 				_cast_lightning_at_target()
 				return
 			if _can_activate_lightning_target():
 				_set_lightning_targeting(true)
 				_play_sfx(sfx_lightning_target_enter)
+				return
+			if _can_use_bow():
+				_fire_bow()
 				return
 			if _can_use_gun():
 				_fire_gun()
@@ -516,7 +537,7 @@ func _update_hud_status() -> void:
 		return
 	hud.set_health(health, max_health)
 	hud.set_stamina(stamina, max_stamina)
-	var weapon_visible: bool = _has_gun_selected() and not GameState.rewind_mode_active and not cinematic_locked
+	var weapon_visible: bool = _has_gun_selected() and not _item_usage_locked and not GameState.rewind_mode_active and not cinematic_locked
 	if hud.has_method("set_weapon_hud_visible"):
 		hud.call("set_weapon_hud_visible", weapon_visible)
 	if hud.has_method("set_ammo"):
@@ -531,6 +552,8 @@ func _update_hud_status() -> void:
 			hud.call("set_reload_progress", 0.0, false)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _item_usage_locked:
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_1:
 			GameState.select_slot(0)
@@ -563,6 +586,8 @@ func _drop_item() -> void:
 		_spawn_drop_item(FLASHLIGHT_ITEM_SCENE)
 	elif item_name == "Gun":
 		_spawn_drop_item(GUN_ITEM_SCENE)
+	elif item_name == "Bow":
+		_spawn_drop_item(BOW_ITEM_SCENE)
 
 func _show_cannot_drop_skill_message() -> void:
 	var world: Node = get_parent()
@@ -640,6 +665,8 @@ func _node_has_property(node: Object, property_name: String) -> bool:
 func _can_use_axiom() -> bool:
 	if _rewind_overload_stun_active:
 		return false
+	if _item_usage_locked:
+		return false
 	return GameState.has_rewind_access()
 
 func _trigger_rewind_overload_stun() -> void:
@@ -684,7 +711,7 @@ func _setup_audio_player() -> void:
 func _play_sfx(stream: AudioStream) -> void:
 	if stream == null:
 		return
-	if stream != sfx_gun_fire:
+	if stream != sfx_gun_fire and stream != sfx_bow_fire:
 		return
 	if _sfx_player == null or not is_instance_valid(_sfx_player):
 		return
@@ -694,19 +721,25 @@ func _play_sfx(stream: AudioStream) -> void:
 func _has_gun_selected() -> bool:
 	return GameState.has_selected_item("Gun")
 
+func _has_bow_selected() -> bool:
+	return GameState.has_selected_item("Bow")
+
 func _has_lightning_skill_selected() -> bool:
 	return GameState.has_selected_item(LIGHTNING_SKILL_ITEM_ID)
 
 func _can_activate_lightning_target() -> bool:
 	if _lightning_target_camera == null or not is_instance_valid(_lightning_target_camera):
 		_resolve_lightning_target_camera()
-	return _has_lightning_skill_selected() and not _lightning_targeting and not _time_stop_active and not cinematic_locked and not GameState.is_time_blocked() and _lightning_target_camera != null and is_instance_valid(_lightning_target_camera)
+	return _has_lightning_skill_selected() and not _item_usage_locked and not _lightning_targeting and not _time_stop_active and not cinematic_locked and not GameState.is_time_blocked() and _lightning_target_camera != null and is_instance_valid(_lightning_target_camera)
 
 func _can_use_gun() -> bool:
-	return _has_gun_selected() and not _lightning_targeting and not cinematic_locked and not GameState.is_time_blocked() and not _gun_reloading and _gun_shot_timer <= 0.0
+	return _has_gun_selected() and not _item_usage_locked and not _lightning_targeting and not cinematic_locked and not GameState.is_time_blocked() and not _gun_reloading and _gun_shot_timer <= 0.0
+
+func _can_use_bow() -> bool:
+	return _has_bow_selected() and not _item_usage_locked and not _lightning_targeting and not cinematic_locked and not GameState.is_time_blocked() and _bow_shot_timer <= 0.0
 
 func _can_reload_gun() -> bool:
-	return _has_gun_selected() and not _gun_reloading and _gun_ammo < _gun_clip_size and not cinematic_locked and not GameState.is_time_blocked()
+	return _has_gun_selected() and not _item_usage_locked and not _gun_reloading and _gun_ammo < _gun_clip_size and not cinematic_locked and not GameState.is_time_blocked()
 
 func _start_gun_reload() -> void:
 	if not _can_reload_gun():
@@ -741,27 +774,69 @@ func _fire_gun() -> void:
 		impact_normal = hit.get("normal", Vector3.UP)
 		var collider: Node = hit.get("collider") as Node
 		var target: Node3D = _resolve_damage_target(collider)
-		if target != null and target.has_method("take_damage"):
-			target.call("take_damage", _gun_damage)
+		if target != null:
+			_apply_weapon_damage(target, "Gun", _gun_damage)
 			hit_damage_target = true
 	_spawn_bullet_tracer(_get_gun_muzzle_world_position(), impact_position)
 	_spawn_bullet_impact(impact_position, impact_normal, hit_damage_target)
 	if _gun_ammo <= 0:
 		_start_gun_reload()
 
+func _fire_bow() -> void:
+	if not _can_use_bow():
+		return
+	_play_sfx(sfx_bow_fire if sfx_bow_fire != null else sfx_gun_fire)
+	_bow_shot_timer = _bow_shot_cooldown
+	_bow_recoil = minf(1.0, _bow_recoil + 0.55)
+	var from: Vector3 = camera.global_position
+	var direction: Vector3 = -camera.global_transform.basis.z.normalized()
+	var to: Vector3 = from + direction * _bow_range
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(from, to)
+	query.exclude = _self_melee_exclude
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	var impact_position: Vector3 = to
+	var impact_normal: Vector3 = Vector3.UP
+	var hit_damage_target: bool = false
+	if not hit.is_empty():
+		impact_position = hit.get("position", to)
+		impact_normal = hit.get("normal", Vector3.UP)
+		var collider: Node = hit.get("collider") as Node
+		var target: Node3D = _resolve_damage_target(collider)
+		if target != null:
+			_apply_weapon_damage(target, "Bow", _bow_damage)
+			hit_damage_target = true
+	_spawn_bullet_tracer(_get_bow_muzzle_world_position(), impact_position)
+	_spawn_bullet_impact(impact_position, impact_normal, hit_damage_target)
+
+func _apply_weapon_damage(target: Node3D, weapon_id: String, default_damage: float) -> void:
+	if target == null:
+		return
+	if target.has_method("take_weapon_damage"):
+		target.call("take_weapon_damage", default_damage, weapon_id)
+		return
+	if target.has_method("take_damage"):
+		target.call("take_damage", default_damage)
+
 func _update_gun_state(delta: float) -> void:
 	if GameState.rewind_mode_active:
 		_update_gun_view_model(delta)
+		_update_bow_view_model(delta)
 		return
 	if _gun_shot_timer > 0.0:
 		_gun_shot_timer = maxf(0.0, _gun_shot_timer - delta)
+	if _bow_shot_timer > 0.0:
+		_bow_shot_timer = maxf(0.0, _bow_shot_timer - delta)
 	if _gun_reloading:
 		_gun_reload_timer = maxf(0.0, _gun_reload_timer - delta)
 		if _gun_reload_timer <= 0.0:
 			_gun_reloading = false
 			_gun_ammo = _gun_clip_size
 	_gun_recoil = maxf(0.0, _gun_recoil - delta * 4.6)
+	_bow_recoil = maxf(0.0, _bow_recoil - delta * 4.2)
 	_update_gun_view_model(delta)
+	_update_bow_view_model(delta)
 
 func _setup_gun_view_model() -> void:
 	var gun_view_scene: PackedScene = load("res://scenes/objects/gun_view_model.tscn") as PackedScene
@@ -804,6 +879,43 @@ func _update_gun_view_model(delta: float) -> void:
 	_gun_view_root.position = Vector3(0.24 + bob_x, -0.27 + bob_y + _gun_recoil * 0.028, -0.34 + _gun_recoil * 0.08)
 	_gun_view_root.rotation_degrees = Vector3(-7.5 - _gun_recoil * 6.2, -15.0, 0.0)
 
+func _setup_bow_view_model() -> void:
+	var bow_view_scene: PackedScene = load("res://scenes/objects/bow_view_model.tscn") as PackedScene
+	if bow_view_scene == null:
+		return
+	_bow_view_root = bow_view_scene.instantiate() as Node3D
+	_bow_view_root.visible = false
+	camera.add_child(_bow_view_root)
+	_bow_muzzle = _bow_view_root.get_node_or_null("Muzzle") as Node3D
+	var tracer_shader: Shader = load("res://shaders/bullet_tracer.gdshader") as Shader
+	if tracer_shader != null:
+		var tracer_material := ShaderMaterial.new()
+		tracer_material.shader = tracer_shader
+		tracer_material.set_shader_parameter("tint_color", Color(0.7, 0.95, 1.0, 0.96))
+		tracer_material.set_shader_parameter("glow_strength", 6.0)
+		tracer_material.set_shader_parameter("pulse_speed", 8.0)
+		_bow_shot_material = tracer_material
+
+func _update_bow_view_model(_delta: float) -> void:
+	if _bow_view_root == null:
+		return
+	var active: bool = _has_bow_selected() and not GameState.is_time_blocked() and not cinematic_locked
+	_bow_view_root.visible = active
+	if not active:
+		return
+	var bob_x: float = sin(Time.get_ticks_msec() * 0.0048) * 0.006
+	var bob_y: float = sin(Time.get_ticks_msec() * 0.0036) * 0.005
+	_bow_view_root.position = Vector3(0.19 + bob_x, -0.29 + bob_y + _bow_recoil * 0.026, -0.31 + _bow_recoil * 0.05)
+	_bow_view_root.rotation_degrees = Vector3(-4.8 - _bow_recoil * 5.2, -17.0, 0.0)
+
+func _get_bow_muzzle_world_position() -> Vector3:
+	if _bow_muzzle != null and _bow_view_root != null and _bow_view_root.visible:
+		return _bow_muzzle.global_position
+	var forward: Vector3 = -camera.global_transform.basis.z.normalized()
+	var right: Vector3 = camera.global_transform.basis.x.normalized()
+	var up: Vector3 = camera.global_transform.basis.y.normalized()
+	return camera.global_position + forward * 0.46 + right * 0.08 - up * 0.04
+
 func _get_gun_muzzle_world_position() -> Vector3:
 	if _gun_muzzle != null and _gun_view_root != null and _gun_view_root.visible:
 		return _gun_muzzle.global_position
@@ -826,7 +938,10 @@ func _spawn_bullet_tracer(from: Vector3, to: Vector3) -> void:
 	var tracer_mesh := BoxMesh.new()
 	tracer_mesh.size = Vector3(0.03, 0.03, distance)
 	tracer.mesh = tracer_mesh
-	tracer.material_override = _gun_shot_material
+	var tracer_material: Material = _gun_shot_material
+	if _has_bow_selected() and _bow_shot_material != null:
+		tracer_material = _bow_shot_material
+	tracer.material_override = tracer_material
 	var look_basis: Basis = Basis.looking_at(direction.normalized(), Vector3.UP)
 	tracer.global_transform = Transform3D(look_basis, from.lerp(to, 0.5))
 	parent.add_child(tracer)
@@ -1180,6 +1295,9 @@ func set_mobility_lock(active: bool) -> void:
 	if active:
 		velocity.x = 0.0
 		velocity.z = 0.0
+
+func set_item_usage_locked(active: bool) -> void:
+	_item_usage_locked = active
 
 func set_time_stop_active(active: bool, world_origin: Vector3 = Vector3.ZERO, expand_duration: float = 1.0) -> void:
 	_time_stop_active = active
