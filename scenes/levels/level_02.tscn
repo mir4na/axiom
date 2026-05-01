@@ -655,6 +655,9 @@ fire_cooldown = 15.0
 projectile_scene = ExtResource("19_orb")
 projectile_damage = 75.0
 projectile_radius = 1.25
+projectile_spawn_vertical_offset = -0.45
+projectile_target_height_offset = 0.45
+projectile_vertical_aim_bias = -0.18
 
 [node name="Rose" parent="World" unique_id=1861027441 instance=ExtResource("7_rose")]
 transform = Transform3D(0.71515644, 0, -0.6989649, 0, 1, 0, 0.6989649, 0, 0.71515644, -6.2, 0, 160.1)

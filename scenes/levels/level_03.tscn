@@ -349,7 +349,7 @@ material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaFloorMesh")
 
 [node name="ArenaCenterMedallion" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=1297882564]
-transform = Transform3D(1.0000005, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155774, 0.9961948, 0, 84.36912, 0)
+transform = Transform3D(1.0000006, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.08715578, 0.9961948, 0, 119.193855, 0)
 visible = false
 material_override = SubResource("MatCourtLine")
 mesh = SubResource("ArenaCenterMedallionMesh")

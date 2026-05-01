@@ -9,6 +9,9 @@ signal projectile_fired(obstacle: Node3D, projectile: Node3D)
 @export var projectile_speed: float = 10.5
 @export var projectile_damage: float = 50.0
 @export var projectile_radius: float = 1.25
+@export var projectile_spawn_vertical_offset: float = -0.4
+@export var projectile_target_height_offset: float = 0.55
+@export var projectile_vertical_aim_bias: float = -0.14
 @export var detection_range: float = 260.0
 @export var sfx_fireball_cast: AudioStream
 
@@ -171,17 +174,18 @@ func _fire_projectile(player: CharacterBody3D) -> void:
 	var spawn_position: Vector3 = global_position + Vector3(0.0, 1.2, 0.0)
 	if _muzzle != null:
 		spawn_position = _muzzle.global_position
+	spawn_position.y += projectile_spawn_vertical_offset
 	projectile_node.global_position = spawn_position
 	if _shot_direction.length_squared() <= 0.0001:
-		var initial_target: Vector3 = player.global_position + Vector3(0.0, 1.0, 0.0)
+		var initial_target: Vector3 = player.global_position + Vector3(0.0, projectile_target_height_offset, 0.0)
 		var initial_direction: Vector3 = initial_target - spawn_position
-		initial_direction.y = 0.0
+		initial_direction.y += projectile_vertical_aim_bias
 		if initial_direction.length_squared() <= 0.0001:
 			var fallback: Vector3 = -global_transform.basis.z
-			fallback.y = 0.0
+			fallback.y += projectile_vertical_aim_bias
 			initial_direction = fallback
 		if initial_direction.length_squared() <= 0.0001:
-			initial_direction = Vector3.BACK
+			initial_direction = Vector3(0.0, projectile_vertical_aim_bias, -1.0)
 		_shot_direction = initial_direction.normalized()
 	if projectile_node.has_method("configure_orb"):
 		projectile_node.call("configure_orb", _shot_direction, projectile_speed, projectile_damage, projectile_radius)
