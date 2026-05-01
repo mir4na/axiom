@@ -10,9 +10,9 @@ clip_contents = true
 layout_mode = 3
 anchors_preset = 0
 offset_left = -472.0
-offset_top = 40.0
+offset_top = 24.0
 offset_right = -28.0
-offset_bottom = 138.0
+offset_bottom = 122.0
 theme = SubResource("Theme_objective")
 
 [node name="Back" type="ColorRect" parent="." unique_id=1274698830]

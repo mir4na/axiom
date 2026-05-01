@@ -1315,10 +1315,12 @@ func _play_level_two_room3_sequence() -> void:
 	var rose_target: Vector3 = _level_two_rose_focus.global_position if _level_two_rose_focus != null else ((_level_two_rose.global_position if _level_two_rose != null else Vector3(0.0, 1.5, 0.0)) + Vector3(0.0, 1.35, 0.0))
 	var player_view_transform: Transform3D = player_camera.global_transform if player_camera != null else _make_look_transform(rose_target + Vector3(0.0, 1.6, -5.0), rose_target)
 	var axia_camera_transform: Transform3D = _resolve_level_two_axia_camera_transform(player_view_transform)
+	var room_focus_transform: Transform3D = _make_look_transform(player_view_transform.origin, rose_target)
 	var use_scene_axia_camera: bool = _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera)
 	_intro_camera.global_transform = player_view_transform
 	_intro_camera.make_current()
-	await _play_camera_shot(player_view_transform, axia_camera_transform, 1.05)
+	await _play_camera_shot(player_view_transform, room_focus_transform, 0.24)
+	await _play_camera_shot(room_focus_transform, axia_camera_transform, 0.72)
 	if use_scene_axia_camera:
 		_level_two_axia_cinematic_camera.make_current()
 	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(rose_target)
