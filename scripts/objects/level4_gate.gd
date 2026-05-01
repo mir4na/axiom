@@ -3,7 +3,7 @@ extends Interactable
 signal gate_opened
 signal portal_activated
 
-@export var required_key: String = "key_3"
+@export var required_key: String = "keycard"
 @export var level_four_scene_path: String = "res://scenes/levels/level_04.tscn"
 @export var dark_portal_color: Color = Color(0.18, 0.08, 0.3, 1.0)
 @export var dark_portal_emission_energy: float = 2.4

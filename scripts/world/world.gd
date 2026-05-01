@@ -1412,7 +1412,7 @@ func _play_level_two_room3_sequence() -> void:
 		_level_two_rose.call("play_idle")
 	_set_level_two_cinematic_ui(false)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	await _set_cinematic_bars(true, 0.28)
+	await _set_cinematic_bars(false, 0.12)
 	if _intro_camera == null:
 		_create_intro_camera()
 	if _intro_camera == null:
@@ -1431,7 +1431,12 @@ func _play_level_two_room3_sequence() -> void:
 		_intro_camera.global_transform = axia_camera_transform
 		_intro_camera.make_current()
 	await _fade_black(0.0, 0.5)
-	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(rose_target)
+	await _set_cinematic_bars(true, 0.28)
+	var active_cutscene_camera: Camera3D = _level_two_axia_cinematic_camera if use_scene_axia_camera else _intro_camera
+	var flashlight_target: Vector3 = rose_target
+	if active_cutscene_camera != null and is_instance_valid(active_cutscene_camera):
+		flashlight_target = active_cutscene_camera.global_position + (-active_cutscene_camera.global_transform.basis.z.normalized() * 28.0)
+	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(flashlight_target)
 	await _show_subtitle("Axia: Hey... so you finally opened it.", 2.4, "axia")
 	await _show_subtitle("Axia: This place gets weird every time you start second-guessing yourself.", 2.8, "axia")
 	await _show_subtitle("Axia: I can help you get through this part... and get you closer to what you're after.", 3.1, "axia")
@@ -1976,7 +1981,7 @@ func _update_objective_text() -> void:
 	if _objective_state == "shovel":
 		_show_objective(_objective_text("shovel", "Pick up the shovel"))
 	elif _objective_state == "dig":
-		_show_objective("%s %d/%d" % [_objective_text("dig", "Press E to bury"), _completed_dig_spots, _total_dig_spots])
+		_show_objective("%s %d/%d" % [_objective_text("dig", "Bury some old stuff"), _completed_dig_spots, _total_dig_spots])
 	elif _objective_state == "rest":
 		_show_objective(_objective_text("rest", "Rest on the sofa"))
 	elif _objective_panel != null:

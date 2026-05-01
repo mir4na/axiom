@@ -74,10 +74,9 @@ height = 0.16
 [sub_resource type="BoxShape3D" id="ArenaWallCollisionSegmentShape"]
 size = Vector3(4.7, 2.8, 0.68)
 
-[sub_resource type="StandardMaterial3D" id="MatArenaAccent"]
-albedo_color = Color(0.78, 0.72, 0.62, 1)
-metallic = 0.02
-roughness = 0.9
+[sub_resource type="StandardMaterial3D" id="MatArenaStepBlack"]
+albedo_color = Color(0.02, 0.02, 0.02, 1)
+roughness = 0.96
 
 [sub_resource type="CylinderMesh" id="ArenaStepRingMeshA"]
 top_radius = 6.0
@@ -88,6 +87,11 @@ height = 0.44
 top_radius = 6.7
 bottom_radius = 7.35
 height = 0.56
+
+[sub_resource type="StandardMaterial3D" id="MatArenaAccent"]
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+metallic = 0.02
+roughness = 0.9
 
 [sub_resource type="CylinderMesh" id="ArenaColumnMesh"]
 top_radius = 0.24
@@ -345,7 +349,8 @@ material_override = SubResource("MatArenaStone")
 mesh = SubResource("ArenaFloorMesh")
 
 [node name="ArenaCenterMedallion" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=1297882564]
-transform = Transform3D(1, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155744, 0.9961947, 0, 0.64, 0)
+transform = Transform3D(1.0000005, 0, 0, 0, 0.9961947, -0.087155744, 0, 0.087155774, 0.9961948, 0, 84.36912, 0)
+visible = false
 material_override = SubResource("MatCourtLine")
 mesh = SubResource("ArenaCenterMedallionMesh")
 
@@ -416,12 +421,12 @@ shape = SubResource("ArenaWallCollisionSegmentShape")
 
 [node name="StepRingA" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=1216372862]
 transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.38, 0)
-material_override = SubResource("MatArenaAccent")
+material_override = SubResource("MatArenaStepBlack")
 mesh = SubResource("ArenaStepRingMeshA")
 
 [node name="StepRingB" type="MeshInstance3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=1207044744]
 transform = Transform3D(1, 0, 0, 0, 0.99939084, -0.034899496, 0, 0.034899496, 0.99939084, 0, 0.2, 0)
-material_override = SubResource("MatArenaStone")
+material_override = SubResource("MatArenaStepBlack")
 mesh = SubResource("ArenaStepRingMeshB")
 
 [node name="ColosseumModules" type="Node3D" parent="World/Platforms/DragonPlatform/DragonArena" unique_id=831578953]
@@ -695,8 +700,8 @@ mesh = SubResource("RuinsShardMesh")
 transform = Transform3D(-7.708599, 0, -10.467928, 0, 13, 0, 10.467928, 0, -7.708599, 27.67669, 20.233805, 143.1003)
 
 [node name="DragonKeycard" parent="World" unique_id=375519423 instance=ExtResource("7")]
-transform = Transform3D(2.35, 0, 0, 0, 2.35, 0, 0, 0, 2.35, 4.2002716, 18.364773, 134.52335)
-key_id = "key_3"
+transform = Transform3D(2.35, 0, 0, 0, 2.35, 0, 0, 0, 2.35, 5.168127, 18.57854, 120.06789)
+key_id = "keycard"
 use_any_free_slot = true
 auto_select_after_pickup = true
 
@@ -722,28 +727,28 @@ transform = Transform3D(0.9063078, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.906
 [node name="ArchMarkers" type="Node3D" parent="World/DragonEncounter" unique_id=1700387011]
 
 [node name="Arch01" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1024589001]
-transform = Transform3D(0.9063078, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.9063078, 27.72, 20.28, 143)
+transform = Transform3D(0.9063078, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.9063078, 27.72, 18, 143)
 
 [node name="Arch02" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=594339667]
-transform = Transform3D(0.81915206, 0, 0.57357645, 0, 1, 0, -0.57357645, 0, 0.81915206, 6.087, 20.28, 150.887)
+transform = Transform3D(0.81915206, 0, 0.57357645, 0, 1, 0, -0.57357645, 0, 0.81915206, 6.087, 18, 150.887)
 
 [node name="Arch03" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1834952095]
-transform = Transform3D(-0.9999716, 0, 0.0075223446, 0, 1, 0, -0.0075223446, 0, -0.9999716, -14.049, 20.28, 141.941)
+transform = Transform3D(-0.9999716, 0, 0.0075223446, 0, 1, 0, -0.0075223446, 0, -0.9999716, -14.049, 18, 141.941)
 
 [node name="Arch04" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=359751114]
-transform = Transform3D(0.42261827, 0, 0.9063078, 0, 1, 0, -0.9063078, 0, 0.42261827, -22.487, 20.28, 121.838)
+transform = Transform3D(0.42261827, 0, 0.9063078, 0, 1, 0, -0.9063078, 0, 0.42261827, -22.487, 18, 121.838)
 
 [node name="Arch05" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1013929584]
-transform = Transform3D(0.17364818, 0, 0.9848077, 0, 1, 0, -0.9848077, 0, 0.17364818, -14.084, 20.28, 101.714)
+transform = Transform3D(0.17364818, 0, 0.9848077, 0, 1, 0, -0.9848077, 0, 0.17364818, -14.084, 18, 101.714)
 
 [node name="Arch06" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=737756712]
-transform = Transform3D(-0.17364818, 0, 0.9848077, 0, 1, 0, -0.9848077, 0, -0.17364818, 6.042304, 20.28, 92.508156)
+transform = Transform3D(-0.17364818, 0, 0.9848077, 0, 1, 0, -0.9848077, 0, -0.17364818, 6.042, 18, 92.508)
 
 [node name="Arch07" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1351779776]
-transform = Transform3D(-0.42261827, 0, 0.9063078, 0, 1, 0, -0.9063078, 0, -0.42261827, 34.438156, 20.28, 121.614136)
+transform = Transform3D(-0.42261827, 0, 0.9063078, 0, 1, 0, -0.9063078, 0, -0.42261827, 34.438, 18, 121.614)
 
 [node name="Arch08" type="Marker3D" parent="World/DragonEncounter/ArchMarkers" unique_id=1684363827]
-transform = Transform3D(-0.64278764, 0, 0.76604444, 0, 1, 0, -0.76604444, 0, -0.64278764, 27.163227, 20.28, 100.58036)
+transform = Transform3D(-0.64278764, 0, 0.76604444, 0, 1, 0, -0.76604444, 0, -0.64278764, 27.163, 19.375, 100.58)
 
 [node name="IntroOrbitA" type="Marker3D" parent="World/DragonEncounter" unique_id=1774242152]
 transform = Transform3D(0.9961947, 0, 0.087155744, 0, 1, 0, -0.087155744, 0, 0.9961947, 11.8, 34.274178, 126.2)
@@ -768,7 +773,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 21.44873, 0)
 shape = SubResource("Level3RideReleaseShape")
 
 [node name="Level4Gate" parent="World" unique_id=2147423050 instance=ExtResource("8")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285.31116, 168.78842, -355.95502)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285.31116, 168.51472, -355.95502)
 
 [node name="LevelFallDeathZone" type="Area3D" parent="World" unique_id=959243451]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56, -78.88209, -12)

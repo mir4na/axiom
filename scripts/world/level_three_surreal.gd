@@ -117,6 +117,7 @@ var _boots_jump_multiplier: float = 1.0
 var _boots_unlocked: bool = false
 var _dragon_arch_markers: Array[Node3D] = []
 var _dragon_keycard_spawn_transform: Transform3D = Transform3D.IDENTITY
+var _level_gate_spawn_transform: Transform3D = Transform3D.IDENTITY
 
 func _ready() -> void:
 	GameState.current_level_index = 2
@@ -143,6 +144,8 @@ func _ready() -> void:
 	_set_bridge_preview_visible(true)
 	if _dragon_keycard != null and is_instance_valid(_dragon_keycard):
 		_dragon_keycard_spawn_transform = _dragon_keycard.global_transform
+	if _level_gate != null and is_instance_valid(_level_gate):
+		_level_gate_spawn_transform = _level_gate.global_transform
 	_collect_dragon_arch_markers()
 	_set_dragon_keycard_pickup_enabled(false)
 	if _dragon_guard != null and _dragon_guard.has_method("set_mount_enabled"):
@@ -196,6 +199,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_stabilize_dragon_keycard()
+	_stabilize_level_gate_transform()
 	if _dragon_riding:
 		_update_portal_destination_trace()
 	elif _stage == Stage.TAKE_BOOTS:
@@ -239,11 +243,18 @@ func _collect_dragon_arch_markers() -> void:
 func _stabilize_dragon_keycard() -> void:
 	if _dragon_keycard == null or not is_instance_valid(_dragon_keycard):
 		return
-	if GameState.has_item("key_3"):
+	if GameState.has_item("keycard"):
 		return
 	if _dragon_keycard_spawn_transform == Transform3D.IDENTITY:
 		return
 	_dragon_keycard.global_transform = _dragon_keycard_spawn_transform
+
+func _stabilize_level_gate_transform() -> void:
+	if _level_gate == null or not is_instance_valid(_level_gate):
+		return
+	if _level_gate_spawn_transform == Transform3D.IDENTITY:
+		return
+	_level_gate.global_transform = _level_gate_spawn_transform
 
 func _collect_floaters() -> void:
 	_floating_nodes.clear()
@@ -1180,7 +1191,7 @@ func _on_dragon_health_changed(current: float, maximum: float) -> void:
 
 func _on_inventory_changed() -> void:
 	_apply_jump_boots_modifier_by_slot()
-	if _stage == Stage.TAKE_KEYCARD and GameState.has_item("key_3"):
+	if _stage == Stage.TAKE_KEYCARD and GameState.has_item("keycard"):
 		_stage = Stage.TAME_DRAGON
 		if _dragon_guard != null and _dragon_guard.has_method("set_mount_enabled"):
 			_dragon_guard.call("set_mount_enabled", true)
@@ -1416,16 +1427,16 @@ func _fly_dragon_away() -> void:
 func _grant_dragon_keycard() -> void:
 	if _dragon_keycard != null:
 		_dragon_keycard.visible = false
-	if GameState.has_item("key_3"):
-		GameState.select_item("key_3")
+	if GameState.has_item("keycard"):
+		GameState.select_item("keycard")
 		return
-	if GameState.add_item_first_free_slot("key_3"):
-		GameState.select_item("key_3")
+	if GameState.add_item_first_free_slot("keycard"):
+		GameState.select_item("keycard")
 		return
 	if GameState.selected_slot >= 0 and GameState.selected_slot < GameState.slots.size():
-		GameState.slots[GameState.selected_slot] = "key_3"
+		GameState.slots[GameState.selected_slot] = "keycard"
 		GameState.inventory_changed.emit()
-		GameState.select_item("key_3")
+		GameState.select_item("keycard")
 
 func _on_gate_opened() -> void:
 	if _stage != Stage.USE_GATE or _portal_transfer_running:
