@@ -1265,6 +1265,7 @@ func _start_dragon_ride() -> void:
 		_player.call("set_mount_riding", true)
 	if _player.has_method("set_external_camera_anchor"):
 		_player.call("set_external_camera_anchor", _dragon_runtime_camera_anchor)
+	_set_player_hud_visible(false)
 	_sync_player_to_dragon_mount()
 	_show_objective("Dragon flight in progress")
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -1378,6 +1379,7 @@ func _release_dragon_ride() -> void:
 			_player.call("set_mount_riding", false)
 		if _player.has_method("set_external_camera_anchor"):
 			_player.call("set_external_camera_anchor", null)
+	_set_player_hud_visible(true)
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	if _stage != Stage.USE_GATE:
 		_stage = Stage.USE_GATE
@@ -1385,6 +1387,13 @@ func _release_dragon_ride() -> void:
 			_level_gate.call("set_interactable_enabled", true)
 	_show_objective("Insert the keycard into the portal box")
 	_show_subtitle("Use the keycard on the center box to activate the portal ring.", 2.4)
+
+func _set_player_hud_visible(visible: bool) -> void:
+	if _world == null:
+		return
+	var hud_variant: Variant = _world.get("player_hud")
+	if hud_variant is CanvasLayer:
+		(hud_variant as CanvasLayer).visible = visible
 
 func _fly_dragon_away() -> void:
 	if _dragon_guard == null:

@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://njng5yim6rnu" path="res://scripts/objects/reset_zone.gd" id="2_reset"]
 [ext_resource type="PackedScene" uid="uid://dvnk7u6u4eknw" path="res://scenes/objects/axia_boss.tscn" id="3_axia_boss"]
 [ext_resource type="Texture2D" uid="uid://dyr45beqt4wtx" path="res://assets/skyboxes/level4_epic_glorious_pink.png" id="4_pink_sky"]
-[ext_resource type="AudioStream" uid="uid://cxshusirauqx4" path="res://audio/bgm/level_1_before_disaster.mp3" id="5_bgm_level1"]
+[ext_resource type="AudioStream" uid="uid://dcdxueaoxk7op" path="res://audio/bgm/level_1_before_disaster.mp3" id="5_bgm_level1"]
 [ext_resource type="AudioStream" uid="uid://unoa5a565im0" path="res://audio/bgm/level_2.mp3" id="6_bgm_level2"]
 [ext_resource type="AudioStream" uid="uid://ud6ggwb63oid" path="res://audio/bgm/bgm_level_4.mp3" id="7_bgm_level4"]
 [ext_resource type="AudioStream" uid="uid://dcc4hg4qx4f5c" path="res://audio/sfx/in-rewind-bgfx.mp3" id="8_sfx_glitch"]

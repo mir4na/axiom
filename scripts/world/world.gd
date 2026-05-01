@@ -25,7 +25,7 @@ const ENDING_BOARD_CAMERA_SHOT_DURATION := 0.9
 const ENDING_BOARD_TYPE_INTERVAL := 0.04
 const ENDING_BOARD_LINE_PAUSE := 0.26
 const ENDING_BOARD_FOOTER_PAUSE := 0.36
-const ENDING_BOARD_HOLD_DURATION := 5.0
+const ENDING_BOARD_HOLD_DURATION := 1.0
 const ENDING_BOARD_FADE_DURATION := 2.6
 const CAMERA_FOV_MIN := 1.0
 const CAMERA_FOV_MAX := 179.0
@@ -44,6 +44,7 @@ const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa07
 @export_group("Audio Placeholder BGM")
 @export var bgm_world_intro: AudioStream
 @export var bgm_level_one: AudioStream
+@export var bgm_level_one_after_disaster: AudioStream
 @export var bgm_level_two: AudioStream
 @export var bgm_level_three: AudioStream
 @export var bgm_level_four: AudioStream
@@ -75,7 +76,7 @@ const ENDING_WORLD_SKY_PATH := "res://assets/AllSkyFree_Godot-10e858fef0a9c5fa07
 @export var level_one_bgm_fade_out_duration: float = 2.0
 @export_range(0.0, 1.0, 0.01) var level_one_post_split_bgm_volume_scale: float = 0.5
 @export_group("BGM Mix")
-@export_range(0.0, 1.0, 0.01) var bgm_volume_scale: float = 0.6
+@export_range(0.0, 1.0, 0.01) var bgm_volume_scale: float = 0.5
 
 @export_group("Ending Sky")
 @export_file("*.png", "*.jpg", "*.jpeg", "*.webp", "*.hdr", "*.exr") var ending_world_sky_path: String = ENDING_WORLD_SKY_PATH
@@ -128,6 +129,7 @@ var _hit_glitch_tween: Tween
 var _cinematic_bars_ticket: int = 0
 var _objective_tween: Tween
 var _objective_transition_serial: int = 0
+var _gameplay_font: Font
 var _ending_board_text_overlay: Control
 var _sofa_aura: MeshInstance3D
 var _sofa_light: OmniLight3D
@@ -192,6 +194,7 @@ func _ready() -> void:
 		screen_fx.set_gameplay_filter_enabled(true)
 	_setup_audio_players()
 	_apply_player_spawn()
+	_sanitize_all_camera_fov_in_tree(self)
 	if _is_level_one_scene():
 		_create_intro_ui()
 		_create_intro_camera()
@@ -231,7 +234,6 @@ func _ready() -> void:
 		return
 	if not _is_world_intro_scene():
 		return
-	_play_bgm_stream(bgm_world_intro)
 	_configure_world_house()
 	_cache_world_targets()
 	_collect_dig_spots()
@@ -280,6 +282,7 @@ func _play_bgm_stream(stream: AudioStream) -> void:
 	var allow_bgm: bool = (
 		stream == bgm_world_intro
 		or stream == bgm_level_one
+		or stream == bgm_level_one_after_disaster
 		or stream == bgm_level_two
 		or stream == bgm_level_three
 		or stream == bgm_level_four
@@ -640,6 +643,7 @@ func _create_intro_ui() -> void:
 	var gameplay_font: Font = null
 	if _objective_label != null:
 		gameplay_font = _objective_label.get_theme_font("font")
+	_gameplay_font = gameplay_font
 
 	_subtitle_label = Label.new()
 	_subtitle_label.anchor_left = 0.16
@@ -702,6 +706,7 @@ func _create_intro_camera() -> void:
 	_intro_camera = Camera3D.new()
 	_intro_camera.name = "IntroCamera"
 	_intro_camera.current = false
+	_intro_camera.fov = _sanitize_camera_fov(70.0, 70.0)
 	_intro_camera.position = _intro_camera_position
 	_intro_camera.look_at(_intro_camera_target, Vector3.FORWARD)
 	add_child(_intro_camera)
@@ -898,6 +903,7 @@ func _play_intro_sequence() -> void:
 	_subtitle_label.visible = false
 	_intro_running = false
 	await _restore_player_camera()
+	_play_level_one_awake_bgm()
 	_show_objective(_objective_text("shovel", "OBJECTIVE: Pick up the shovel"))
 	_objective_state = "shovel"
 	await _show_subtitle("I should grab the shovel before I start digging.", 2.5)
@@ -906,6 +912,7 @@ func _play_intro_sequence() -> void:
 func _play_level_one_arrival() -> void:
 	if _level_one_flow != null:
 		await _level_one_flow.play_arrival()
+	_play_level_one_after_disaster_bgm()
 
 func _play_level_two_intro() -> void:
 	var level_two_tree: SceneTree = get_tree()
@@ -1406,14 +1413,16 @@ func _play_level_two_room3_sequence() -> void:
 	var rose_target: Vector3 = _level_two_rose_focus.global_position if _level_two_rose_focus != null else ((_level_two_rose.global_position if _level_two_rose != null else Vector3(0.0, 1.5, 0.0)) + Vector3(0.0, 1.35, 0.0))
 	var player_view_transform: Transform3D = player_camera.global_transform if player_camera != null else _make_look_transform(rose_target + Vector3(0.0, 1.6, -5.0), rose_target)
 	var axia_camera_transform: Transform3D = _resolve_level_two_axia_camera_transform(player_view_transform)
-	var room_focus_transform: Transform3D = Transform3D(axia_camera_transform.basis, player_view_transform.origin)
 	var use_scene_axia_camera: bool = _level_two_axia_cinematic_camera != null and is_instance_valid(_level_two_axia_cinematic_camera)
 	_intro_camera.global_transform = player_view_transform
 	_intro_camera.make_current()
-	await _play_camera_shot(player_view_transform, room_focus_transform, 0.24)
-	await _play_camera_shot(room_focus_transform, axia_camera_transform, 0.72)
+	await _fade_black(1.0, 0.5)
 	if use_scene_axia_camera:
 		_level_two_axia_cinematic_camera.make_current()
+	else:
+		_intro_camera.global_transform = axia_camera_transform
+		_intro_camera.make_current()
+	await _fade_black(0.0, 0.5)
 	var flashlight_fx: SpotLight3D = _create_level_two_flashlight_fx(rose_target)
 	await _show_subtitle("Axia: Hey... so you finally opened it.", 2.4, "axia")
 	await _show_subtitle("Axia: This place gets weird every time you start second-guessing yourself.", 2.8, "axia")
@@ -2090,10 +2099,18 @@ func _play_level_one_awake_bgm() -> void:
 		return
 	_play_bgm_stream(bgm_level_one)
 
+func _play_level_one_after_disaster_bgm() -> void:
+	if not _is_level_one_scene():
+		return
+	if bgm_level_one_after_disaster != null:
+		_play_bgm_stream(bgm_level_one_after_disaster)
+	else:
+		_play_bgm_stream(bgm_level_one)
+
 func _play_level_one_post_split_bgm() -> void:
 	if not _is_level_one_scene():
 		return
-	_play_bgm_stream(bgm_level_one)
+	_play_level_one_after_disaster_bgm()
 	if _bgm_player == null or not is_instance_valid(_bgm_player):
 		return
 	_bgm_player.volume_db = _volume_scale_to_db(level_one_post_split_bgm_volume_scale)
@@ -2442,7 +2459,7 @@ func _play_level_four_return_wake_sequence() -> void:
 	if _intro_camera == null:
 		_ending_cinematic_running = false
 		_set_intro_lock(false)
-		_start_ending_credits_without_board()
+		_show_ending_board()
 		return
 	var wake_eye: Vector3 = _player_spawn_position + Vector3(0.0, 1.02, 0.04)
 	var wake_focus: Vector3 = wake_eye + Vector3(0.0, 2.85, 0.1)
@@ -2471,7 +2488,7 @@ func _play_level_four_return_wake_sequence() -> void:
 	await _return_intro_camera_to_player(0.9)
 	_set_intro_lock(false)
 	_ending_cinematic_running = false
-	_start_ending_credits_without_board()
+	_show_ending_board()
 
 func _get_last_scene_bgm_stream() -> AudioStream:
 	if bgm_last_scene != null:
@@ -2519,7 +2536,7 @@ func _set_ending_board_active(visible: bool, interactable: bool) -> void:
 
 func _show_ending_board() -> void:
 	_set_ending_board_active(true, true)
-	_show_objective("Inspect the board")
+	_show_objective("Finish the game")
 
 func _update_ending_board_hint() -> void:
 	if _ending_cinematic_running or _ending_credits_running:
@@ -2578,11 +2595,11 @@ func _play_ending_board_cinematic() -> void:
 	var end_fov: float = _resolve_ending_board_camera_fov(start_fov)
 	_intro_camera.global_transform = start_transform
 	_intro_camera.make_current()
-	_intro_camera.fov = _sanitize_camera_fov(start_fov, 70.0)
+	_set_intro_camera_fov_safe(start_fov)
 	await _set_cinematic_bars(true, 0.35)
 	var camera_tween := create_tween().set_parallel(true)
 	camera_tween.tween_method(_blend_intro_camera.bind(start_transform, end_transform), 0.0, 1.0, ENDING_BOARD_CAMERA_SHOT_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	camera_tween.tween_property(_intro_camera, "fov", end_fov, ENDING_BOARD_CAMERA_SHOT_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	camera_tween.tween_method(_set_intro_camera_fov_safe, start_fov, end_fov, ENDING_BOARD_CAMERA_SHOT_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	await camera_tween.finished
 	_ending_board.set_message_visible(false)
 	_ending_board.set_footer_visible(false)
@@ -2627,6 +2644,24 @@ func _sanitize_camera_fov(value: float, fallback_value: float = 70.0) -> float:
 	if resolved != resolved or abs(resolved) == INF:
 		resolved = fallback
 	return clampf(resolved, CAMERA_FOV_MIN, CAMERA_FOV_MAX)
+
+func _set_intro_camera_fov_safe(value: float) -> void:
+	if _intro_camera == null or not is_instance_valid(_intro_camera):
+		return
+	_intro_camera.fov = _sanitize_camera_fov(value, 70.0)
+
+func _sanitize_all_camera_fov_in_tree(root: Node) -> void:
+	if root == null:
+		return
+	var stack: Array[Node] = []
+	stack.append(root)
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		if node is Camera3D:
+			var cam: Camera3D = node as Camera3D
+			cam.fov = _sanitize_camera_fov(cam.fov, 70.0)
+		for child in node.get_children():
+			stack.append(child)
 
 func _play_ending_board_overlay_text() -> void:
 	if _ending_board_text_overlay == null or not is_instance_valid(_ending_board_text_overlay):
@@ -2682,24 +2717,26 @@ func _show_ending_credits_roll() -> void:
 	background.color = Color(0, 0, 0, 1)
 	credits_root.add_child(background)
 	var credit_text := Label.new()
-	credit_text.anchor_left = 0.5
+	credit_text.anchor_left = 0.12
 	credit_text.anchor_top = 0.0
-	credit_text.anchor_right = 0.5
+	credit_text.anchor_right = 0.88
 	credit_text.anchor_bottom = 0.0
-	credit_text.offset_left = -430.0
-	credit_text.offset_right = 430.0
+	credit_text.offset_left = 0.0
+	credit_text.offset_right = 0.0
 	credit_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	credit_text.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	credit_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	credit_text.add_theme_font_size_override("font_size", 68)
+	if _gameplay_font != null:
+		credit_text.add_theme_font_override("font", _gameplay_font)
 	credit_text.add_theme_color_override("font_color", Color(0.96, 0.96, 0.96, 1.0))
 	credit_text.text = "CREDITS\n\nGame Designer\nmir4na\n\nProgrammer\nmir4na, Codex, Antigravity\n\nAssets\nCreators who published free models\n\nSound Effects and BGM\nCreators on YouTube\n\nAlso Thanks To\nGodot Engine\nGodot Community\nMixamo"
-	credit_text.custom_minimum_size = Vector2(860.0, 1820.0)
+	credit_text.custom_minimum_size = Vector2(0.0, 1820.0)
 	credit_text.size = credit_text.custom_minimum_size
 	credits_root.add_child(credit_text)
 	var start_y: float = viewport_size.y + 110.0
 	var end_y: float = -credit_text.custom_minimum_size.y - 180.0
-	credit_text.position = Vector2(-430.0, start_y)
+	credit_text.position = Vector2(0.0, start_y)
 	var credits_tween := create_tween()
 	credits_tween.tween_property(credit_text, "position:y", end_y, 23.0).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	await credits_tween.finished
@@ -2712,6 +2749,8 @@ func _show_ending_credits_roll() -> void:
 	thanks_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	thanks_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	thanks_label.add_theme_font_size_override("font_size", 56)
+	if _gameplay_font != null:
+		thanks_label.add_theme_font_override("font", _gameplay_font)
 	thanks_label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
 	thanks_label.text = "Again, Thanks for Playing this Game ^^."
 	thanks_label.modulate.a = 0.0

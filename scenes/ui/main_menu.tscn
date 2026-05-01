@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bgpm1ajyifylf" path="res://scripts/ui/main_menu.gd" id="1_mm"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_abstract_bg.tscn" id="2_bg_3d"]
 [ext_resource type="FontFile" uid="uid://bvkra0a1gyuc6" path="res://assets/fonts/PatrickHand-Regular.ttf" id="3_hand_font"]
+[ext_resource type="AudioStream" path="res://audio/sfx/button.mp3" id="4_sfx_button"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_start_normal"]
 bg_color = Color(0.08, 0.08, 0.08, 0.94)
@@ -86,6 +87,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_mm")
+sfx_start_button = ExtResource("4_sfx_button")
 
 [node name="Background3D" type="SubViewportContainer" parent="."]
 layout_mode = 1
@@ -171,5 +173,9 @@ color = Color(1, 1, 1, 0.16)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=268788544]
 libraries/ = SubResource("AnimationLibrary_main_menu")
+
+[node name="StartSFX" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_sfx_button")
+bus = &"Master"
 
 [connection signal="pressed" from="MenuRoot/StartButton" to="." method="_on_start_pressed"]

@@ -14,6 +14,10 @@ signal portal_activated
 @onready var _glow: OmniLight3D = $Glow
 @onready var _portal_ring: MeshInstance3D = get_node_or_null("PortalRing") as MeshInstance3D
 @onready var _portal_area: Area3D = get_node_or_null("PortalArea") as Area3D
+@onready var _portal_area_north: Area3D = get_node_or_null("PortalAreaNorth") as Area3D
+@onready var _portal_area_south: Area3D = get_node_or_null("PortalAreaSouth") as Area3D
+@onready var _portal_area_east: Area3D = get_node_or_null("PortalAreaEast") as Area3D
+@onready var _portal_area_west: Area3D = get_node_or_null("PortalAreaWest") as Area3D
 @onready var _portal_dark_glow: OmniLight3D = get_node_or_null("PortalDarkGlow") as OmniLight3D
 
 var _enabled: bool = true
@@ -21,8 +25,10 @@ var _opening: bool = false
 var _portal_active: bool = false
 var _transitioning: bool = false
 var _ring_pulse_time: float = 0.0
+var _portal_areas: Array[Area3D] = []
 
 func _ready() -> void:
+	_refresh_portal_areas()
 	_setup_highlight()
 	_connect_portal_area()
 	_set_portal_active(false)
@@ -71,9 +77,11 @@ func set_interactable_enabled(enabled: bool) -> void:
 		_portal_dark_glow.visible = enabled and _portal_active
 		if not (enabled and _portal_active):
 			_portal_dark_glow.light_energy = 0.0
-	if _portal_area != null:
-		_portal_area.monitorable = enabled
-		_portal_area.monitoring = enabled and _portal_active and not _transitioning
+	for area in _portal_areas:
+		if area == null or not is_instance_valid(area):
+			continue
+		area.monitorable = enabled
+		area.monitoring = enabled and _portal_active and not _transitioning
 	_update_prompt()
 
 func set_highlight_enabled(enabled: bool) -> void:
@@ -145,17 +153,20 @@ func _set_portal_active(active: bool) -> void:
 		_portal_dark_glow.visible = _enabled and active
 		_portal_dark_glow.light_color = dark_portal_color
 		_portal_dark_glow.light_energy = dark_portal_emission_energy if active else 0.0
-	if _portal_area != null:
-		_portal_area.monitoring = _enabled and active and not _transitioning
-		_portal_area.monitorable = _enabled
+	for area in _portal_areas:
+		if area == null or not is_instance_valid(area):
+			continue
+		area.monitoring = _enabled and active and not _transitioning
+		area.monitorable = _enabled
 	_ring_pulse_time = 0.0
 
 func _connect_portal_area() -> void:
-	if _portal_area == null:
-		return
 	var entered_callable: Callable = Callable(self, "_on_portal_area_body_entered")
-	if not _portal_area.is_connected("body_entered", entered_callable):
-		_portal_area.body_entered.connect(entered_callable)
+	for area in _portal_areas:
+		if area == null or not is_instance_valid(area):
+			continue
+		if not area.is_connected("body_entered", entered_callable):
+			area.body_entered.connect(entered_callable)
 
 func _on_portal_area_body_entered(body: Node) -> void:
 	if not _enabled or not _portal_active or _transitioning:
@@ -166,10 +177,28 @@ func _on_portal_area_body_entered(body: Node) -> void:
 		_show_prompt("Drop all items from every slot first")
 		return
 	_transitioning = true
-	if _portal_area != null:
-		_portal_area.monitoring = false
+	for area in _portal_areas:
+		if area == null or not is_instance_valid(area):
+			continue
+		area.monitoring = false
 	prompt_text = ""
 	gate_opened.emit()
+
+func _refresh_portal_areas() -> void:
+	_portal_areas.clear()
+	var candidates: Array[Area3D] = [
+		_portal_area,
+		_portal_area_north,
+		_portal_area_south,
+		_portal_area_east,
+		_portal_area_west
+	]
+	for area in candidates:
+		if area == null or not is_instance_valid(area):
+			continue
+		if _portal_areas.has(area):
+			continue
+		_portal_areas.append(area)
 
 func _has_any_inventory_item() -> bool:
 	for slot in GameState.slots:
